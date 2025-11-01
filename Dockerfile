@@ -13,10 +13,11 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# En desarrollo, copiamos todo al final para mejor cache
+# Copiar código de la aplicación
 COPY . .
 
+# Exponer puerto 8501
 EXPOSE 8501
 
-# CAMBIADO: usar file watcher para auto-reload
-CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501", "--server.fileWatcherType=poll"]
+# CORREGIDO: Configurar Streamlit para aceptar conexiones externas
+CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501", "--server.headless=true"]
