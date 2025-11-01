@@ -1,4 +1,26 @@
 services:
+  app:
+    build: .
+    container_name: gestor-horas
+    ports:
+      - "8501:8501"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: mis_horas
+      DB_PASSWORD: mis_horas
+      DB_NAME: mis_horas
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      streamlit run app.py 
+      --server.address=0.0.0.0 
+      --server.port=8501 
+      --server.headless=true
+      --server.enableCORS=false
+      --server.enableXsrfProtection=false
+
   db:
     image: mysql:8.0
     container_name: mis_horas_db
@@ -16,22 +38,6 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
-
-  app:
-    build: .
-    container_name: gestor-horas
-    depends_on:
-      db:
-        condition: service_healthy  # Esperar a que MySQL esté listo
-    environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_USER: mis_horas
-      DB_PASSWORD: mis_horas
-      DB_NAME: mis_horas
-    ports:
-      - "8501:8501"
-    restart: unless-stopped
 
 volumes:
   mysql_data:  # Volumen nombrado manejado por Docker
