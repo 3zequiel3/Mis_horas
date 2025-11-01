@@ -9,7 +9,7 @@ services:
       MYSQL_USER: mis_horas
       MYSQL_PASSWORD: mis_horas
     ports:
-      - "3306:3306"
+      - "500:3306"
     volumes:
       - mysql_data:/var/lib/mysql  # CAMBIADO: usar volumen nombrado
     healthcheck:
