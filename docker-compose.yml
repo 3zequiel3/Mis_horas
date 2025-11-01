@@ -1,0 +1,37 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: mis_horas_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: mis_horas
+      MYSQL_USER: mis_horas
+      MYSQL_PASSWORD: mis_horas
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql  # CAMBIADO: usar volumen nombrado
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  app:
+    build: .
+    container_name: gestor-horas
+    depends_on:
+      db:
+        condition: service_healthy  # Esperar a que MySQL esté listo
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: mis_horas
+      DB_PASSWORD: mis_horas
+      DB_NAME: mis_horas
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
+
+volumes:
+  mysql_data:  # Volumen nombrado manejado por Docker
