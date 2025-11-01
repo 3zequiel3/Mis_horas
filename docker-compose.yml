@@ -3,7 +3,7 @@ services:
     build: .
     container_name: gestor-horas
     ports:
-      - "8501:8501"
+      - "21000:8501"
     environment:
       DB_HOST: db
       DB_PORT: 3306
@@ -31,7 +31,7 @@ services:
       MYSQL_USER: mis_horas
       MYSQL_PASSWORD: mis_horas
     ports:
-      - "500:3306"
+      - "21003:3306"
     volumes:
       - mysql_data:/var/lib/mysql  # CAMBIADO: usar volumen nombrado
     healthcheck:
@@ -40,4 +40,4 @@ services:
       retries: 10
 
 volumes:
-  mysql_data:  # Volumen nombrado manejado por Docker
+  mysql_data:  # Volumen nombrado manejado por Dock er
