@@ -11,8 +11,7 @@ services:
       DB_PASSWORD: mis_horas
       DB_NAME: mis_horas
     depends_on:
-      db:
-        condition: service_healthy
+      db
     command: >
       streamlit run app.py 
       --server.address=0.0.0.0 
@@ -34,10 +33,6 @@ services:
       - "21003:3306"
     volumes:
       - mysql_data:/var/lib/mysql  # CAMBIADO: usar volumen nombrado
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
 
 volumes:
   mysql_data:  # Volumen nombrado manejado por Dock er
