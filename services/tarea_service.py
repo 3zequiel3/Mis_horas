@@ -1,4 +1,3 @@
-# services/tarea_service.py
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from models import Tarea, Dia
@@ -6,7 +5,7 @@ from utils.formatters import horas_a_formato
 
 def obtener_dias_disponibles(db: Session, proyecto_id: int, año: int, mes: int, tarea_excluir_id=None):
     """Obtiene días del mes que NO están asignados a otras tareas"""
-    # Obtener todos los días del mes
+    # Todos los días del mes
     todos_dias = (
         db.query(Dia)
         .filter(
@@ -18,7 +17,7 @@ def obtener_dias_disponibles(db: Session, proyecto_id: int, año: int, mes: int,
         .all()
     )
     
-    # Obtener días ya asignados a otras tareas
+    # Días ya asignados a otras tareas (excluyendo la tarea actual si se está editando)
     query_tareas = db.query(Tarea).filter(Tarea.proyecto_id == proyecto_id)
     if tarea_excluir_id:
         query_tareas = query_tareas.filter(Tarea.id != tarea_excluir_id)
@@ -40,7 +39,7 @@ def calcular_horas_tarea(tarea):
     return horas_a_formato(total)
 
 def crear_tarea(db: Session, titulo: str, detalle: str, que_falta: str, proyecto_id: int, dias_seleccionados: list):
-    """Crea una nueva tarea"""
+    """Crea una nueva tarea y le asigna los días seleccionados"""
     tarea = Tarea(
         titulo=titulo,
         detalle=detalle,
@@ -52,41 +51,39 @@ def crear_tarea(db: Session, titulo: str, detalle: str, que_falta: str, proyecto
     db.commit()
     db.refresh(tarea)
 
-    # Asignar días
+    # Asignar días seleccionados
     for dia in dias_seleccionados:
         tarea.dias.append(dia)
     
-    # Calcular horas
+    # Calcular y guardar horas automáticamente
     tarea.horas = calcular_horas_tarea(tarea)
     db.commit()
     return tarea
 
 def actualizar_tarea(db: Session, tarea_id: int, titulo: str, detalle: str, que_falta: str, dias_seleccionados: list):
-    """Actualiza una tarea existente"""
+    """Actualiza una tarea existente con nuevos datos y días"""
     tarea = db.query(Tarea).filter(Tarea.id == tarea_id).first()
     if not tarea:
         return None
     
-    # Actualizar campos básicos
+    # Actualizar campos de texto
     tarea.titulo = titulo
     tarea.detalle = detalle
     tarea.que_falta = que_falta
     
-    # Limpiar días actuales
+    # Reemplazar días asignados
     tarea.dias.clear()
-    
-    # Asignar nuevos días
     for dia in dias_seleccionados:
         tarea.dias.append(dia)
     
-    # Recalcular horas
+    # Recalcular horas basado en nuevos días
     tarea.horas = calcular_horas_tarea(tarea)
     
     db.commit()
     return tarea
 
 def obtener_tareas_proyecto(db: Session, proyecto_id: int):
-    """Obtiene todas las tareas de un proyecto"""
+    """Obtiene todas las tareas de un proyecto ordenadas por ID ascendente"""
     return (
         db.query(Tarea)
         .filter(Tarea.proyecto_id == proyecto_id)
@@ -95,7 +92,7 @@ def obtener_tareas_proyecto(db: Session, proyecto_id: int):
     )
 
 def eliminar_tarea(db: Session, tarea_id: int):
-    """Elimina una tarea"""
+    """Elimina una tarea de la base de datos"""
     tarea = db.query(Tarea).filter(Tarea.id == tarea_id).first()
     if tarea:
         db.delete(tarea)

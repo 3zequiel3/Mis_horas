@@ -1,4 +1,3 @@
-# proyecto_service.py
 import datetime
 import calendar
 from sqlalchemy.orm import Session
@@ -19,7 +18,7 @@ def obtener_meses_proyecto(db: Session, proyecto_id: int):
     return meses
 
 def generar_dias_para_proyecto(db: Session, proyecto: Proyecto):
-    """Genera días para el mes inicial del proyecto"""
+    """Genera días del mes inicial del proyecto si no existen"""
     existing = (
         db.query(Dia)
         .filter(Dia.proyecto_id == proyecto.id)
@@ -28,7 +27,7 @@ def generar_dias_para_proyecto(db: Session, proyecto: Proyecto):
     if existing:
         return
 
-    # Generar días para el mes/año del proyecto
+    # Crear días para el mes/año inicial del proyecto
     month_range = calendar.monthrange(proyecto.anio, proyecto.mes)[1]
     
     for day in range(1, month_range + 1):
@@ -46,7 +45,7 @@ def generar_dias_para_proyecto(db: Session, proyecto: Proyecto):
     db.commit()
 
 def agregar_mes_proyecto(db: Session, proyecto: Proyecto, año: int, mes: int):
-    """Agrega un nuevo mes al proyecto"""
+    """Agrega un nuevo mes al proyecto si no existe"""
     existing = (
         db.query(Dia)
         .filter(
@@ -77,7 +76,7 @@ def agregar_mes_proyecto(db: Session, proyecto: Proyecto, año: int, mes: int):
     return True
 
 def crear_proyecto(db: Session, nombre: str, descripcion: str, anio: int, mes: int):
-    """Crea un nuevo proyecto"""
+    """Crea un nuevo proyecto y genera sus días iniciales"""
     nuevo = Proyecto(
         nombre=nombre,
         descripcion=descripcion,

@@ -1,4 +1,3 @@
-# app.py
 import streamlit as st
 from sqlalchemy.orm import Session
 from db import init_db
@@ -19,18 +18,18 @@ def main():
     init_db()
     db = next(get_db())
 
-    # Cargar proyectos
+    # Obtener proyectos ordenados por más reciente
     proyectos = db.query(Proyecto).order_by(Proyecto.id.desc()).all()
     
-    # Renderizar sidebar
+    # Renderizar sidebar con selección de proyecto y mes
     sel_proyecto, mes_sel, año_sel = render_sidebar(db, proyectos)
     
-    # Renderizar formulario de proyecto si está activo
+    # Mostrar formulario de proyecto si está activado
     if st.session_state.get("show_project_modal", False):
         render_project_form(db)
         st.divider()
 
-    # Main content
+    # Contenido principal
     if not st.session_state.get("show_project_modal", False):
         st.title("🕒 Mis horas")
 
@@ -46,7 +45,7 @@ def main():
             st.info("Selecciona un mes desde el sidebar para continuar.")
             return
 
-        # Layout principal
+        # Layout de dos columnas: días | tareas
         col_izq, col_der = st.columns([1.1, 1.4], gap="large")
 
         with col_izq:

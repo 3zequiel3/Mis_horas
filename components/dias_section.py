@@ -1,4 +1,3 @@
-# dias_section.py
 import streamlit as st
 import pandas as pd
 from sqlalchemy.orm import Session
@@ -7,13 +6,12 @@ from utils.formatters import horas_a_formato, formato_a_horas
 from utils.constants import MESES_ES
 
 def render_dias_section(db: Session, proyecto, año_sel: int, mes_sel: int):
-    """Renderiza la sección de días del mes"""
+    """Sección para visualizar y editar horas trabajadas por día"""
     st.subheader(f"{MESES_ES[mes_sel]} {año_sel} – días")
 
-    # Obtener días del mes
     dias = obtener_dias_mes(db, proyecto.id, año_sel, mes_sel)
 
-    # Crear DataFrame con formato HH:MM
+    # Preparar datos para la tabla editable
     data_dias = []
     for d in dias:
         horas_reales = d.horas_trabajadas / 2
@@ -28,12 +26,12 @@ def render_dias_section(db: Session, proyecto, año_sel: int, mes_sel: int):
         )
     df_dias = pd.DataFrame(data_dias)
 
-    # Data editor con formato de texto para HH:MM
+    # Editor de datos con columnas configuradas
     edited = st.data_editor(
         df_dias,
         hide_index=True,
         column_config={
-            "id": None,
+            "id": None,  # Ocultar ID
             "Fecha": st.column_config.Column(disabled=True),
             "Día": st.column_config.Column(disabled=True),
             "Horas Trabajadas": st.column_config.TextColumn(
@@ -67,7 +65,7 @@ def render_dias_section(db: Session, proyecto, año_sel: int, mes_sel: int):
                 cambios_detectados = True
         
         if cambios_detectados:
-            # Recalcular tareas afectadas
+            # Recalcular horas de tareas afectadas por los cambios
             for dia_modificado in dias_modificados:
                 recalcular_tareas_afectadas(db, dia_modificado)
             
@@ -75,7 +73,7 @@ def render_dias_section(db: Session, proyecto, año_sel: int, mes_sel: int):
             st.success("✅ Guardado automáticamente")
             st.rerun()
 
-    # Totales en formato HH:MM
+    # Mostrar totales
     total_trab = sum(d.horas_trabajadas for d in dias)
     total_real = sum(d.horas_reales for d in dias)
     st.markdown(f"**Total horas trabajadas:** {horas_a_formato(total_trab)}")

@@ -1,4 +1,3 @@
-# tareas_section.py
 import streamlit as st
 import pandas as pd
 from sqlalchemy.orm import Session
@@ -11,8 +10,7 @@ from utils.constants import MESES_ES
 from utils.formatters import horas_a_formato
 
 def render_tareas_section(db: Session, proyecto, año_sel: int, mes_sel: int):
-    """Renderiza la sección completa de tareas"""
-    # Header con botón de exportar
+    """Sección principal para gestión de tareas del proyecto"""
     col_titulo, col_export = st.columns([3, 1])
     
     with col_titulo:
@@ -21,14 +19,11 @@ def render_tareas_section(db: Session, proyecto, año_sel: int, mes_sel: int):
     with col_export:
         render_export_button(db, proyecto, mes_sel, año_sel)
 
-    # Formulario para nueva tarea
     render_new_task_form(db, proyecto, año_sel, mes_sel)
-
-    # Tabla de tareas
     render_tasks_table(db, proyecto, año_sel, mes_sel)
 
 def render_export_button(db: Session, proyecto, mes_sel: int, año_sel: int):
-    """Renderiza el botón de exportar PDF"""
+    """Botón para exportar tareas a PDF"""
     if st.button("📄 Exportar PDF", help="Descargar tabla de tareas en PDF"):
         tareas_pdf = obtener_tareas_proyecto(db, proyecto.id)
         
@@ -52,7 +47,7 @@ def render_export_button(db: Session, proyecto, mes_sel: int, año_sel: int):
             st.error("No hay tareas para exportar")
 
 def render_new_task_form(db: Session, proyecto, año_sel: int, mes_sel: int):
-    """Renderiza el formulario para crear nueva tarea"""
+    """Formulario para crear nuevas tareas"""
     with st.expander("➕ Nueva tarea", expanded=True):
         form_key = f"form_nueva_tarea_{st.session_state.get('form_reset_counter', 0)}"
         
@@ -64,7 +59,7 @@ def render_new_task_form(db: Session, proyecto, año_sel: int, mes_sel: int):
             with col2:
                 que_falta = st.text_area("¿Qué falta?")
             
-            # Solo días disponibles
+            # Mostrar solo días no asignados a otras tareas
             dias_disponibles = obtener_dias_disponibles(db, proyecto.id, año_sel, mes_sel)
             dias_del_mes = [
                 f"{d.fecha.strftime('%d/%m/%Y')} - {d.dia_semana}" for d in dias_disponibles
@@ -78,7 +73,7 @@ def render_new_task_form(db: Session, proyecto, año_sel: int, mes_sel: int):
             guardar = st.form_submit_button("Guardar tarea", type="primary")
 
             if guardar and titulo.strip():
-                # Mapear días seleccionados
+                # Mapear selecciones a objetos de días
                 mapa = {
                     f"{d.fecha.strftime('%d/%m/%Y')} - {d.dia_semana}": d for d in dias_disponibles
                 }
@@ -86,7 +81,7 @@ def render_new_task_form(db: Session, proyecto, año_sel: int, mes_sel: int):
                 
                 crear_tarea(db, titulo, detalle, que_falta, proyecto.id, dias_seleccionados)
                 
-                # Reset formulario
+                # Reset del formulario para nueva tarea
                 if 'form_reset_counter' not in st.session_state:
                     st.session_state['form_reset_counter'] = 0
                 st.session_state['form_reset_counter'] += 1
@@ -97,7 +92,7 @@ def render_new_task_form(db: Session, proyecto, año_sel: int, mes_sel: int):
                 st.error("El título de la tarea es obligatorio")
 
 def render_tasks_table(db: Session, proyecto, año_sel: int, mes_sel: int):
-    """Renderiza la tabla de tareas con funcionalidad de edición"""
+    """Tabla interactiva de tareas con edición y eliminación"""
     tareas = obtener_tareas_proyecto(db, proyecto.id)
 
     if tareas:
@@ -105,7 +100,7 @@ def render_tasks_table(db: Session, proyecto, año_sel: int, mes_sel: int):
         data_tareas = []
         for t in tareas:
             horas_calculadas = calcular_horas_tarea(t)
-            # Actualizar en la BD si es diferente
+            # Sincronizar horas calculadas con BD
             if t.horas != horas_calculadas:
                 t.horas = horas_calculadas
                 db.commit()
@@ -125,7 +120,7 @@ def render_tasks_table(db: Session, proyecto, año_sel: int, mes_sel: int):
 
         df_tareas = pd.DataFrame(data_tareas)
         
-        # Data editor con columnas de acción
+        # Editor de datos con checkboxes para acciones
         edited_df = st.data_editor(
             df_tareas,
             use_container_width=True,
@@ -143,13 +138,10 @@ def render_tasks_table(db: Session, proyecto, año_sel: int, mes_sel: int):
             key="tabla_tareas_con_acciones"
         )
 
-        # Procesar acciones
         process_task_actions(db, edited_df, proyecto, año_sel, mes_sel)
-
-        # Formularios de edición
         render_edit_forms(db, tareas, proyecto, año_sel, mes_sel)
 
-        # Resumen
+        # Resumen de horas totales
         total_horas_tareas = sum(
             sum(dia.horas_reales for dia in tarea.dias) for tarea in tareas
         )
@@ -159,11 +151,11 @@ def render_tasks_table(db: Session, proyecto, año_sel: int, mes_sel: int):
         st.info("No hay tareas registradas para este proyecto.")
 
 def process_task_actions(db: Session, edited_df: pd.DataFrame, proyecto, año_sel: int, mes_sel: int):
-    """Procesa las acciones de editar y eliminar de la tabla"""
+    """Procesa las acciones marcadas en los checkboxes de la tabla"""
     for index, row in edited_df.iterrows():
         tarea_id = int(row["ID"])
         
-        # Acción EDITAR
+        # Manejar estado de edición
         current_editing = st.session_state.get(f"editing_task_{tarea_id}", False)
         if row["Editar"] != current_editing:
             st.session_state[f"editing_task_{tarea_id}"] = row["Editar"]
@@ -171,7 +163,7 @@ def process_task_actions(db: Session, edited_df: pd.DataFrame, proyecto, año_se
                 st.session_state[f"confirm_delete_{tarea_id}"] = False
             st.rerun()
         
-        # Acción ELIMINAR
+        # Manejar eliminación con confirmación
         if row["Eliminar"]:
             if st.session_state.get(f"confirm_delete_{tarea_id}", False):
                 if eliminar_tarea(db, tarea_id):
@@ -183,13 +175,12 @@ def process_task_actions(db: Session, edited_df: pd.DataFrame, proyecto, año_se
                 st.warning("¿Confirmar eliminar? Marca la casilla nuevamente.")
 
 def render_edit_forms(db: Session, tareas, proyecto, año_sel: int, mes_sel: int):
-    """Renderiza los formularios de edición de tareas"""
+    """Formularios de edición para tareas marcadas como editables"""
     for t in tareas:
         if st.session_state.get(f"editing_task_{t.id}", False):
             st.divider()
             with st.expander(f"✏️ Editando: {t.titulo}", expanded=True):
                 with st.form(f"edit_form_{t.id}"):
-                    # Campos editables
                     col1_edit, col2_edit = st.columns([1.5, 1])
                     with col1_edit:
                         titulo_edit = st.text_input("Tarea", value=t.titulo)
@@ -197,7 +188,7 @@ def render_edit_forms(db: Session, tareas, proyecto, año_sel: int, mes_sel: int
                     with col2_edit:
                         que_falta_edit = st.text_area("¿Qué falta?", value=t.que_falta or "")
                     
-                    # Días disponibles + días actuales
+                    # Incluir días disponibles + días ya asignados a esta tarea
                     dias_disponibles_edit = obtener_dias_disponibles(
                         db, proyecto.id, año_sel, mes_sel, t.id
                     )
@@ -227,7 +218,7 @@ def render_edit_forms(db: Session, tareas, proyecto, año_sel: int, mes_sel: int
                     guardar_edit = st.form_submit_button("💾 Guardar cambios", type="primary")
                     
                     if guardar_edit and titulo_edit.strip():
-                        # Mapear días seleccionados
+                        # Mapear selecciones editadas a objetos
                         mapa_edit = {
                             f"{d.fecha.strftime('%d/%m/%Y')} - {d.dia_semana}": d 
                             for d in todos_dias_edit
@@ -236,6 +227,7 @@ def render_edit_forms(db: Session, tareas, proyecto, año_sel: int, mes_sel: int
                         
                         actualizar_tarea(db, t.id, titulo_edit, detalle_edit, que_falta_edit, dias_seleccionados)
                         
+                        # Cerrar modal automáticamente después de guardar
                         st.session_state[f"editing_task_{t.id}"] = False
                         st.success("Tarea actualizada ✅")
                         st.rerun()

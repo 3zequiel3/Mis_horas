@@ -1,16 +1,16 @@
-# forms.py
 import streamlit as st
 import datetime
 from sqlalchemy.orm import Session
 from services.proyecto_service import crear_proyecto
 
 def render_project_form(db: Session):
-    """Renderiza el formulario para crear un nuevo proyecto"""
+    """Formulario para crear un nuevo proyecto con mes y año inicial"""
     with st.expander("🆕 Nuevo proyecto", expanded=True):
         with st.form("form_nuevo_proyecto"):
             nombre = st.text_input("Nombre del proyecto")
             descripcion = st.text_area("Descripción", "")
             hoy = datetime.date.today()
+            
             colm1, colm2 = st.columns(2)
             with colm1:
                 anio = st.number_input("Año", min_value=2020, max_value=2100, value=hoy.year)

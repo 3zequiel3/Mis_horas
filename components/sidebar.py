@@ -6,10 +6,9 @@ from services.proyecto_service import obtener_meses_proyecto, agregar_mes_proyec
 from utils.constants import MESES_ES
 
 def render_sidebar(db: Session, proyectos):
-    """Renderiza el sidebar completo"""
+    """Renderiza el sidebar completo con selector de proyectos y meses"""
     st.sidebar.title("📁 Proyectos")
 
-    # Inicializar estado del modal
     if "show_project_modal" not in st.session_state:
         st.session_state["show_project_modal"] = False
 
@@ -23,11 +22,10 @@ def render_sidebar(db: Session, proyectos):
         index=0,
     )
 
-    # Botón nuevo proyecto
     if st.sidebar.button("➕ Nuevo proyecto"):
         st.session_state["show_project_modal"] = True
 
-    # Selector de mes (solo si hay proyecto seleccionado)
+    # Mostrar selector de mes solo si hay proyecto seleccionado
     mes_sel = None
     año_sel = None
     
@@ -37,23 +35,22 @@ def render_sidebar(db: Session, proyectos):
     return sel_proyecto, mes_sel, año_sel
 
 def render_month_selector(db: Session, proyecto):
-    """Renderiza el selector de mes y funcionalidad para agregar meses"""
+    """Renderiza selector de mes y botón para agregar nuevos meses"""
     st.sidebar.divider()
     st.sidebar.subheader("📅 Mes")
     
-    # Obtener meses del proyecto seleccionado
     meses_proyecto = obtener_meses_proyecto(db, proyecto.id)
     
     mes_sel = None
     año_sel = None
     
     if meses_proyecto:
-        # Crear opciones para el selectbox
+        # Crear opciones con formato "Mes Año"
         opciones_meses = []
         for año, mes in meses_proyecto:
             opciones_meses.append((año, mes, f"{MESES_ES[mes]} {año}"))
         
-        # Seleccionar mes actual por defecto
+        # Seleccionar mes actual por defecto si existe
         hoy = datetime.date.today()
         indice_default = 0
         for i, (año, mes, _) in enumerate(opciones_meses):
@@ -71,24 +68,22 @@ def render_month_selector(db: Session, proyecto):
         
         año_sel, mes_sel, _ = mes_seleccionado
     
-    # Botón para agregar nuevo mes
     if st.sidebar.button("➕ Agregar mes"):
         st.session_state["show_add_month"] = True
 
-    # Formulario para agregar mes
     if st.session_state.get("show_add_month", False):
         render_add_month_form(db, proyecto)
 
     return mes_sel, año_sel
 
 def render_add_month_form(db: Session, proyecto):
-    """Renderiza el formulario para agregar un nuevo mes"""
+    """Formulario para agregar un nuevo mes al proyecto"""
     with st.sidebar.form("form_agregar_mes"):
         st.write("**Agregar nuevo mes:**")
         hoy = datetime.date.today()
         nuevo_año = st.number_input("Año", min_value=2020, max_value=2100, value=hoy.year)
         
-        # Selectbox con nombres de meses
+        # Selectbox con nombres de meses en español
         opciones_meses_form = [(num, nombre) for num, nombre in MESES_ES.items()]
         mes_seleccionado_form = st.selectbox(
             "Mes",

@@ -1,4 +1,3 @@
-# utils/formatters.py
 def horas_a_formato(horas_decimal):
     """Convierte horas decimales a formato HH:MM"""
     if not horas_decimal:

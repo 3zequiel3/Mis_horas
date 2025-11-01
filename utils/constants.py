@@ -1,5 +1,4 @@
-# constants.py
-
+# Días de la semana en español (índice weekday de Python)
 DIAS_ES = {
     0: "Lunes",
     1: "Martes", 
@@ -10,6 +9,7 @@ DIAS_ES = {
     6: "Domingo",
 }
 
+# Meses del año en español
 MESES_ES = {
     1: "Enero",
     2: "Febrero",
