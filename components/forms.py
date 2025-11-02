@@ -24,7 +24,14 @@ def render_project_form(db: Session):
                 cancelar = st.form_submit_button("Cancelar")
 
             if crear and nombre.strip():
-                crear_proyecto(db, nombre, descripcion, anio, mes)
+                crear_proyecto(
+                    db, 
+                    nombre, 
+                    descripcion, 
+                    anio, 
+                    mes, 
+                    st.session_state.user_id
+                )
                 st.success("Proyecto creado ✅")
                 st.session_state["show_project_modal"] = False
                 st.rerun()

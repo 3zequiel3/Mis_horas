@@ -13,6 +13,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/venv
     command: >
       streamlit run app.py 
       --server.address=0.0.0.0 

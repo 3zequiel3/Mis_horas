@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from models import Tarea, Dia
+from models import Tarea, Dia, Usuario
 from utils.formatters import horas_a_formato
 
 def obtener_dias_disponibles(db: Session, proyecto_id: int, año: int, mes: int, tarea_excluir_id=None):
@@ -33,69 +33,123 @@ def obtener_dias_disponibles(db: Session, proyecto_id: int, año: int, mes: int,
     dias_disponibles = [dia for dia in todos_dias if dia.id not in dias_ocupados]
     return dias_disponibles
 
-def calcular_horas_tarea(tarea):
-    """Calcula las horas totales de una tarea sumando las horas reales de sus días"""
-    total = sum(dia.horas_reales for dia in tarea.dias)
-    return horas_a_formato(total)
-
-def crear_tarea(db: Session, titulo: str, detalle: str, que_falta: str, proyecto_id: int, dias_seleccionados: list):
-    """Crea una nueva tarea y le asigna los días seleccionados"""
-    tarea = Tarea(
+def crear_tarea(db: Session, proyecto_id: int, titulo: str, detalle: str = "", 
+                que_falta: str = "", dias_ids: list = None, usuario_id: int = None):
+    """Crea una nueva tarea asociada a días específicos"""
+    nueva_tarea = Tarea(
         titulo=titulo,
         detalle=detalle,
-        horas="",
         que_falta=que_falta,
         proyecto_id=proyecto_id,
+        horas=""
     )
-    db.add(tarea)
-    db.commit()
-    db.refresh(tarea)
-
-    # Asignar días seleccionados
-    for dia in dias_seleccionados:
-        tarea.dias.append(dia)
     
-    # Calcular y guardar horas automáticamente
-    tarea.horas = calcular_horas_tarea(tarea)
+    # Asociar días si se proporcionaron
+    if dias_ids:
+        dias = db.query(Dia).filter(Dia.id.in_(dias_ids)).all()
+        nueva_tarea.dias = dias
+    
+    db.add(nueva_tarea)
     db.commit()
-    return tarea
+    
+    # Calcular horas después de asociar días
+    if dias_ids and usuario_id:
+        nueva_tarea.horas = calcular_horas_tarea(nueva_tarea, usuario_id)
+        db.commit()
+    
+    db.refresh(nueva_tarea)
+    return nueva_tarea
 
-def actualizar_tarea(db: Session, tarea_id: int, titulo: str, detalle: str, que_falta: str, dias_seleccionados: list):
-    """Actualiza una tarea existente con nuevos datos y días"""
+def actualizar_tarea(db: Session, tarea_id: int, titulo: str = None, 
+                     detalle: str = None, que_falta: str = None, 
+                     dias_ids: list = None, usuario_id: int = None):
+    """Actualiza una tarea existente"""
     tarea = db.query(Tarea).filter(Tarea.id == tarea_id).first()
+    
     if not tarea:
         return None
     
-    # Actualizar campos de texto
-    tarea.titulo = titulo
-    tarea.detalle = detalle
-    tarea.que_falta = que_falta
+    # Actualizar campos básicos
+    if titulo is not None:
+        tarea.titulo = titulo
+    if detalle is not None:
+        tarea.detalle = detalle
+    if que_falta is not None:
+        tarea.que_falta = que_falta
     
-    # Reemplazar días asignados
-    tarea.dias.clear()
-    for dia in dias_seleccionados:
-        tarea.dias.append(dia)
-    
-    # Recalcular horas basado en nuevos días
-    tarea.horas = calcular_horas_tarea(tarea)
+    # Actualizar días asociados si se proporcionaron
+    if dias_ids is not None:
+        dias = db.query(Dia).filter(Dia.id.in_(dias_ids)).all()
+        tarea.dias = dias
+        # Recalcular horas
+        if usuario_id:
+            tarea.horas = calcular_horas_tarea(tarea, usuario_id)
     
     db.commit()
+    db.refresh(tarea)
     return tarea
 
-def obtener_tareas_proyecto(db: Session, proyecto_id: int):
-    """Obtiene todas las tareas de un proyecto ordenadas por ID ascendente"""
-    return (
-        db.query(Tarea)
-        .filter(Tarea.proyecto_id == proyecto_id)
-        .order_by(Tarea.id.asc())
-        .all()
-    )
-
 def eliminar_tarea(db: Session, tarea_id: int):
-    """Elimina una tarea de la base de datos"""
+    """Elimina una tarea"""
     tarea = db.query(Tarea).filter(Tarea.id == tarea_id).first()
+    
     if tarea:
         db.delete(tarea)
         db.commit()
         return True
     return False
+
+def obtener_tareas_proyecto(db: Session, proyecto_id: int):
+    """Obtiene todas las tareas de un proyecto"""
+    return db.query(Tarea).filter(Tarea.proyecto_id == proyecto_id).all()
+
+def calcular_horas_tarea(tarea: Tarea, usuario_id: int) -> str:
+    """
+    Calcula las horas totales de una tarea según configuración del usuario
+    - Si usar_horas_reales = True: suma horas_reales
+    - Si usar_horas_reales = False: suma horas_trabajadas
+    """
+    if not tarea.dias:
+        return "00:00"
+    
+    # Obtener sesión desde el primer día
+    db = tarea.dias[0]._sa_instance_state.session
+    if not db:
+        # Si no hay sesión en el objeto, intentar obtenerla de otra forma
+        return "00:00"
+    
+    # Obtener configuración del usuario
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    usar_horas_reales = usuario.usar_horas_reales if usuario else False
+    
+    # Sumar según configuración
+    if usar_horas_reales:
+        total_horas = sum(dia.horas_reales for dia in tarea.dias)
+    else:
+        total_horas = sum(dia.horas_trabajadas for dia in tarea.dias)
+    
+    return horas_a_formato(total_horas)
+
+def obtener_horas_tarea_segun_usuario(tarea: Tarea, usuario_id: int, db: Session) -> str:
+    """
+    Obtiene las horas de una tarea según la configuración del usuario
+    Esta función es útil cuando ya tenemos la tarea cargada
+    """
+    if not tarea.dias:
+        return "00:00"
+    
+    # Obtener configuración del usuario
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    usar_horas_reales = usuario.usar_horas_reales if usuario else False
+    
+    # Sumar según configuración
+    if usar_horas_reales:
+        total_horas = sum(dia.horas_reales for dia in tarea.dias)
+    else:
+        total_horas = sum(dia.horas_trabajadas for dia in tarea.dias)
+    
+    return horas_a_formato(total_horas)
+
+def obtener_tarea_por_id(db: Session, tarea_id: int):
+    """Obtiene una tarea por su ID"""
+    return db.query(Tarea).filter(Tarea.id == tarea_id).first()

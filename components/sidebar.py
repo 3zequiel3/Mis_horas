@@ -2,17 +2,18 @@
 import streamlit as st
 import datetime
 from sqlalchemy.orm import Session
-from services.proyecto_service import obtener_meses_proyecto, agregar_mes_proyecto
+from services.proyecto_service import obtener_meses_proyecto, agregar_mes_proyecto, obtener_proyectos_usuario
 from utils.constants import MESES_ES
 
-def render_sidebar(db: Session, proyectos):
+def render_sidebar(db: Session):
     """Renderiza el sidebar completo con selector de proyectos y meses"""
     st.sidebar.title("📁 Proyectos")
 
     if "show_project_modal" not in st.session_state:
         st.session_state["show_project_modal"] = False
 
-    # Selector de proyecto con opción "Sin seleccionar"
+    proyectos = obtener_proyectos_usuario(db, st.session_state.user_id)
+
     opciones_proyectos = [None] + proyectos
     
     sel_proyecto = st.sidebar.selectbox(
@@ -25,14 +26,13 @@ def render_sidebar(db: Session, proyectos):
     if st.sidebar.button("➕ Nuevo proyecto"):
         st.session_state["show_project_modal"] = True
 
-    # Mostrar selector de mes solo si hay proyecto seleccionado
     mes_sel = None
     año_sel = None
     
     if sel_proyecto:
         mes_sel, año_sel = render_month_selector(db, sel_proyecto)
 
-    return sel_proyecto, mes_sel, año_sel
+    return sel_proyecto, mes_sel, año_sel, proyectos
 
 def render_month_selector(db: Session, proyecto):
     """Renderiza selector de mes y botón para agregar nuevos meses"""
