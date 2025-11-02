@@ -11,6 +11,7 @@ from services.auth_service import (
 )
 import re
 import uuid
+import hashlib
 
 def validate_email(email: str) -> bool:
     """Valida formato de email"""
@@ -29,17 +30,34 @@ def validate_password(password: str) -> tuple[bool, str]:
 
 def get_browser_id():
     """
-    Genera y retorna un browser_id único para este navegador.
-    NO intenta recuperar sesiones - eso lo hace render_login_page().
+    Genera un browser_id ÚNICO Y PERSISTENTE para este navegador.
+    Usa el session_id de Streamlit que persiste entre recargas.
     """
-    # Si ya existe en session_state, retornarlo
-    if 'browser_id' in st.session_state:
-        return st.session_state.browser_id
-    
-    # Si no existe, generar uno nuevo
-    browser_id = str(uuid.uuid4())
-    st.session_state.browser_id = browser_id
-    return browser_id
+    try:
+        # Obtener el contexto de ejecución de Streamlit
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+        ctx = get_script_run_ctx()
+        
+        if ctx is None:
+            # Fallback: generar uno temporal
+            if 'browser_id_fallback' not in st.session_state:
+                st.session_state.browser_id_fallback = str(uuid.uuid4())
+            return st.session_state.browser_id_fallback
+        
+        # Usar el session_id del contexto
+        # Este ID es único por pestaña del navegador y persiste entre recargas
+        session_id = ctx.session_id
+        
+        # Crear un hash único basado en el session_id
+        browser_id = hashlib.md5(session_id.encode()).hexdigest()
+        
+        return browser_id
+        
+    except Exception as e:
+        # Si falla, usar fallback en session_state
+        if 'browser_id_fallback' not in st.session_state:
+            st.session_state.browser_id_fallback = str(uuid.uuid4())
+        return st.session_state.browser_id_fallback
 
 def render_login_page(db: Session):
     """Página de login y registro"""
@@ -62,10 +80,10 @@ def render_login_page(db: Session):
         </style>
     """, unsafe_allow_html=True)
     
-    # Obtener ID único del navegador (genera uno nuevo si no existe)
+    # Obtener ID único del navegador (PERSISTENTE entre recargas)
     browser_id = get_browser_id()
     
-    # IMPORTANTE: Verificar si HAY sesión guardada para ESTE browser_id específico
+    # IMPORTANTE: Verificar sesión SOLO si NO está autenticado
     if 'authenticated' not in st.session_state:
         sesion = obtener_sesion_activa_para_navegador(db, browser_id)
         
@@ -108,7 +126,7 @@ def render_login_form(db: Session):
         )
         
         keep_session = st.checkbox("Mantener sesión iniciada en este dispositivo", value=False)
-        st.caption("💡 Tu sesión se mantendrá activa incluso si cierras el navegador")
+        st.caption("💡 Tu sesión se mantendrá activa solo en este navegador (incluso al cerrar)")
         
         login_button = st.form_submit_button("🔑 Iniciar Sesión", type="primary", use_container_width=True)
         
@@ -129,7 +147,7 @@ def render_login_form(db: Session):
 
 def login_user(usuario, mantener_sesion=False):
     """Función helper para hacer login de usuario"""
-    # Guardar en session_state (SIEMPRE)
+    # Guardar en session_state (SIEMPRE para sesión activa)
     st.session_state.authenticated = True
     st.session_state.user_id = usuario.id
     st.session_state.user_username = usuario.username
@@ -139,7 +157,7 @@ def login_user(usuario, mantener_sesion=False):
     st.session_state.user_mantener_sesion = mantener_sesion
     st.session_state.user_usar_horas_reales = usuario.usar_horas_reales
     
-    # Si marca "mantener sesión", guardar en browser_sessions.json
+    # SOLO si marca "mantener sesión", guardar en browser_sessions.json
     if mantener_sesion:
         from db import init_db
         from utils.helpers import get_db
