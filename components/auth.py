@@ -99,7 +99,7 @@ def render_login_form(db: Session):
     with st.form("login_form"):
         username = st.text_input(
             "Usuario o Email",
-            placeholder="Ingresa tu usuario o email"
+            placeholder="Ingresa tu usuario"
         )
         password = st.text_input(
             "Contraseña",
