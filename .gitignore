@@ -111,4 +111,4 @@ data/*.json
 # config.local.py
 # development.ini
 
-data/
+data/*
