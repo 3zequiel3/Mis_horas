@@ -208,8 +208,7 @@ def generar_pdf_proyecto(proyecto, dias, tareas, mes: int, año: int, usar_horas
             fontName='Helvetica-Bold'
         )
         
-        etiqueta_total = "Horas Reales" if usar_horas_reales else "Horas Trabajadas"
-        resumen = f"Total: <b>{len(tareas)}</b> tareas | <b>{horas_a_formato(total_horas)}</b> {etiqueta_total}"
+        resumen = f"Total: <b>{len(tareas)}</b> tareas | <b>{horas_a_formato(total_horas)} Horas</b>"
         story.append(Paragraph(resumen, resumen_style))
 
     # ============ PIE DE PÁGINA ============
