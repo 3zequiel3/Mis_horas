@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 from services.auth_service import (
     crear_usuario, 
     autenticar_usuario, 
-    obtener_usuario_por_id,
-    activar_mantener_sesion,
-    obtener_usuario_con_sesion_activa
+    obtener_usuario_por_id
 )
 import re
+import uuid
+import hashlib
 
 def validate_email(email: str) -> bool:
     """Valida formato de email"""
@@ -23,6 +23,18 @@ def validate_password(password: str) -> tuple[bool, str]:
     if not re.search(r'[0-9]', password):
         return False, "La contraseña debe contener al menos un número"
     return True, ""
+
+def get_browser_id():
+    """
+    Genera un ID único y persistente para este navegador/dispositivo.
+    Se mantiene durante toda la sesión del navegador.
+    """
+    if 'browser_id' not in st.session_state:
+        # Generar ID único basado en información de la sesión
+        # Esto se regenera cada vez que se cierra el navegador
+        st.session_state.browser_id = str(uuid.uuid4())
+    
+    return st.session_state.browser_id
 
 def render_login_page(db: Session):
     """Página de login y registro"""
@@ -45,10 +57,21 @@ def render_login_page(db: Session):
         </style>
     """, unsafe_allow_html=True)
     
-    # Verificar auto-login
-    if auto_login_if_remembered(db):
-        st.rerun()
-        return
+    # Obtener ID único del navegador
+    browser_id = get_browser_id()
+    
+    # Verificar si hay sesión activa para ESTE navegador específico
+    if 'authenticated' not in st.session_state:
+        # Intentar cargar sesión guardada solo para este navegador
+        from services.auth_service import obtener_sesion_activa_para_navegador
+        sesion = obtener_sesion_activa_para_navegador(db, browser_id)
+        
+        if sesion:
+            usuario = obtener_usuario_por_id(db, sesion['user_id'])
+            if usuario:
+                # Restaurar sesión solo para este navegador
+                login_user(usuario, mantener_sesion=True)
+                st.rerun()
     
     # Header
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -65,30 +88,6 @@ def render_login_page(db: Session):
     with tab_register:
         render_register_form(db)
 
-def auto_login_if_remembered(db: Session):
-    """Intenta hacer auto-login si hay un usuario con mantener_sesion=True"""
-    # Si ya está autenticado, no hacer nada
-    if st.session_state.get('authenticated', False):
-        return True
-    
-    # Buscar usuario con mantener_sesion activo
-    usuario = obtener_usuario_con_sesion_activa(db)
-    
-    if usuario:
-        # Restaurar sesión
-        st.session_state.authenticated = True
-        st.session_state.user_id = usuario.id
-        st.session_state.user_username = usuario.username
-        st.session_state.user_nombre = usuario.nombre_completo
-        st.session_state.user_email = usuario.email
-        st.session_state.user_foto = usuario.foto_perfil
-        st.session_state.user_mantener_sesion = usuario.mantener_sesion
-        st.session_state.user_usar_horas_reales = usuario.usar_horas_reales  # ← NUEVO
-        
-        return True
-    
-    return False
-
 def render_login_form(db: Session):
     """Formulario de inicio de sesión"""
     st.markdown("#### Ingresa a tu cuenta")
@@ -104,8 +103,8 @@ def render_login_form(db: Session):
             placeholder="Ingresa tu contraseña"
         )
         
-        keep_session = st.checkbox("Mantener sesión iniciada", value=True)
-        st.caption("💡 No tendrás que iniciar sesión cada vez que abras la página")
+        keep_session = st.checkbox("Mantener sesión iniciada en este dispositivo", value=False)
+        st.caption("💡 Tu sesión solo estará activa en este navegador/dispositivo")
         
         login_button = st.form_submit_button("🔑 Iniciar Sesión", type="primary", use_container_width=True)
         
@@ -116,11 +115,17 @@ def render_login_form(db: Session):
             
             usuario = autenticar_usuario(db, username, password)
             if usuario:
-                # Actualizar mantener_sesion en la BD
-                activar_mantener_sesion(db, usuario.id, keep_session)
+                # Obtener ID único de este navegador
+                browser_id = get_browser_id()
                 
-                # Hacer login
+                # Guardar sesión solo para este navegador
+                if keep_session:
+                    from services.auth_service import guardar_sesion_navegador
+                    guardar_sesion_navegador(db, browser_id, usuario.id)
+                
+                # Login en session_state (temporal)
                 login_user(usuario, keep_session)
+                
                 st.success(f"¡Bienvenido {usuario.nombre_completo}!")
                 st.rerun()
             else:
@@ -135,7 +140,7 @@ def login_user(usuario, mantener_sesion=False):
     st.session_state.user_email = usuario.email
     st.session_state.user_foto = usuario.foto_perfil
     st.session_state.user_mantener_sesion = mantener_sesion
-    st.session_state.user_usar_horas_reales = usuario.usar_horas_reales  # ← NUEVO
+    st.session_state.user_usar_horas_reales = usuario.usar_horas_reales
 
 def render_register_form(db: Session):
     """Formulario de registro"""

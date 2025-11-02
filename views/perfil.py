@@ -1,7 +1,10 @@
 import streamlit as st
 from sqlalchemy.orm import Session
 from components.user_profile import render_profile_edit_form, render_password_change_form
-from services.auth_service import logout_usuario, activar_mantener_sesion, activar_horas_reales, obtener_usuario_por_id
+from services.auth_service import logout_usuario, activar_horas_reales, obtener_usuario_por_id
+from components.auth import get_browser_id
+import json
+from pathlib import Path
 
 def render_perfil_page(db: Session):
     """Página de perfil de usuario"""
@@ -66,37 +69,48 @@ def render_user_info_section():
         st.markdown(f"**Estado:** 🟢 Activo")
 
 def render_sessions_management(db: Session):
-    """Gestión de sesiones usando la BD"""
+    """Gestión de sesiones usando browser_sessions.json"""
     st.markdown("#### 💻 Gestión de Sesiones")
     
-    # Obtener usuario actual de la BD
-    usuario = obtener_usuario_por_id(db, st.session_state.user_id)
+    # Obtener browser_id actual
+    browser_id = get_browser_id()
     
-    if not usuario:
-        st.error("Error al cargar información del usuario")
-        return
+    st.markdown("**🔐 Configuración de Sesión Actual:**")
     
-    st.markdown("**🔐 Configuración de Sesión:**")
+    # Verificar si hay sesión persistente para este navegador
+    sessions_file = Path("data/browser_sessions.json")
+    sesion_activa = False
+    
+    if sessions_file.exists():
+        try:
+            with open(sessions_file, 'r') as f:
+                sessions = json.load(f)
+                sesion_activa = browser_id in sessions
+        except:
+            sesion_activa = False
     
     # Checkbox para mantener sesión
-    mantener_sesion_actual = usuario.mantener_sesion
-    
     mantener_sesion_nuevo = st.checkbox(
-        "Mantener sesión iniciada",
-        value=mantener_sesion_actual,
-        help="No necesitarás iniciar sesión cada vez que abras la página",
+        "Mantener sesión iniciada en este dispositivo",
+        value=sesion_activa,
+        help="No necesitarás iniciar sesión cada vez que abras la página en ESTE navegador",
         key="checkbox_mantener_sesion"
     )
     
     # Detectar cambio
-    if mantener_sesion_nuevo != mantener_sesion_actual:
-        success, mensaje = activar_mantener_sesion(db, usuario.id, mantener_sesion_nuevo)
-        if success:
-            st.session_state.user_mantener_sesion = mantener_sesion_nuevo
-            st.success(f"✅ {mensaje}")
-            st.rerun()
+    if mantener_sesion_nuevo != sesion_activa:
+        if mantener_sesion_nuevo:
+            # Activar sesión persistente
+            from services.auth_service import guardar_sesion_navegador
+            guardar_sesion_navegador(db, browser_id, st.session_state.user_id)
+            st.success("✅ Sesión guardada en este dispositivo")
         else:
-            st.error(mensaje)
+            # Desactivar sesión persistente
+            from services.auth_service import cerrar_sesion_navegador
+            cerrar_sesion_navegador(browser_id)
+            st.success("✅ Sesión eliminada de este dispositivo")
+        
+        st.rerun()
     
     st.divider()
     
@@ -105,30 +119,110 @@ def render_sessions_management(db: Session):
         st.markdown("""
         **Cuando está ACTIVADO:**
         - ✅ No necesitas iniciar sesión cada vez que abres o recargas la página
-        - ✅ Tu sesión se mantiene activa automáticamente
+        - ✅ Tu sesión se mantiene activa automáticamente **en este navegador**
         - ✅ Más cómodo para uso personal
+        - ⚠️ **Solo funciona en este dispositivo/navegador**
         
         **Cuando está DESACTIVADO:**
         - 🔒 Debes iniciar sesión cada vez
         - 🔒 Más seguro para computadoras compartidas
         - 🔒 Recomendado para dispositivos públicos
+        
+        **Importante:**
+        - Cada navegador/dispositivo tiene su propia sesión independiente
+        - Si otro usuario accede desde otro dispositivo, deberá iniciar sesión
+        - No se comparten sesiones entre navegadores
         """)
     
     st.divider()
     
+    # Mostrar información de sesión actual
+    st.markdown("**📊 Información de Sesión:**")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.metric("🆔 ID de Navegador", browser_id[:8] + "...")
+        
+    with col2:
+        estado = "✅ Persistente" if sesion_activa else "⏳ Temporal"
+        st.metric("🔐 Tipo de Sesión", estado)
+    
     # Información de último acceso
-    if usuario.ultimo_acceso:
+    usuario = obtener_usuario_por_id(db, st.session_state.user_id)
+    if usuario and usuario.ultimo_acceso:
         st.caption(f"🕐 Último acceso: {usuario.ultimo_acceso.strftime('%d/%m/%Y %H:%M')}")
     
     st.divider()
     
+    # Ver todas las sesiones activas del usuario
+    if sessions_file.exists():
+        with st.expander("🔍 Ver sesiones activas", expanded=False):
+            try:
+                with open(sessions_file, 'r') as f:
+                    all_sessions = json.load(f)
+                
+                user_sessions = [
+                    (bid, data) for bid, data in all_sessions.items() 
+                    if data.get('user_id') == st.session_state.user_id
+                ]
+                
+                if user_sessions:
+                    st.markdown(f"**Tienes {len(user_sessions)} sesión(es) activa(s):**")
+                    
+                    for bid, data in user_sessions:
+                        is_current = bid == browser_id
+                        prefix = "🟢 **Esta sesión**" if is_current else "🔵 Otra sesión"
+                        
+                        st.markdown(f"{prefix}")
+                        st.caption(f"   ID: {bid[:16]}...")
+                        st.caption(f"   Última actividad: {data.get('last_activity', 'Desconocida')}")
+                        
+                        if not is_current:
+                            if st.button(f"❌ Cerrar sesión {bid[:8]}", key=f"close_{bid}"):
+                                from services.auth_service import cerrar_sesion_navegador
+                                cerrar_sesion_navegador(bid)
+                                st.success("Sesión cerrada")
+                                st.rerun()
+                        st.markdown("---")
+                else:
+                    st.info("No hay sesiones persistentes activas")
+                    
+            except Exception as e:
+                st.error(f"Error al cargar sesiones: {str(e)}")
+    
+    st.divider()
+    
     # Cerrar sesión actual
-    if st.button("🚪 Cerrar Sesión", type="primary", use_container_width=True):
-        # Desactivar mantener_sesion al cerrar sesión manualmente
-        activar_mantener_sesion(db, usuario.id, False)
-        logout_usuario()
-        st.success("Sesión cerrada correctamente")
-        st.rerun()
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("🚪 Cerrar Sesión Actual", type="primary", use_container_width=True):
+            logout_usuario()
+            st.success("Sesión cerrada correctamente")
+            st.rerun()
+    
+    with col2:
+        if st.button("🔴 Cerrar Todas las Sesiones", type="secondary", use_container_width=True):
+            # Cerrar todas las sesiones del usuario
+            if sessions_file.exists():
+                try:
+                    with open(sessions_file, 'r') as f:
+                        all_sessions = json.load(f)
+                    
+                    # Filtrar sesiones de este usuario
+                    new_sessions = {
+                        bid: data for bid, data in all_sessions.items()
+                        if data.get('user_id') != st.session_state.user_id
+                    }
+                    
+                    with open(sessions_file, 'w') as f:
+                        json.dump(new_sessions, f, indent=2)
+                    
+                    logout_usuario()
+                    st.success("Todas las sesiones cerradas")
+                    st.rerun()
+                except:
+                    st.error("Error al cerrar sesiones")
 
 def render_user_settings(db: Session):
     """Configuraciones del usuario"""

@@ -2,6 +2,18 @@ from sqlalchemy.orm import Session
 from models import Usuario
 from datetime import datetime
 import streamlit as st
+import json
+from pathlib import Path
+
+# Archivo para guardar sesiones activas por navegador
+SESSIONS_FILE = Path("data/browser_sessions.json")
+
+def ensure_sessions_file():
+    """Asegura que el archivo de sesiones existe"""
+    SESSIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    if not SESSIONS_FILE.exists():
+        with open(SESSIONS_FILE, 'w') as f:
+            json.dump({}, f)
 
 def crear_usuario(db: Session, username: str, email: str, password: str, nombre_completo: str = None):
     """Crea un nuevo usuario"""
@@ -51,6 +63,72 @@ def obtener_usuario_por_id(db: Session, user_id: int):
     """Obtiene un usuario por su ID"""
     return db.query(Usuario).filter(Usuario.id == user_id).first()
 
+def guardar_sesion_navegador(db: Session, browser_id: str, user_id: int):
+    """
+    Guarda la sesión activa para un navegador específico.
+    Cada navegador tiene su propia sesión independiente.
+    """
+    ensure_sessions_file()
+    
+    try:
+        with open(SESSIONS_FILE, 'r') as f:
+            sessions = json.load(f)
+    except:
+        sessions = {}
+    
+    # Guardar sesión para este navegador específico
+    sessions[browser_id] = {
+        'user_id': user_id,
+        'created_at': datetime.now().isoformat(),
+        'last_activity': datetime.now().isoformat()
+    }
+    
+    with open(SESSIONS_FILE, 'w') as f:
+        json.dump(sessions, f, indent=2)
+
+def obtener_sesion_activa_para_navegador(db: Session, browser_id: str):
+    """
+    Obtiene la sesión activa SOLO para este navegador específico.
+    Otros navegadores no verán esta sesión.
+    """
+    ensure_sessions_file()
+    
+    try:
+        with open(SESSIONS_FILE, 'r') as f:
+            sessions = json.load(f)
+    except:
+        return None
+    
+    # Buscar sesión solo para este navegador
+    sesion = sessions.get(browser_id)
+    
+    if sesion:
+        # Actualizar última actividad
+        sesion['last_activity'] = datetime.now().isoformat()
+        sessions[browser_id] = sesion
+        
+        with open(SESSIONS_FILE, 'w') as f:
+            json.dump(sessions, f, indent=2)
+    
+    return sesion
+
+def cerrar_sesion_navegador(browser_id: str):
+    """Cierra la sesión de un navegador específico"""
+    ensure_sessions_file()
+    
+    try:
+        with open(SESSIONS_FILE, 'r') as f:
+            sessions = json.load(f)
+    except:
+        return
+    
+    # Eliminar solo la sesión de este navegador
+    if browser_id in sessions:
+        del sessions[browser_id]
+        
+        with open(SESSIONS_FILE, 'w') as f:
+            json.dump(sessions, f, indent=2)
+
 def actualizar_perfil_usuario(db: Session, user_id: int, nombre_completo: str = None, 
                               email: str = None, foto_perfil: str = None):
     """Actualiza el perfil del usuario"""
@@ -99,17 +177,9 @@ def cambiar_password(db: Session, user_id: int, password_actual: str, password_n
     return True, "Contraseña actualizada exitosamente"
 
 def activar_mantener_sesion(db: Session, user_id: int, activar: bool = True):
-    """Activa o desactiva 'mantener sesión' para un usuario"""
-    usuario = db.query(Usuario).filter(Usuario.id == user_id).first()
-    
-    if not usuario:
-        return False, "Usuario no encontrado"
-    
-    usuario.mantener_sesion = activar
-    usuario.ultimo_acceso = datetime.utcnow()
-    db.commit()
-    
-    return True, f"Mantener sesión {'activado' if activar else 'desactivado'} exitosamente"
+    """DEPRECADO - Ya no se usa, las sesiones se manejan por navegador"""
+    # Mantener por compatibilidad
+    return True, "Configuración actualizada"
 
 def activar_horas_reales(db: Session, user_id: int, activar: bool = True):
     """Activa o desactiva el cálculo de 'horas reales' (división por 2) para un usuario"""
@@ -124,17 +194,19 @@ def activar_horas_reales(db: Session, user_id: int, activar: bool = True):
     return True, f"Cálculo de horas reales {'activado' if activar else 'desactivado'} exitosamente"
 
 def obtener_usuario_con_sesion_activa(db: Session):
-    """Obtiene el último usuario que tiene mantener_sesion=True"""
-    usuario = db.query(Usuario).filter(
-        Usuario.mantener_sesion == True
-    ).order_by(Usuario.ultimo_acceso.desc()).first()
-    
-    return usuario
+    """DEPRECADO - Ya no se usa"""
+    return None
 
 def logout_usuario():
     """Cierra la sesión del usuario actual"""
-    # Limpiar session_state
-    keys_to_keep = []
+    from components.auth import get_browser_id
+    
+    # Cerrar sesión persistente de este navegador
+    browser_id = get_browser_id()
+    cerrar_sesion_navegador(browser_id)
+    
+    # Limpiar session_state (mantener browser_id)
+    keys_to_keep = ['browser_id']
     for key in list(st.session_state.keys()):
         if key not in keys_to_keep:
             del st.session_state[key]
