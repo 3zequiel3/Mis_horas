@@ -7,7 +7,8 @@ from services.auth_service import (
 )
 import re
 import uuid
-import hashlib
+import json
+from pathlib import Path
 
 def validate_email(email: str) -> bool:
     """Valida formato de email"""
@@ -26,15 +27,61 @@ def validate_password(password: str) -> tuple[bool, str]:
 
 def get_browser_id():
     """
-    Genera un ID único y persistente para este navegador/dispositivo.
-    Se mantiene durante toda la sesión del navegador.
+    Genera y mantiene un browser_id único por sesión del navegador.
+    - Si ya existe en session_state, lo reutiliza ✅
+    - Si no existe pero hay sesión persistente guardada, la recupera ✅
+    - Si no existe nada, genera uno nuevo ✅
     """
-    if 'browser_id' not in st.session_state:
-        # Generar ID único basado en información de la sesión
-        # Esto se regenera cada vez que se cierra el navegador
-        st.session_state.browser_id = str(uuid.uuid4())
+    # 1. Si ya está en session_state, retornarlo (sesión activa)
+    if 'browser_id' in st.session_state:
+        return st.session_state.browser_id
     
-    return st.session_state.browser_id
+    # 2. Verificar si hay sesión persistente guardada
+    temp_dir = Path("data/temp_sessions")
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Usar session_id de Streamlit para identificar esta pestaña
+    try:
+        session_id = st.runtime.scriptrunner.get_script_run_ctx().session_id
+        session_file = temp_dir / f"{session_id}.json"
+        
+        # Si existe archivo, cargar browser_id
+        if session_file.exists():
+            try:
+                with open(session_file, 'r') as f:
+                    data = json.load(f)
+                    browser_id = data['browser_id']
+                    # Guardar en session_state para no volver a leer el archivo
+                    st.session_state.browser_id = browser_id
+                    return browser_id
+            except:
+                pass
+    except:
+        # Si falla obtener session_id, continuar sin persistencia
+        pass
+    
+    # 3. No existe en ningún lado, generar nuevo
+    browser_id = str(uuid.uuid4())
+    st.session_state.browser_id = browser_id
+    
+    # Guardar en archivo SOLO si se activa "mantener sesión"
+    # (esto se hace en login_user cuando keep_session=True)
+    
+    return browser_id
+
+def save_browser_id_to_disk(browser_id: str):
+    """Guarda el browser_id en disco para persistencia entre sesiones"""
+    try:
+        temp_dir = Path("data/temp_sessions")
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        
+        session_id = st.runtime.scriptrunner.get_script_run_ctx().session_id
+        session_file = temp_dir / f"{session_id}.json"
+        
+        with open(session_file, 'w') as f:
+            json.dump({'browser_id': browser_id}, f)
+    except:
+        pass
 
 def render_login_page(db: Session):
     """Página de login y registro"""
@@ -61,8 +108,9 @@ def render_login_page(db: Session):
     browser_id = get_browser_id()
     
     # Verificar si hay sesión activa para ESTE navegador específico
+    # SOLO si NO está autenticado en session_state
     if 'authenticated' not in st.session_state:
-        # Intentar cargar sesión guardada solo para este navegador
+        # Intentar cargar sesión PERSISTENTE (solo si marcó "mantener sesión")
         from services.auth_service import obtener_sesion_activa_para_navegador
         sesion = obtener_sesion_activa_para_navegador(db, browser_id)
         
@@ -104,7 +152,7 @@ def render_login_form(db: Session):
         )
         
         keep_session = st.checkbox("Mantener sesión iniciada en este dispositivo", value=False)
-        st.caption("💡 Tu sesión solo estará activa en este navegador/dispositivo")
+        st.caption("💡 Si no marcas esta opción, deberás iniciar sesión al cerrar el navegador")
         
         login_button = st.form_submit_button("🔑 Iniciar Sesión", type="primary", use_container_width=True)
         
@@ -115,15 +163,7 @@ def render_login_form(db: Session):
             
             usuario = autenticar_usuario(db, username, password)
             if usuario:
-                # Obtener ID único de este navegador
-                browser_id = get_browser_id()
-                
-                # Guardar sesión solo para este navegador
-                if keep_session:
-                    from services.auth_service import guardar_sesion_navegador
-                    guardar_sesion_navegador(db, browser_id, usuario.id)
-                
-                # Login en session_state (temporal)
+                # Login en session_state (siempre, para que funcione mientras esté abierta la pestaña)
                 login_user(usuario, keep_session)
                 
                 st.success(f"¡Bienvenido {usuario.nombre_completo}!")
@@ -133,6 +173,7 @@ def render_login_form(db: Session):
 
 def login_user(usuario, mantener_sesion=False):
     """Función helper para hacer login de usuario"""
+    # Guardar en session_state (SIEMPRE, para que funcione en la sesión actual)
     st.session_state.authenticated = True
     st.session_state.user_id = usuario.id
     st.session_state.user_username = usuario.username
@@ -141,6 +182,22 @@ def login_user(usuario, mantener_sesion=False):
     st.session_state.user_foto = usuario.foto_perfil
     st.session_state.user_mantener_sesion = mantener_sesion
     st.session_state.user_usar_horas_reales = usuario.usar_horas_reales
+    
+    # Si marcó "mantener sesión", guardar en disco y en browser_sessions.json
+    if mantener_sesion:
+        browser_id = get_browser_id()
+        
+        # Guardar browser_id en archivo para persistencia
+        save_browser_id_to_disk(browser_id)
+        
+        # Guardar sesión en browser_sessions.json
+        from services.auth_service import guardar_sesion_navegador
+        from db import init_db
+        from utils.helpers import get_db
+        
+        init_db()
+        db = next(get_db())
+        guardar_sesion_navegador(db, browser_id, usuario.id)
 
 def render_register_form(db: Session):
     """Formulario de registro"""

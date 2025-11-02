@@ -1,16 +1,19 @@
 import streamlit as st
 from sqlalchemy.orm import Session
 from db import init_db
-from components.auth import render_login_page
+from components.auth import render_login_page, get_browser_id
 from views.index import render_dashboard_index
 from views.perfil import render_perfil_page
 from utils.helpers import get_db
-from services.auth_service import logout_usuario, activar_mantener_sesion
+from services.auth_service import logout_usuario
 
 def main():
     """Aplicación principal con sistema de navegación"""
     init_db()
     db = next(get_db())
+    
+    # Asegurar browser_id antes de verificar autenticación
+    browser_id = get_browser_id()
     
     # Verificar autenticación
     if not st.session_state.get('authenticated', False):
@@ -53,11 +56,9 @@ def render_sidebar(db: Session):
     """Sidebar con navegación y gestión condicional de proyectos"""
     st.sidebar.title("🕒 Mis Horas")
     
-    # Botón de logout
+    # Botón de logout - CORREGIDO
     if st.sidebar.button("🚪 Cerrar Sesión", key="logout_top", use_container_width=True, type="secondary"):
-        if st.session_state.get('user_id'):
-            activar_mantener_sesion(db, st.session_state.user_id, False)
-        logout_usuario()
+        logout_usuario()  # ← Ya maneja todo internamente
         st.rerun()
     
     st.sidebar.divider()
