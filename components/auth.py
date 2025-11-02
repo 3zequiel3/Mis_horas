@@ -1,14 +1,16 @@
 import streamlit as st
 from sqlalchemy.orm import Session
+from pathlib import Path
+import json    
 from services.auth_service import (
     crear_usuario, 
     autenticar_usuario, 
-    obtener_usuario_por_id
+    obtener_usuario_por_id,
+    guardar_sesion_navegador,
+    obtener_sesion_activa_para_navegador
 )
 import re
 import uuid
-import json
-from pathlib import Path
 
 def validate_email(email: str) -> bool:
     """Valida formato de email"""
@@ -27,61 +29,45 @@ def validate_password(password: str) -> tuple[bool, str]:
 
 def get_browser_id():
     """
-    Genera y mantiene un browser_id único por sesión del navegador.
-    - Si ya existe en session_state, lo reutiliza ✅
-    - Si no existe pero hay sesión persistente guardada, la recupera ✅
-    - Si no existe nada, genera uno nuevo ✅
+    Obtiene un browser_id único y persistente.
+    SOLUCIÓN: Guardar en session_state y persistir en browser_sessions.json
     """
-    # 1. Si ya está en session_state, retornarlo (sesión activa)
+    # 1. Si ya existe en session_state, retornarlo
     if 'browser_id' in st.session_state:
         return st.session_state.browser_id
     
-    # 2. Verificar si hay sesión persistente guardada
-    temp_dir = Path("data/temp_sessions")
-    temp_dir.mkdir(parents=True, exist_ok=True)
+    # 2. Intentar recuperar sesión activa del usuario actual
+    # Esto funciona cuando el usuario marca "mantener sesión"
+    # y recarga la página (session_state se limpia pero browser_sessions.json persiste)
+
+    sessions_file = Path("data/browser_sessions.json")
     
-    # Usar session_id de Streamlit para identificar esta pestaña
-    try:
-        session_id = st.runtime.scriptrunner.get_script_run_ctx().session_id
-        session_file = temp_dir / f"{session_id}.json"
-        
-        # Si existe archivo, cargar browser_id
-        if session_file.exists():
-            try:
-                with open(session_file, 'r') as f:
-                    data = json.load(f)
-                    browser_id = data['browser_id']
-                    # Guardar en session_state para no volver a leer el archivo
+    if sessions_file.exists():
+        try:
+            with open(sessions_file, 'r') as f:
+                all_sessions = json.load(f)
+            
+            # Buscar la última sesión activa (heurística simple)
+            if all_sessions:
+                # Ordenar por última actividad
+                sorted_sessions = sorted(
+                    all_sessions.items(),
+                    key=lambda x: x[1].get('last_activity', ''),
+                    reverse=True
+                )
+                
+                # Tomar la primera (más reciente)
+                if sorted_sessions:
+                    browser_id, session_data = sorted_sessions[0]
                     st.session_state.browser_id = browser_id
                     return browser_id
-            except:
-                pass
-    except:
-        # Si falla obtener session_id, continuar sin persistencia
-        pass
+        except:
+            pass
     
-    # 3. No existe en ningún lado, generar nuevo
+    # 3. No hay sesión previa, generar nuevo ID
     browser_id = str(uuid.uuid4())
     st.session_state.browser_id = browser_id
-    
-    # Guardar en archivo SOLO si se activa "mantener sesión"
-    # (esto se hace en login_user cuando keep_session=True)
-    
     return browser_id
-
-def save_browser_id_to_disk(browser_id: str):
-    """Guarda el browser_id en disco para persistencia entre sesiones"""
-    try:
-        temp_dir = Path("data/temp_sessions")
-        temp_dir.mkdir(parents=True, exist_ok=True)
-        
-        session_id = st.runtime.scriptrunner.get_script_run_ctx().session_id
-        session_file = temp_dir / f"{session_id}.json"
-        
-        with open(session_file, 'w') as f:
-            json.dump({'browser_id': browser_id}, f)
-    except:
-        pass
 
 def render_login_page(db: Session):
     """Página de login y registro"""
@@ -107,17 +93,14 @@ def render_login_page(db: Session):
     # Obtener ID único del navegador
     browser_id = get_browser_id()
     
-    # Verificar si hay sesión activa para ESTE navegador específico
-    # SOLO si NO está autenticado en session_state
+    # IMPORTANTE: Verificar sesión persistente ANTES de mostrar formulario
     if 'authenticated' not in st.session_state:
-        # Intentar cargar sesión PERSISTENTE (solo si marcó "mantener sesión")
-        from services.auth_service import obtener_sesion_activa_para_navegador
         sesion = obtener_sesion_activa_para_navegador(db, browser_id)
         
         if sesion:
             usuario = obtener_usuario_por_id(db, sesion['user_id'])
             if usuario:
-                # Restaurar sesión solo para este navegador
+                # Restaurar sesión automáticamente
                 login_user(usuario, mantener_sesion=True)
                 st.rerun()
     
@@ -152,7 +135,7 @@ def render_login_form(db: Session):
         )
         
         keep_session = st.checkbox("Mantener sesión iniciada en este dispositivo", value=False)
-        st.caption("💡 Si no marcas esta opción, deberás iniciar sesión al cerrar el navegador")
+        st.caption("💡 Tu sesión se mantendrá activa incluso si recargas la página")
         
         login_button = st.form_submit_button("🔑 Iniciar Sesión", type="primary", use_container_width=True)
         
@@ -163,7 +146,7 @@ def render_login_form(db: Session):
             
             usuario = autenticar_usuario(db, username, password)
             if usuario:
-                # Login en session_state (siempre, para que funcione mientras esté abierta la pestaña)
+                # Login
                 login_user(usuario, keep_session)
                 
                 st.success(f"¡Bienvenido {usuario.nombre_completo}!")
@@ -173,7 +156,7 @@ def render_login_form(db: Session):
 
 def login_user(usuario, mantener_sesion=False):
     """Función helper para hacer login de usuario"""
-    # Guardar en session_state (SIEMPRE, para que funcione en la sesión actual)
+    # Guardar en session_state (SIEMPRE)
     st.session_state.authenticated = True
     st.session_state.user_id = usuario.id
     st.session_state.user_username = usuario.username
@@ -183,20 +166,15 @@ def login_user(usuario, mantener_sesion=False):
     st.session_state.user_mantener_sesion = mantener_sesion
     st.session_state.user_usar_horas_reales = usuario.usar_horas_reales
     
-    # Si marcó "mantener sesión", guardar en disco y en browser_sessions.json
+    # Si marca "mantener sesión", guardar en browser_sessions.json
     if mantener_sesion:
-        browser_id = get_browser_id()
-        
-        # Guardar browser_id en archivo para persistencia
-        save_browser_id_to_disk(browser_id)
-        
-        # Guardar sesión en browser_sessions.json
-        from services.auth_service import guardar_sesion_navegador
         from db import init_db
         from utils.helpers import get_db
         
         init_db()
         db = next(get_db())
+        
+        browser_id = get_browser_id()
         guardar_sesion_navegador(db, browser_id, usuario.id)
 
 def render_register_form(db: Session):
