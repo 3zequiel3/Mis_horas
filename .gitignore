@@ -101,7 +101,14 @@ test_*.py
 # PDFs generados (opcional - si no quieres versionar PDFs de prueba)
 *.pdf
 
+# Archivos de sesión (IMPORTANTE: agregar estos)
+data/browser_sessions.json
+data/temp_sessions/
+data/*.json
+
 # Archivos específicos de tu proyecto
 # Descomenta si usas estos:
 # config.local.py
 # development.ini
+
+data/
