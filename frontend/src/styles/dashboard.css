@@ -7,24 +7,30 @@
 }
 
 .dashboard h1 {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
   margin-bottom: 2rem;
   font-size: 2.5rem;
   font-weight: 700;
+  color: #f5576c;
+}
+
+.dashboard h1::first-letter {
+  /* Mantener emojis visibles */
+  background: none;
+  -webkit-text-fill-color: currentColor;
 }
 
 .dashboard h2 {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
   margin-bottom: 1.5rem;
   margin-top: 2rem;
   font-size: 1.75rem;
   font-weight: 700;
+  color: #667eea;
+}
+
+.dashboard h2::first-letter {
+  /* Mantener emojis visibles */
+  background: none;
+  -webkit-text-fill-color: currentColor;
 }
 
 .stats-grid {

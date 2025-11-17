@@ -10,7 +10,7 @@ import { MESES_ES } from '../utils/formatters';
 
 export interface ProyectosViewState {
   proyectos: Proyecto[];
-  currentView: 'table' | 'cards' | 'grid';
+  currentView: 'table' | 'cards';
 }
 
 const state: ProyectosViewState = {
@@ -51,7 +51,6 @@ export async function loadProyectos(): Promise<void> {
 
     renderTableView();
     renderCardsView();
-    renderGridView();
   } catch (error) {
     console.error('Error cargando proyectos:', error);
     showErrorState();
@@ -117,28 +116,6 @@ function renderCardsView(): void {
 }
 
 /**
- * Renderiza la vista de grid
- */
-function renderGridView(): void {
-  const gridContainer = querySelector<HTMLDivElement>('#grid-container');
-  if (!gridContainer) return;
-
-  gridContainer.innerHTML = state.proyectos
-    .map(
-      (p) => `
-    <div class="grid-item" onclick="window.location.href='/proyecto/${p.id}'">
-      <div class="grid-item-title">${p.nombre}</div>
-      <div class="grid-item-period">${MESES_ES[p.mes as keyof typeof MESES_ES]} ${p.anio}</div>
-      <span class="status-badge status-${p.activo ? 'active' : 'inactive'}">
-        ${p.activo ? 'Activo' : 'Inactivo'}
-      </span>
-    </div>
-  `
-    )
-    .join('');
-}
-
-/**
  * Inicializa los event listeners de tabs
  */
 export function initializeTabs(): void {
@@ -147,7 +124,7 @@ export function initializeTabs(): void {
   tabBtns.forEach((btn) => {
     btn.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
-      const tab = target.getAttribute('data-tab') as 'table' | 'cards' | 'grid' | null;
+      const tab = target.getAttribute('data-tab') as 'table' | 'cards' | null;
 
       if (!tab) return;
 
