@@ -139,13 +139,14 @@ const { children } = Astro.props;
       title: '¿Cerrar Sesión?',
       text: 'Serás desconectado de tu cuenta',
       icon: 'question',
-      background: '#1a1a2e',
-      color: '#ffffff',
+      background: '#0f1419',
+      color: '#c8c8c8',
       confirmButtonColor: '#667eea',
-      cancelButtonColor: '#f5576c',
+      cancelButtonColor: '#2d3746',
       showCancelButton: true,
       confirmButtonText: 'Sí, cerrar sesión',
-      cancelButtonText: 'Cancelar'
+      cancelButtonText: 'Cancelar',
+      iconColor: '#667eea',
     });
 
     if (result.isConfirmed) {
@@ -157,9 +158,10 @@ const { children } = Astro.props;
           title: 'Error',
           text: 'No se pudo cerrar la sesión',
           icon: 'error',
-          background: '#1a1a2e',
-          color: '#ffffff',
-          confirmButtonColor: '#667eea'
+          background: '#0f1419',
+          color: '#c8c8c8',
+          confirmButtonColor: '#ef4444',
+          iconColor: '#ef4444',
         });
       }
     }

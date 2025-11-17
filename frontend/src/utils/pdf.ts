@@ -67,7 +67,9 @@ export async function generatePDFFromHTML(
 }
 
 /**
- * Dibuja una tabla en el PDF mejorada
+ * Dibuja una tabla en el PDF - ocupa todo el ancho con celdas centradas
+ * Soporta contenido multilinea completo sin truncar
+ * Colores inspirados en el tema oscuro de la aplicación
  */
 function drawTable(
   pdf: jsPDF,
@@ -77,112 +79,167 @@ function drawTable(
 ): number {
   const headers = config.headers;
   const rows = config.rows;
-  const columnWidths = config.columnWidths || Array(headers.length).fill(180 / headers.length);
-  const rowHeight = config.rowHeight || 8;
+  
+  // Calcular ancho disponible (casi todo el ancho de la página)
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const totalAvailableWidth = pageWidth - 20; // 10mm margen a cada lado
+  
+  // Distribuir ancho equitativamente entre columnas
+  const columnWidths = Array(headers.length).fill(totalAvailableWidth / headers.length);
+  
   const fontSize = 9;
   const headerFontSize = 10;
+  const minRowHeight = 8;
 
   let currentY = startY;
   const pageHeight = pdf.internal.pageSize.getHeight();
   const margin = 10;
+  const pageBottom = pageHeight - margin - 12;
 
-  // Dibujar header
+  // ========== DIBUJAR HEADERS ==========
+  // Headers con color sólido (Purple de la app) - más profesional
   pdf.setFontSize(headerFontSize);
   pdf.setFont('helvetica', 'bold');
-  pdf.setFillColor(25, 73, 150); // Azul marino
-  pdf.setTextColor(255, 255, 255); // Blanco
+  pdf.setTextColor(255, 255, 255); // Texto blanco
+  pdf.setLineWidth(0.4);
 
-  let currentX = startX;
-  headers.forEach((header, i) => {
-    pdf.rect(currentX, currentY, columnWidths[i], rowHeight, 'F');
-    pdf.setDrawColor(25, 73, 150);
-    pdf.rect(currentX, currentY, columnWidths[i], rowHeight);
+  const headerHeight = 11;
+  for (let i = 0; i < headers.length; i++) {
+    const x = startX + columnWidths.slice(0, i).reduce((a, b) => a + b, 0);
     
-    pdf.text(header, currentX + 2, currentY + rowHeight / 2 + 1.5, {
-      maxWidth: columnWidths[i] - 4,
-      align: 'left',
+    // Relleno header - Purple sólido
+    pdf.setFillColor(102, 126, 234); // Purple #667eea
+    pdf.rect(x, currentY, columnWidths[i], headerHeight, 'F');
+    
+    // Borde sutil - sin colores que choquen
+    pdf.setDrawColor(120, 140, 250); // Purple más claro para borde
+    pdf.setLineWidth(0.4);
+    pdf.rect(x, currentY, columnWidths[i], headerHeight);
+    
+    // Texto centrado - BLANCO PURO
+    pdf.setTextColor(255, 255, 255);
+    pdf.text(headers[i], x + columnWidths[i] / 2, currentY + headerHeight / 2 + 1.3, {
+      maxWidth: columnWidths[i] - 2,
+      align: 'center',
     });
-    currentX += columnWidths[i];
-  });
+  }
 
-  currentY += rowHeight;
+  currentY += headerHeight;
 
-  // Dibujar filas
+  // ========== DIBUJAR FILAS ==========
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(fontSize);
-  pdf.setTextColor(0, 0, 0);
+  pdf.setLineWidth(0.2);
 
   rows.forEach((row, rowIndex) => {
+    // Calcular altura dinámicamente basada en el contenido
+    let maxRowHeight = minRowHeight;
+    
+    for (let i = 0; i < row.length; i++) {
+      const cellValue = String(row[i] || '-');
+      const cellWidth = columnWidths[i] - 3;
+      
+      // Usar splitTextToSize para calcular altura necesaria
+      const lines = pdf.splitTextToSize(cellValue, cellWidth);
+      const cellHeight = lines.length * 4.5 + 2;
+      
+      if (cellHeight > maxRowHeight) {
+        maxRowHeight = cellHeight;
+      }
+    }
+
+    // Asegurar altura mínima
+    if (maxRowHeight < minRowHeight) {
+      maxRowHeight = minRowHeight;
+    }
+
     // Verificar si necesita nueva página
-    if (currentY + rowHeight > pageHeight - margin - 15) {
+    if (currentY + maxRowHeight > pageBottom) {
       pdf.addPage();
+      
+      // Fondo oscuro en nueva página
+      pdf.setFillColor(15, 20, 25);
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+      
       currentY = margin;
 
       // Redibujar header en nueva página
       pdf.setFontSize(headerFontSize);
       pdf.setFont('helvetica', 'bold');
-      pdf.setFillColor(25, 73, 150);
-      pdf.setTextColor(255, 255, 255);
+      pdf.setLineWidth(0.4);
 
-      let headerX = startX;
-      headers.forEach((header, i) => {
-        pdf.rect(headerX, currentY, columnWidths[i], rowHeight, 'F');
-        pdf.setDrawColor(25, 73, 150);
-        pdf.rect(headerX, currentY, columnWidths[i], rowHeight);
+      for (let i = 0; i < headers.length; i++) {
+        const x = startX + columnWidths.slice(0, i).reduce((a, b) => a + b, 0);
         
-        pdf.text(header, headerX + 2, currentY + rowHeight / 2 + 1.5, {
-          maxWidth: columnWidths[i] - 4,
-          align: 'left',
+        pdf.setFillColor(102, 126, 234); // Purple
+        pdf.rect(x, currentY, columnWidths[i], headerHeight, 'F');
+        pdf.setDrawColor(120, 140, 250); // Purple más claro
+        pdf.rect(x, currentY, columnWidths[i], headerHeight);
+        
+        pdf.setTextColor(255, 255, 255);
+        pdf.text(headers[i], x + columnWidths[i] / 2, currentY + headerHeight / 2 + 1.3, {
+          maxWidth: columnWidths[i] - 2,
+          align: 'center',
         });
-        headerX += columnWidths[i];
-      });
+      }
 
-      currentY += rowHeight;
-
+      currentY += headerHeight;
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(fontSize);
-      pdf.setTextColor(0, 0, 0);
+      pdf.setLineWidth(0.2);
     }
 
-    // Alternar colores de fila
+    // Color de fila alternada - oscuro sutil
     if (rowIndex % 2 === 0) {
-      pdf.setFillColor(245, 245, 245);
-      currentX = startX;
-      columnWidths.forEach((width) => {
-        pdf.rect(currentX, currentY, width, rowHeight, 'F');
-        currentX += width;
+      pdf.setFillColor(26, 26, 46); // bg-primary
+      for (let i = 0; i < columnWidths.length; i++) {
+        const x = startX + columnWidths.slice(0, i).reduce((a, b) => a + b, 0);
+        pdf.rect(x, currentY, columnWidths[i], maxRowHeight, 'F');
+      }
+    } else {
+      pdf.setFillColor(31, 41, 55); // gray-800
+      for (let i = 0; i < columnWidths.length; i++) {
+        const x = startX + columnWidths.slice(0, i).reduce((a, b) => a + b, 0);
+        pdf.rect(x, currentY, columnWidths[i], maxRowHeight, 'F');
+      }
+    }
+
+    // Dibujar celdas de contenido
+    pdf.setTextColor(200, 200, 200); // Gris claro - mejor legibilidad
+    for (let i = 0; i < row.length; i++) {
+      const x = startX + columnWidths.slice(0, i).reduce((a, b) => a + b, 0);
+      
+      // Bordes muy sutiles
+      pdf.setDrawColor(45, 55, 70); // Muy oscuro
+      pdf.setLineWidth(0.2);
+      pdf.rect(x, currentY, columnWidths[i], maxRowHeight);
+
+      // Contenido multilinea
+      const cellValue = String(row[i] || '-');
+      const cellWidth = columnWidths[i] - 3;
+      const lines = pdf.splitTextToSize(cellValue, cellWidth);
+      
+      // Calcular posición vertical para centrar el texto
+      const totalTextHeight = lines.length * 4.5;
+      const startTextY = currentY + (maxRowHeight - totalTextHeight) / 2 + 2;
+      
+      // Dibujar cada línea centrada
+      lines.forEach((line: string, lineIndex: number) => {
+        pdf.text(line, x + columnWidths[i] / 2, startTextY + lineIndex * 4.5, {
+          align: 'center',
+        });
       });
     }
 
-    // Dibujar bordes y contenido
-    currentX = startX;
-    columnWidths.forEach((width, colIndex) => {
-      pdf.setDrawColor(200, 200, 200);
-      pdf.rect(currentX, currentY, width, rowHeight);
-
-      const cellValue = String(row[colIndex] || '');
-      pdf.setTextColor(0, 0, 0);
-      
-      // Alineación específica por columna
-      let align: 'left' | 'center' = 'left';
-      if (colIndex === 2) align = 'center'; // Horas centradas
-      
-      pdf.text(cellValue, currentX + 2, currentY + rowHeight / 2 + 1.5, {
-        maxWidth: width - 4,
-        align,
-      });
-
-      currentX += width;
-    });
-
-    currentY += rowHeight;
+    currentY += maxRowHeight;
   });
 
   return currentY;
 }
 
 /**
- * Genera PDF de tareas con tabla mejorada
+ * Genera PDF de tareas con tabla mejorada (estilo ReportLab)
+ * Portrait compacto, tipografía profesional y legible
  */
 export async function generateTasksPDF(
   projectName: string,
@@ -193,71 +250,87 @@ export async function generateTasksPDF(
 ): Promise<void> {
   try {
     const pdf = new jsPDF({
-      orientation: 'landscape',
+      orientation: 'portrait',
       unit: 'mm',
       format: 'a4',
     });
 
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 15;
-    let currentY = margin;
+    const margin = 12;
+    let currentY = 0;
 
-    // Header profesional con fondo azul
-    pdf.setFillColor(25, 73, 150); // Azul marino
-    pdf.rect(0, 0, pageWidth, 35, 'F');
+    // ==================== FONDO OSCURO ====================
+    // Llenar toda la página con fondo oscuro como en la app
+    pdf.setFillColor(15, 20, 25); // #0f1419 - fondo oscuro de la app
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
-    // Título principal en blanco
+    // ==================== HEADER - SIMPLIFICADO Y LIMPIO ====================
+    // Header Purple sólido profesional
+    pdf.setFillColor(102, 126, 234); // Purple #667eea
+    pdf.rect(0, 0, pageWidth, 28, 'F');
+
+    // Título principal - BLANCO PURO
     pdf.setFontSize(22);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(255, 255, 255);
-    pdf.text(projectName, margin, 12);
+    pdf.text(projectName, margin, 10);
 
-    // Información del período
+    // Período
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
-    pdf.text(`Período: ${month} ${year}`, margin, 20);
-    pdf.text(`Generado: ${new Date().toLocaleDateString('es-ES')}`, margin, 27);
+    pdf.setTextColor(220, 220, 220);
+    pdf.text(`${month} de ${year}`, margin, 18);
 
-    currentY = 40;
-
-    // Preparar datos de la tabla
-    const headers = ['Tarea', 'Detalle', 'Horas', '¿Qué Falta?', 'Días'];
-
-    const rows = tareas.map((tarea) => {
-      // Obtener días asociados a la tarea
-      const diasAsociados = (tarea as any).dias
-        ?.map((d: Dia) => new Date(d.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }))
-        .join(', ') || '-';
-
-      return [
-        tarea.titulo,
-        tarea.detalle || '-',
-        tarea.horas || '00:00',
-        tarea.que_falta || '-',
-        diasAsociados,
-      ];
+    // Fecha y hora de generación - Gris discreto
+    pdf.setFontSize(8);
+    pdf.setTextColor(180, 180, 180);
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('es-ES', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
     });
+    const timeStr = now.toLocaleTimeString('es-ES', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    pdf.text(`Generado: ${dateStr} ${timeStr}`, margin, 25);
 
-    // Configurar ancho de columnas para landscape - mejor proporcionado
-    const columnWidths = [28, 40, 18, 45, 45];
+    currentY = 32;
 
-    // Configurar tabla
-    const tableConfig: TableConfig = {
-      headers,
-      rows,
-      columnWidths,
-      rowHeight: 9,
-    };
+    // ==================== TABLA ====================
+    if (tareas.length === 0) {
+      pdf.setFontSize(12);
+      pdf.setTextColor(180, 180, 180);
+      pdf.text('No hay tareas registradas', margin, currentY);
+    } else {
+      const headers = ['Tarea', 'Descripción', 'Horas', 'Días'];
 
-    // Dibujar tabla
-    currentY = drawTable(pdf, tableConfig, margin, currentY);
+      const rows = tareas.map((tarea) => {
+        // Obtener días asociados a la tarea (SIN TRUNCAR)
+        const diasAsociados = (tarea as any).dias
+          ?.map((d: Dia) => new Date(d.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }))
+          .join(', ') || '-';
 
-    // Resumen al final
-    if (tareas.length > 0) {
-      currentY += 5;
+        return [
+          tarea.titulo || '-', // SIN TRUNCAR
+          tarea.detalle || '-', // SIN TRUNCAR - contenido completo
+          tarea.horas || '00:00',
+          diasAsociados, // SIN TRUNCAR
+        ];
+      });
 
-      // Calcular totales
+      const tableConfig: TableConfig = {
+        headers,
+        rows,
+      };
+
+      currentY = drawTable(pdf, tableConfig, margin, currentY);
+
+      // ==================== TOTALES ====================
+      currentY += 6;
+
       let totalHorasNum = 0;
       tareas.forEach((tarea) => {
         const partes = (tarea.horas || '00:00').split(':');
@@ -270,36 +343,52 @@ export async function generateTasksPDF(
       const minutos = Math.round((totalHorasNum - horas) * 60);
       const totalFormato = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
 
-      // Panel de totales
-      pdf.setFillColor(240, 245, 250); // Azul claro
-      pdf.rect(margin, currentY, columnWidths.reduce((a, b) => a + b), 12, 'F');
+      // Panel de totales - ocupa casi todo el ancho
+      const totalBoxWidth = pageWidth - 24; // Márgenes
+      
+      // Fondo oscuro con borde Green accent
+      pdf.setFillColor(26, 26, 46); // bg-primary
+      pdf.rect(margin, currentY, totalBoxWidth, 14, 'F');
+      
+      // Borde con Green accent - más visible
+      pdf.setDrawColor(67, 233, 123); // Green #43e97b
+      pdf.setLineWidth(1.8);
+      pdf.rect(margin, currentY, totalBoxWidth, 14);
 
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(25, 73, 150);
-      pdf.text(`Total de Tareas: ${tareas.length}`, margin + 2, currentY + 8);
+      pdf.setTextColor(67, 233, 123); // Green text - destaca
       
-      const totalX = margin + 60;
-      pdf.text(`Total de Horas: ${totalFormato}`, totalX, currentY + 8);
+      const totalText = `TOTAL: ${tareas.length} tarea${tareas.length !== 1 ? 's' : ''} | ${totalFormato} hora${totalHorasNum !== 1 ? 's' : ''}`;
+      pdf.text(totalText, margin + 4, currentY + 9);
     }
 
-    // Footer numerado
+    // ==================== FOOTER ====================
     const pageCount = pdf.getNumberOfPages();
     pdf.setFontSize(8);
-    pdf.setTextColor(150, 150, 150);
+    pdf.setTextColor(107, 114, 128); // gray-500
     pdf.setFont('helvetica', 'normal');
 
     for (let i = 1; i <= pageCount; i++) {
       pdf.setPage(i);
+      
+      // Línea divisoria antes del footer
+      pdf.setDrawColor(55, 65, 81); // gray-700
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, pageHeight - 10, pageWidth - margin, pageHeight - 10);
+      
+      // Número de página
+      pdf.setTextColor(107, 114, 128);
       pdf.text(
         `Página ${i} de ${pageCount}`,
         pageWidth - margin - 20,
-        pageHeight - 8
+        pageHeight - 6
       );
     }
 
-    // Descargar PDF
-    pdf.save(`${projectName}-${month}-${year}.pdf`);
+    // Descargar
+    const fileName = `MisHoras-${projectName}-${month.replace(/\s/g, '_')}-${year}.pdf`;
+    pdf.save(fileName);
   } catch (error) {
     console.error('Error generando PDF de tareas:', error);
     throw error;

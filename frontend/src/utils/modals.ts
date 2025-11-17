@@ -4,6 +4,15 @@
 
 import Swal from 'sweetalert2';
 
+// Configuración de tema oscuro para Sweet Alert
+const darkThemeConfig = {
+  background: '#0f1419',
+  color: '#c8c8c8',
+  confirmButtonColor: '#667eea',
+  cancelButtonColor: '#2d3746',
+  iconColor: '#667eea',
+};
+
 export interface ModalOptions {
   title: string;
   message?: string;
@@ -24,8 +33,11 @@ export async function showConfirmModal(options: ModalOptions): Promise<boolean> 
     confirmButtonText: options.confirmText || 'Confirmar',
     cancelButtonText: options.cancelText || 'Cancelar',
     showCancelButton: true,
-    confirmButtonColor: options.isDangerous ? '#ef4444' : '#3b82f6',
-    cancelButtonColor: '#6b7280',
+    background: darkThemeConfig.background,
+    color: darkThemeConfig.color,
+    confirmButtonColor: options.isDangerous ? '#ef4444' : '#667eea',
+    cancelButtonColor: darkThemeConfig.cancelButtonColor,
+    iconColor: options.type === 'success' ? '#10b981' : options.type === 'error' ? '#ef4444' : '#667eea',
   });
 
   return result.isConfirmed;
@@ -39,7 +51,10 @@ export async function showSuccessModal(title: string, message?: string): Promise
     title,
     text: message,
     icon: 'success',
+    background: darkThemeConfig.background,
+    color: darkThemeConfig.color,
     confirmButtonColor: '#10b981',
+    iconColor: '#10b981',
   });
 }
 
@@ -51,7 +66,10 @@ export async function showErrorModal(title: string, message?: string): Promise<v
     title,
     text: message,
     icon: 'error',
+    background: darkThemeConfig.background,
+    color: darkThemeConfig.color,
     confirmButtonColor: '#ef4444',
+    iconColor: '#ef4444',
   });
 }
 
@@ -66,7 +84,11 @@ export async function showWarningModal(title: string, message?: string): Promise
     confirmButtonText: 'Continuar',
     cancelButtonText: 'Cancelar',
     showCancelButton: true,
+    background: darkThemeConfig.background,
+    color: darkThemeConfig.color,
     confirmButtonColor: '#f59e0b',
+    cancelButtonColor: darkThemeConfig.cancelButtonColor,
+    iconColor: '#f59e0b',
   });
 
   return result.isConfirmed;
@@ -80,7 +102,10 @@ export async function showInfoModal(title: string, message?: string): Promise<vo
     title,
     text: message,
     icon: 'info',
-    confirmButtonColor: '#3b82f6',
+    background: darkThemeConfig.background,
+    color: darkThemeConfig.color,
+    confirmButtonColor: '#667eea',
+    iconColor: '#667eea',
   });
 }
 
@@ -92,8 +117,12 @@ export function showLoadingModal(title: string = 'Cargando...'): void {
     title,
     allowOutsideClick: false,
     allowEscapeKey: false,
+    background: darkThemeConfig.background,
+    color: darkThemeConfig.color,
     didOpen: async () => {
       Swal.showLoading();
+      const loader = document.querySelector('.swal2-loader') as HTMLElement;
+      if (loader) loader.style.borderColor = '#667eea';
     },
   });
 }
@@ -115,14 +144,18 @@ export function showToast(message: string, type: 'success' | 'error' | 'warning'
     showConfirmButton: false,
     timer: 3000,
     timerProgressBar: true,
+    background: darkThemeConfig.background,
+    color: darkThemeConfig.color,
     didOpen: (toast) => {
       toast.addEventListener('mouseenter', Swal.stopTimer);
       toast.addEventListener('mouseleave', Swal.resumeTimer);
     },
   });
 
+  const iconColor = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#667eea';
   Toast.fire({
     icon: type,
     title: message,
+    iconColor,
   });
 }

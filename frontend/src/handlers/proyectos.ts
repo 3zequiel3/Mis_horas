@@ -160,17 +160,38 @@ export async function deleteProyecto(id: number): Promise<void> {
     text: 'Esta acción no se puede deshacer',
     icon: 'warning',
     showCancelButton: true,
+    background: '#0f1419',
+    color: '#c8c8c8',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#2d3746',
     confirmButtonText: 'Sí, eliminar',
     cancelButtonText: 'Cancelar',
+    iconColor: '#f59e0b',
   });
 
   if (result.isConfirmed) {
     try {
       await ProyectoService.cambiarEstado(id, false);
-      Swal.fire('Desactivado', 'Proyecto desactivado exitosamente', 'success');
+      Swal.fire({
+        title: 'Desactivado',
+        text: 'Proyecto desactivado exitosamente',
+        icon: 'success',
+        background: '#0f1419',
+        color: '#c8c8c8',
+        confirmButtonColor: '#10b981',
+        iconColor: '#10b981',
+      });
       await loadProyectos();
     } catch (error) {
-      Swal.fire('Error', 'No se pudo desactivar el proyecto', 'error');
+      Swal.fire({
+        title: 'Error',
+        text: 'No se pudo desactivar el proyecto',
+        icon: 'error',
+        background: '#0f1419',
+        color: '#c8c8c8',
+        confirmButtonColor: '#ef4444',
+        iconColor: '#ef4444',
+      });
     }
   }
 }

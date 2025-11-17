@@ -10,13 +10,15 @@ export async function logout(): Promise<void> {
   const loadingModal = Swal.fire({
     title: 'Cerrando sesión...',
     icon: 'info',
-    background: '#1a1a2e',
-    color: '#ffffff',
+    background: '#0f1419',
+    color: '#c8c8c8',
     confirmButtonColor: '#667eea',
     allowOutsideClick: false,
     allowEscapeKey: false,
     didOpen: () => {
       Swal.showLoading();
+      const loader = document.querySelector('.swal2-loader') as HTMLElement;
+      if (loader) loader.style.borderColor = '#667eea';
     }
   });
 
@@ -29,9 +31,10 @@ export async function logout(): Promise<void> {
       title: 'Sesión Cerrada',
       text: 'Redirigiendo a login...',
       icon: 'success',
-      background: '#1a1a2e',
-      color: '#ffffff',
-      confirmButtonColor: '#667eea',
+      background: '#0f1419',
+      color: '#c8c8c8',
+      confirmButtonColor: '#10b981',
+      iconColor: '#10b981',
       timer: 1500,
       timerProgressBar: true,
     });

@@ -112,7 +112,15 @@ export function limpiarSeleccion(): void {
  * Muestra un error
  */
 function showError(message: string): void {
-  Swal.fire('Error', message, 'error');
+  Swal.fire({
+    title: 'Error',
+    text: message,
+    icon: 'error',
+    background: '#0f1419',
+    color: '#c8c8c8',
+    confirmButtonColor: '#ef4444',
+    iconColor: '#ef4444',
+  });
 }
 
 /**
