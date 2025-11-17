@@ -202,7 +202,7 @@ const pageTitle = 'Proyecto - Mis Horas';
 
       <!-- Modal para visualizar tarea -->
       <div id="view-tarea-modal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content modal-tarea">
           <div class="modal-header">
             <h3 id="view-modal-title">Detalle de Tarea</h3>
             <button class="modal-close" id="view-modal-close">✕</button>
@@ -425,9 +425,19 @@ const pageTitle = 'Proyecto - Mis Horas';
     }
 
     if (viewModalBody) {
-      // Renderizar formulario editable con horas de cada día
+      // Calcular horas totales de la tarea
+      let horasTotales = 0;
       let diasHtml = '';
+      
       if (tarea.dias && tarea.dias.length > 0) {
+        tarea.dias.forEach((d: any) => {
+          const horasAMostrar = proyectoHandlers.state.usuarioActual?.usar_horas_reales
+            ? d.horas_reales || 0
+            : d.horas_trabajadas || 0;
+          
+          horasTotales += horasAMostrar;
+        });
+
         diasHtml = tarea.dias
           .map((d: any) => {
             const fecha = new Date(d.fecha).toLocaleDateString('es-ES', {
@@ -436,100 +446,56 @@ const pageTitle = 'Proyecto - Mis Horas';
               year: '2-digit',
               weekday: 'short',
             });
-            const horasAMostrar = proyectoHandlers.state.usuarioActual?.usar_horas_reales
-              ? d.horas_reales || 0
-              : d.horas_trabajadas || 0;
+            
             return `
-              <div class="dia-edit-row" data-dia-id="${d.id}">
-                <label>${fecha}</label>
-                <input 
-                  type="text" 
-                  class="dia-horas-input" 
-                  value="${horasAMostrar}" 
-                  placeholder="0:00"
-                  data-tarea-id="${tarea.id}"
-                  data-dia-id="${d.id}"
-                />
+              <div class="dia-badge-item">
+                <span class="dia-badge-label">${fecha}</span>
               </div>
             `;
           })
           .join('');
       } else {
-        diasHtml = '<p style="color: var(--text-secondary); text-align: center;">Sin días asignados</p>';
+        diasHtml = '<div class="dias-empty"><p>Sin días asignados</p></div>';
       }
 
       viewModalBody.innerHTML = `
-        <div class="tarea-detalle">
-          <div class="detalle-row">
-            <strong>Detalle:</strong>
-            <p>${tarea.detalle || 'Sin detalle'}</p>
+        <div class="tarea-detalle-mejorada">
+          <div class="detalle-seccion">
+            <div class="seccion-header">
+              <h4 class="seccion-titulo">📝 Detalle</h4>
+            </div>
+            <p class="seccion-contenido">${tarea.detalle || 'Sin detalle'}</p>
           </div>
-          <div class="detalle-row">
-            <strong>¿Qué falta?</strong>
-            <p>${tarea.que_falta || 'Nada pendiente'}</p>
+
+          <div class="detalle-seccion">
+            <div class="seccion-header">
+              <h4 class="seccion-titulo">❓ ¿Qué falta?</h4>
+            </div>
+            <p class="seccion-contenido">${tarea.que_falta || 'Nada pendiente'}</p>
           </div>
-          <div class="detalle-row">
-            <strong>Horas totales:</strong>
-            <p>${tarea.horas}</p>
+
+          <div class="detalle-seccion">
+            <div class="seccion-header">
+              <h4 class="seccion-titulo">⏱️ Horas totales</h4>
+            </div>
+            <div class="horas-totales-badge">
+              <span class="horas-numero">${horasTotales}h</span>
+              <span class="horas-label">Acumuladas</span>
+            </div>
           </div>
-          <div class="detalle-row">
-            <strong>Editar horas por día:</strong>
-            <div class="dias-edit-form">
+
+          <div class="detalle-seccion">
+            <div class="seccion-header">
+              <h4 class="seccion-titulo">📅 Días asignados</h4>
+            </div>
+            <div class="dias-desglose-inline">
               ${diasHtml}
+            </div>
+          </div>
             </div>
           </div>
         </div>
       `;
-
-      // Agregar event listeners a los inputs de horas
-      viewModalBody.querySelectorAll('.dia-horas-input').forEach((input: Element) => {
-        const inputEl = input as HTMLInputElement;
-        inputEl.addEventListener('change', async () => {
-          const tareaId = parseInt(inputEl.dataset.tareaId || '0');
-          const diaId = parseInt(inputEl.dataset.diaId || '0');
-          const horasStr = inputEl.value;
-
-          try {
-            const tareaActualizada = await TareaService.updateTareaDiaHoras(
-              tareaId,
-              diaId,
-              horasStr
-            );
-
-            // Actualizar la tarea en vista
-            tareaEnVista = tareaActualizada;
-
-            // Mostrar notificación de éxito
-            Swal.fire({
-              title: '✓',
-              text: 'Horas actualizadas',
-              icon: 'success',
-              timer: 1500,
-              showConfirmButton: false,
-              background: '#0f1419',
-              color: '#c8c8c8',
-              iconColor: '#10b981',
-            });
-
-            // Recargar tareas para reflejar los cambios
-            await proyectoHandlers.loadTareas();
-            await proyectoHandlers.loadDias();
-          } catch (error) {
-            console.error('Error actualizando horas:', error);
-            Swal.fire({
-              title: 'Error',
-              text: 'No se pudieron actualizar las horas',
-              icon: 'error',
-              background: '#0f1419',
-              color: '#c8c8c8',
-              confirmButtonColor: '#ef4444',
-              iconColor: '#ef4444',
-            });
-            // Revertir el input
-            inputEl.value = inputEl.defaultValue;
-          }
-        });
-      });
     }
 
     viewModal.style.display = 'flex';
@@ -820,29 +786,38 @@ const pageTitle = 'Proyecto - Mis Horas';
     }
   });
 
-  // Finalizar proyecto
+  // Finalizar o Reactivar proyecto
   document.getElementById('finalizar-btn')?.addEventListener('click', async () => {
+    const proyecto = proyectoHandlers.state.proyectoActual;
+    if (!proyecto) return;
+
+    const isActive = proyecto.activo;
+    const action = isActive ? 'Finalizar' : 'Reactivar';
+    const newState = !isActive;
+
     const result = await Swal.fire({
-      title: '¿Finalizar proyecto?',
-      text: 'Esto marcará el proyecto como inactivo',
+      title: `¿${action} proyecto?`,
+      text: isActive 
+        ? 'Esto marcará el proyecto como inactivo' 
+        : 'Esto reactivará el proyecto',
       icon: 'question',
       showCancelButton: true,
       background: '#0f1419',
       color: '#c8c8c8',
       confirmButtonColor: '#667eea',
       cancelButtonColor: '#2d3746',
-      confirmButtonText: 'Sí, finalizar',
+      confirmButtonText: `Sí, ${action.toLowerCase()}`,
       cancelButtonText: 'Cancelar',
       iconColor: '#667eea',
     });
 
     if (result.isConfirmed) {
       try {
-        await ProyectoService.cambiarEstado(proyectoHandlers.state.proyectoActual?.id || 0, false);
+        await ProyectoService.cambiarEstado(proyectoHandlers.state.proyectoActual?.id || 0, newState);
         await proyectoHandlers.loadProyecto();
         Swal.fire({
           title: 'Éxito',
-          text: 'Proyecto finalizado',
+          text: `Proyecto ${action.toLowerCase()}do correctamente`,
           icon: 'success',
           background: '#0f1419',
           color: '#c8c8c8',
@@ -852,7 +827,7 @@ const pageTitle = 'Proyecto - Mis Horas';
       } catch (error) {
         Swal.fire({
           title: 'Error',
-          text: 'No se pudo finalizar el proyecto',
+          text: `No se pudo ${action.toLowerCase()} el proyecto`,
           icon: 'error',
           background: '#0f1419',
           color: '#c8c8c8',
@@ -971,6 +946,37 @@ const pageTitle = 'Proyecto - Mis Horas';
   }
 
   /**
+   * Verifica si un mes ya existe en los meses disponibles
+   */
+  function mesMestaDisponible(anio: number, mes: number): boolean {
+    return mesesDisponibles.some(([a, m]) => a === anio && m === mes);
+  }
+
+  /**
+   * Crea un mes automáticamente si no existe
+   */
+  async function crearMesAutomatico(anio: number, mes: number): Promise<boolean> {
+    try {
+      if (!proyectoHandlers.state.proyectoActual) return false;
+      
+      // Verificar si el mes ya existe
+      if (mesMestaDisponible(anio, mes)) {
+        return true;
+      }
+
+      // Crear el mes automáticamente
+      await ProyectoService.addMes(proyectoHandlers.state.proyectoActual.id, anio, mes);
+      
+      // Recargar la lista de meses
+      await loadMeses();
+      return true;
+    } catch (error) {
+      console.error('Error creando mes automáticamente:', error);
+      return false;
+    }
+  }
+
+  /**
    * Renderiza la lista de meses
    */
   function renderMeses() {
@@ -1004,10 +1010,22 @@ const pageTitle = 'Proyecto - Mis Horas';
         const mes = parseInt(element.getAttribute('data-mes') || '0');
 
         if (anio > 0 && mes > 0) {
-          // No cambiamos de proyecto, solo actualizamos los datos del mes
-          // El proyecto original siempre tiene el mismo ID
-          // Solo cambiamos qué mes/año estamos viendo
+          // Intentar crear el mes automáticamente si no existe
+          const mesCreado = await crearMesAutomatico(anio, mes);
           
+          if (!mesCreado) {
+            Swal.fire({
+              title: 'Error',
+              text: 'No se pudo crear el mes automáticamente',
+              icon: 'error',
+              background: '#0f1419',
+              color: '#c8c8c8',
+              confirmButtonColor: '#ef4444',
+              iconColor: '#ef4444',
+            });
+            return;
+          }
+
           // Obtener el proyecto y actualizarlo
           if (proyectoHandlers.state.proyectoActual) {
             // Almacenamos qué mes estamos viendo

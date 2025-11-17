@@ -81,6 +81,37 @@
   text-align: center;
 }
 
+/* Mensaje de Mes No Activo */
+.mes-message-row {
+  padding: 0 !important;
+  border-bottom: none !important;
+}
+
+.mes-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem 1rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border-radius: 8px;
+  margin: 1rem;
+  border-left: 4px solid rgba(102, 126, 234, 0.3);
+}
+
+.mes-icon {
+  font-size: 3rem;
+  display: block;
+}
+
+.mes-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+}
+
 /* Horas Input */
 .horas-input {
     width: 70px !important;

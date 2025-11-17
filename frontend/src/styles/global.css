@@ -48,6 +48,7 @@
 
 html {
   font-size: 16px;
+  min-height: 100vh;
 }
 
 body {
@@ -56,6 +57,9 @@ body {
   background-color: var(--bg-tertiary);
   line-height: 1.6;
   background: linear-gradient(135deg, #0f1419 0%, #1a1a2e 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 a {

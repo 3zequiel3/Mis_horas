@@ -1,4 +1,8 @@
 from app import db
+from datetime import datetime, timezone, timedelta
+
+# Zona horaria local (Argentina: UTC-3)
+LOCAL_TZ = timezone(timedelta(hours=-3))
 
 class Proyecto(db.Model):
     __tablename__ = "proyectos"
@@ -10,6 +14,8 @@ class Proyecto(db.Model):
     mes = db.Column(db.Integer, nullable=False)
     usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
     activo = db.Column(db.Boolean, default=True)
+    fecha_creacion = db.Column(db.DateTime, default=lambda: datetime.now(LOCAL_TZ), nullable=False)
+    fecha_actualizacion = db.Column(db.DateTime, default=lambda: datetime.now(LOCAL_TZ), onupdate=lambda: datetime.now(LOCAL_TZ))
 
     # Relaciones
     usuario = db.relationship("Usuario", back_populates="proyectos")
@@ -26,4 +32,6 @@ class Proyecto(db.Model):
             'mes': self.mes,
             'usuario_id': self.usuario_id,
             'activo': self.activo,
+            'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None,
+            'fecha_actualizacion': self.fecha_actualizacion.isoformat() if self.fecha_actualizacion else None,
         }

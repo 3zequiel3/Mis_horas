@@ -79,6 +79,12 @@
   max-width: 900px;
 }
 
+.modal-content.modal-tarea {
+  max-width: 700px;
+  max-height: none;
+  overflow-y: visible;
+}
+
 .mes-modal-body {
   padding: 1rem;
   max-height: 70vh;
@@ -292,5 +298,168 @@ form {
   margin: 0;
   word-break: break-word;
   line-height: 1.5;
+}
+
+/* Detalle de tarea mejorado */
+.tarea-detalle-mejorada {
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.detalle-seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.06) 0%, rgba(118, 75, 162, 0.06) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.15);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.detalle-seccion:hover {
+  border-color: rgba(102, 126, 234, 0.3);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+}
+
+.seccion-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.seccion-titulo {
+  margin: 0;
+  color: #667eea;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.seccion-contenido {
+  color: var(--text-primary);
+  margin: 0;
+  word-break: break-word;
+  line-height: 1.4;
+  font-size: 0.9rem;
+}
+
+.horas-totales-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 1rem 0.75rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+  border: 2px solid rgba(102, 126, 234, 0.3);
+  border-radius: 10px;
+}
+
+.horas-numero {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.horas-label {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.dias-desglose {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dias-desglose-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dia-badge-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  border-radius: 20px;
+  transition: all 0.2s ease;
+}
+
+.dia-badge-item:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.25) 0%, rgba(118, 75, 162, 0.25) 100%);
+  border-color: rgba(102, 126, 234, 0.5);
+  transform: translateY(-2px);
+}
+
+.dia-badge-label {
+  color: #667eea;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}
+
+.dia-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+}
+
+.dia-row:hover {
+  background: rgba(102, 126, 234, 0.08);
+  border-color: rgba(102, 126, 234, 0.2);
+  transform: translateX(2px);
+}
+
+.dia-fecha {
+  flex: 1;
+}
+
+.dia-label {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+}
+
+.dia-horas {
+  flex-shrink: 0;
+}
+
+.horas-valor {
+  color: #667eea;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.3rem 0.7rem;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.dias-empty {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-secondary);
+}
+
+.dias-empty p {
+  margin: 0;
+  font-size: 0.85rem;
 }
 

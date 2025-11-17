@@ -143,11 +143,74 @@ export async function loadProyecto(): Promise<void> {
 }
 
 /**
+ * Verifica si un mes es válido para mostrar
+ */
+function getMesStatus(): 'futuro' | 'activo' | 'pasado' {
+  const hoy = new Date();
+  const mesActual = hoy.getMonth() + 1; // 1-12
+  const anioActual = hoy.getFullYear();
+
+  if (state.anioActual > anioActual) return 'futuro';
+  if (state.anioActual < anioActual) return 'pasado';
+  
+  // Mismo año
+  if (state.mesActual > mesActual) return 'futuro';
+  if (state.mesActual < mesActual) return 'pasado';
+  
+  return 'activo';
+}
+
+/**
+ * Oculta o muestra el row de totales
+ */
+function toggleTotalsRow(show: boolean) {
+  const tfoot = document.querySelector('table tfoot') as HTMLTableSectionElement | null;
+  if (tfoot) {
+    tfoot.style.display = show ? '' : 'none';
+  }
+}
+
+/**
  * Carga los días del mes actual
  */
 export async function loadDias(): Promise<void> {
   try {
     if (!state.proyectoActual) return;
+
+    // Verificar estado del mes
+    const mesStatus = getMesStatus();
+    const diasTbody = document.querySelector('#dias-tbody');
+    const mesDiasTbody = document.querySelector('#mes-dias-tbody');
+
+    if (mesStatus !== 'activo') {
+      // Mostrar mensaje en lugar de tabla
+      const esFuturo = mesStatus === 'futuro';
+      const mensaje = esFuturo 
+        ? 'Mes aún no iniciado' 
+        : 'Mes terminado';
+      const icono = esFuturo ? '📅' : '✓';
+      
+      const html = `
+        <tr>
+          <td colspan="4" class="mes-message-row">
+            <div class="mes-message">
+              <span class="mes-icon">${icono}</span>
+              <span class="mes-text">${mensaje}</span>
+            </div>
+          </td>
+        </tr>
+      `;
+
+      if (diasTbody) diasTbody.innerHTML = html;
+      if (mesDiasTbody) mesDiasTbody.innerHTML = html;
+      
+      // Ocultar totales cuando el mes no está activo
+      toggleTotalsRow(false);
+      return;
+    }
+
+    // Mostrar totales cuando el mes está activo
+    toggleTotalsRow(true);
 
     state.diasActuales = await DiaService.getDiasMes(
       state.proyectoActual.id,
@@ -358,6 +421,18 @@ function updateProjectHeader(): void {
   if (statusEl) {
     statusEl.className = `badge ${state.proyectoActual.activo ? 'badge-active' : 'badge-inactive'}`;
     statusEl.textContent = state.proyectoActual.activo ? '✓ Activo' : '✗ Inactivo';
+  }
+
+  // Actualizar botón de finalizar/reactivar
+  const finalizarBtn = querySelector<HTMLButtonElement>('#finalizar-btn');
+  if (finalizarBtn) {
+    if (state.proyectoActual.activo) {
+      finalizarBtn.textContent = '✅ Finalizar';
+      finalizarBtn.className = 'btn btn-success';
+    } else {
+      finalizarBtn.textContent = '♻️ Reactivar';
+      finalizarBtn.className = 'btn btn-primary';
+    }
   }
 }
 

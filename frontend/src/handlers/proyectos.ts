@@ -19,6 +19,25 @@ const state: ProyectosViewState = {
 };
 
 /**
+ * Formatea una fecha de forma segura
+ */
+function formatDate(dateString?: string | null): string {
+  if (!dateString) return '-';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  } catch {
+    return '-';
+  }
+}
+
+/**
  * Carga los proyectos desde el API
  */
 export async function loadProyectos(): Promise<void> {
@@ -58,7 +77,7 @@ function renderTableView(): void {
           ${p.activo ? '✓ Activo' : '✗ Inactivo'}
         </span>
       </td>
-      <td>${new Date(p.fecha_creacion || '').toLocaleDateString()}</td>
+      <td>${formatDate(p.fecha_creacion)}</td>
       <td>
         <div class="action-btns">
           <a href="/proyecto/${p.id}" class="btn-sm">👁️ Ver</a>
