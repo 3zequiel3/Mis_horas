@@ -5,18 +5,21 @@ WORKDIR /app
 # Crear usuario no-root por seguridad
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
-# Copiar archivos de dependencias
+# Copiar solo package*.json PRIMERO (mejor caché)
 COPY frontend/package.json frontend/package-lock.json ./
 
-# Instalar todas las dependencias (incluyendo dev)
-RUN npm ci --no-audit --no-fund
+# Instalar dependencias (npm ci es más determinístico que npm install)
+RUN npm ci --no-audit --no-fund && npm cache clean --force
 
 # Copiar archivos de configuración
 COPY frontend/astro.config.mjs frontend/tsconfig.json ./
+
+# Copiar .env
 COPY .env .env
 
-# Copiar código (será montado como volumen en desarrollo)
-COPY frontend/ .
+# Copiar código fuente
+COPY frontend/src ./src
+COPY frontend/public ./public
 
 # Cambiar propietario de archivos
 RUN chown -R nodejs:nodejs /app

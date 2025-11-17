@@ -5,22 +5,18 @@ WORKDIR /app
 # Crear usuario no-root por seguridad
 RUN useradd -m -u 1001 appuser
 
-# Instalar dependencias del sistema
+# Instalar solo dependencias de runtime (no build-essential)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
     default-libmysqlclient-dev \
-    libssl-dev \
-    libffi-dev \
-    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar requirements.txt
+# Copiar requirements.txt PRIMERO (layer de caché)
 COPY backend/requirements.txt .
 
-# Instalar dependencias
+# Instalar dependencias Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar .env desde la raíz
+# Copiar .env
 COPY .env .env
 
 # Copiar código del backend
