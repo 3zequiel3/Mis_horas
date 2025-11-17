@@ -47,8 +47,25 @@
   transition: background 0.2s ease;
 }
 
-.dias-table tbody tr:hover {
-  background: rgba(102, 126, 234, 0.1);
+/* Modo de selección múltiple */
+.dias-table tbody.selection-mode-active tr {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+}
+
+.dias-table tbody tr.row-selected {
+  background: rgba(102, 126, 234, 0.3) !important;
+  box-shadow: inset 4px 0 0 #667eea;
+}
+
+.dias-table tbody tr.row-selected:hover {
+  background: rgba(102, 126, 234, 0.4) !important;
+}
+
+.dias-table tbody tr {
+  position: relative;
 }
 
 /* Estilos para días sin horas */
@@ -56,17 +73,9 @@
   background: rgba(239, 68, 68, 0.08);
 }
 
-.dias-table tbody tr.dia-sin-horas:hover {
-  background: rgba(239, 68, 68, 0.15);
-}
-
 /* Estilos para días con horas */
 .dias-table tbody tr.dia-con-horas {
   background: rgba(34, 197, 94, 0.08);
-}
-
-.dias-table tbody tr.dia-con-horas:hover {
-  background: rgba(34, 197, 94, 0.15);
 }
 
   .totals-row td {

@@ -10,6 +10,7 @@ import { AuthService } from '../services/auth';
 import { querySelector, querySelectorAll } from '../utils/dom';
 import { showErrorModal, showLoadingModal, closeModal } from '../utils/modals';
 import { MESES_ES, horasAFormato } from '../utils/formatters';
+import { MultiSelectTable } from '../utils/multiselect';
 
 export interface ProyectoDetailState {
   proyectoActual: Proyecto | null;
@@ -18,6 +19,8 @@ export interface ProyectoDetailState {
   usuarioActual: Usuario | null;
   mesActual: number;
   anioActual: number;
+  multiSelectSemanal: MultiSelectTable | null;
+  multiSelectMensual: MultiSelectTable | null;
 }
 
 const state: ProyectoDetailState = {
@@ -27,6 +30,8 @@ const state: ProyectoDetailState = {
   usuarioActual: null,
   mesActual: new Date().getMonth() + 1,
   anioActual: new Date().getFullYear(),
+  multiSelectSemanal: null,
+  multiSelectMensual: null,
 };
 
 // ============================================================
@@ -322,6 +327,9 @@ function renderTablaDias(
     const row = document.createElement('tr');
     const fecha = new Date(dia.fecha);
     
+    // Agregar data-dia-id para multi-select
+    row.setAttribute('data-dia-id', dia.id.toString());
+    
     // Agregar clase según las horas trabajadas
     if ((dia.horas_trabajadas || 0) === 0) {
       row.classList.add('dia-sin-horas');
@@ -364,6 +372,13 @@ function renderTablaDias(
 
   // Actualizar totales
   updateTotals(totalTrabId, totalRealId, totalTrabajadas, totalReales);
+  
+  // Refrescar multi-select si está activo
+  if (tbodyId === 'dias-tbody' && state.multiSelectSemanal) {
+    state.multiSelectSemanal.refresh();
+  } else if (tbodyId === 'mes-dias-tbody' && state.multiSelectMensual) {
+    state.multiSelectMensual.refresh();
+  }
 }
 
 /**
@@ -480,6 +495,9 @@ async function updateHoras(diaId: number, horasStr: string): Promise<void> {
     await DiaService.updateHoras(diaId, horasStr);
     await loadDias();
     updateTotalPanel();
+    
+    // Recargar tareas para reflejar recálculo automático del backend
+    await loadTareas();
   } catch (error) {
     console.error('Error actualizando horas:', error);
     showErrorModal('Error', 'No se pudo actualizar las horas');
@@ -523,6 +541,189 @@ function attachTareaListeners(): void {
 }
 
 // ============================================================
+// Multi-Select Management
+// ============================================================
+
+/**
+ * Crea los controles de selección en el header
+ */
+function createSelectionHeaderControls(sectionId: string): HTMLElement {
+  const controls = document.createElement('div');
+  controls.className = 'selection-header-controls';
+  controls.id = `${sectionId}-selection-controls`;
+  
+  controls.innerHTML = `
+    <div class="selection-info">
+      <span class="selection-count" id="${sectionId}-selection-count">0 días seleccionados</span>
+    </div>
+    <div class="selection-actions">
+      <button class="selection-btn selection-btn-create" id="${sectionId}-btn-create-task">
+        ✅ Crear tarea
+      </button>
+      <button class="selection-btn selection-btn-cancel" id="${sectionId}-btn-cancel">
+        ✖ Cancelar
+      </button>
+    </div>
+  `;
+  
+  return controls;
+}
+
+/**
+ * Muestra u oculta los controles de selección en el header
+ */
+function toggleSelectionControls(sectionId: string, isActive: boolean): void {
+  const controls = querySelector<HTMLElement>(`#${sectionId}-selection-controls`);
+  const title = querySelector<HTMLElement>(`#${sectionId}-title`);
+  
+  if (controls) {
+    if (isActive) {
+      controls.classList.add('active');
+      if (sectionId === 'mes-section') {
+        // Para el modal, solo mostrar el contenedor
+        controls.style.display = 'flex';
+      } else {
+        // Para la sección semanal, ocultar título
+        if (title) {
+          title.style.display = 'none';
+        }
+      }
+    } else {
+      controls.classList.remove('active');
+      if (sectionId === 'mes-section') {
+        // Para el modal, ocultar el contenedor
+        controls.style.display = 'none';
+      } else {
+        // Para la sección semanal, restaurar título
+        if (title) {
+          title.style.display = '';
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Actualiza el contador de días seleccionados
+ */
+function updateSelectionCount(sectionId: string, selectedIds: Set<number>): void {
+  const countEl = querySelector<HTMLElement>(`#${sectionId}-selection-count`);
+  if (countEl) {
+    const count = selectedIds.size;
+    countEl.textContent = `${count} día${count !== 1 ? 's' : ''} seleccionado${count !== 1 ? 's' : ''}`;
+  }
+  
+  const btnCreateTask = querySelector<HTMLButtonElement>(`#${sectionId}-btn-create-task`);
+  if (btnCreateTask) {
+    btnCreateTask.disabled = selectedIds.size === 0;
+  }
+}
+
+/**
+ * Inicializa el modo de selección múltiple para una tabla
+ */
+function initMultiSelectForTable(
+  tableId: string,
+  sectionId: string,
+  multiSelectInstance: MultiSelectTable | null
+): MultiSelectTable {
+  // Callback cuando cambia el modo de selección
+  const onModeChange = (isActive: boolean) => {
+    toggleSelectionControls(sectionId, isActive);
+  };
+
+  // Callback cuando cambia la selección
+  const onSelectionChange = (selectedIds: Set<number>) => {
+    updateSelectionCount(sectionId, selectedIds);
+  };
+
+  // Crear instancia de multi-select
+  const instance = new MultiSelectTable({
+    tableSelector: `#${tableId}`,
+    rowSelector: 'tbody tr:not(.loading-row)',
+    holdDuration: 1500,
+    onModeChange,
+    onSelectionChange
+  });
+
+  // Event listener para botón de crear tarea
+  const btnCreateTask = querySelector<HTMLButtonElement>(`#${sectionId}-btn-create-task`);
+  if (btnCreateTask) {
+    btnCreateTask.addEventListener('click', () => {
+      const selectedIds = instance.getSelectedIds();
+      
+      // Disparar evento para abrir modal de crear tarea con días pre-seleccionados
+      const event = new CustomEvent('create-tarea-with-dias', {
+        detail: { diaIds: selectedIds }
+      });
+      document.dispatchEvent(event);
+
+      // Salir del modo selección
+      instance.exitSelectionMode();
+    });
+  }
+
+  // Event listener para botón de cancelar
+  const btnCancel = querySelector<HTMLButtonElement>(`#${sectionId}-btn-cancel`);
+  if (btnCancel) {
+    btnCancel.addEventListener('click', () => {
+      instance.exitSelectionMode();
+    });
+  }
+
+  return instance;
+}
+
+/**
+ * Inicializa el modo de selección múltiple para las tablas
+ */
+export function initMultiSelect(): void {
+  // Agregar controles a la sección de "Esta Semana"
+  const diasSection = querySelector<HTMLElement>('.dias-column .section');
+  if (diasSection) {
+    // Buscar el h2 y convertir su contenedor en section-header
+    const h2 = diasSection.querySelector('h2');
+    if (h2) {
+      // Crear wrapper para el header
+      const headerWrapper = document.createElement('div');
+      headerWrapper.className = 'section-header';
+      
+      // Agregar ID al título
+      h2.id = 'semana-section-title';
+      
+      // Crear controles
+      const controls = createSelectionHeaderControls('semana-section');
+      
+      // Insertar antes del h2 actual
+      h2.parentNode!.insertBefore(headerWrapper, h2);
+      headerWrapper.appendChild(h2);
+      headerWrapper.appendChild(controls);
+      
+      // Inicializar multi-select para tabla semanal
+      state.multiSelectSemanal = initMultiSelectForTable('dias-table', 'semana-section', state.multiSelectSemanal);
+    }
+  }
+  
+  // Inicializar multi-select para tabla mensual (modal)
+  // Los controles ya están en el HTML del modal
+  state.multiSelectMensual = initMultiSelectForTable('mes-dias-table', 'mes-section', state.multiSelectMensual);
+}
+
+/**
+ * Limpia el multi-select al destruir la página
+ */
+export function cleanupMultiSelect(): void {
+  if (state.multiSelectSemanal) {
+    state.multiSelectSemanal.destroy();
+    state.multiSelectSemanal = null;
+  }
+  if (state.multiSelectMensual) {
+    state.multiSelectMensual.destroy();
+    state.multiSelectMensual = null;
+  }
+}
+
+// ============================================================
 // Exports
 // ============================================================
 
@@ -532,4 +733,6 @@ export const proyectoHandlers = {
   loadDias,
   loadTareas,
   updateTotalPanel,
+  initMultiSelect,
+  cleanupMultiSelect,
 };

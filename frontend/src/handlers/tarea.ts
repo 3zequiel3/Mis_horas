@@ -94,7 +94,7 @@ export const TareaHandler = {
   },
 
   // Limpia formulario para crear nueva tarea
-  resetParaCrear(form: HTMLFormElement) {
+  resetParaCrear(form: HTMLFormElement, preselectedDiaIds?: number[]) {
     form.reset();
     this.diasSeleccionados.clear();
 
@@ -106,6 +106,19 @@ export const TareaHandler = {
       submitBtn.textContent = 'Crear Tarea';
       submitBtn.dataset.editMode = 'false';
       submitBtn.dataset.tareaId = '0';
+    }
+
+    // Pre-seleccionar días si se proporcionan
+    if (preselectedDiaIds && preselectedDiaIds.length > 0) {
+      preselectedDiaIds.forEach((diaId) => {
+        const dia = this.diasDisponibles.get(diaId);
+        if (dia) {
+          this.diasSeleccionados.set(diaId, dia);
+        }
+      });
+
+      const diasSelect = document.getElementById('dias-select') as HTMLSelectElement;
+      if (diasSelect) this.actualizarSelectDias(diasSelect);
     }
 
     const diasSelectedDiv = document.getElementById('dias-selected')!;

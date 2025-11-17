@@ -290,3 +290,12 @@ textarea:focus {
 .gradient-green {
   background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
 }
+
+/* SweetAlert con z-index alto para aparecer sobre modales */
+.swal-high-z-index {
+  z-index: 20000 !important;
+}
+
+.swal-high-z-index .swal2-container {
+  z-index: 20000 !important;
+}

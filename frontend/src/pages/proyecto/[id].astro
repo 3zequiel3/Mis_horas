@@ -59,7 +59,7 @@ const pageTitle = 'Proyecto - Mis Horas';
             <h2>📆 Esta Semana</h2>
             
             <div class="table-container">
-              <table class="dias-table">
+              <table class="dias-table" id="dias-table">
                 <thead>
                   <tr>
                     <th>Fecha</th>
@@ -166,12 +166,25 @@ const pageTitle = 'Proyecto - Mis Horas';
       <div id="mes-modal" class="modal" style="display: none;">
         <div class="modal-content modal-large">
           <div class="modal-header">
-            <h3 id="mes-modal-title">Todos los días de Noviembre 2025</h3>
+            <h3 id="mes-modal-title">Noviembre 2025</h3>
             <button class="modal-close" id="mes-modal-close">✕</button>
+          </div>
+          <div class="selection-controls-container" id="mes-section-selection-controls" style="display: none;">
+            <div class="selection-info">
+              <span class="selection-count" id="mes-section-selection-count">0 días seleccionados</span>
+            </div>
+            <div class="selection-actions">
+              <button class="selection-btn selection-btn-create" id="mes-section-btn-create-task">
+                ✅ Crear tarea
+              </button>
+              <button class="selection-btn selection-btn-cancel" id="mes-section-btn-cancel">
+                ✖ Cancelar
+              </button>
+            </div>
           </div>
           <div class="mes-modal-body">
             <div class="table-container">
-              <table class="dias-table">
+              <table class="dias-table" id="mes-dias-table">
                 <thead>
                   <tr>
                     <th>Fecha</th>
@@ -378,6 +391,26 @@ const pageTitle = 'Proyecto - Mis Horas';
     }
   });
 
+  // Crear tarea con días pre-seleccionados desde multi-select
+  document.addEventListener('create-tarea-with-dias', async (event: any) => {
+    const diaIds = event.detail.diaIds as number[];
+    const proyecto = proyectoHandlers.state.proyectoActual;
+    if (proyecto && diaIds && diaIds.length > 0) {
+      // Cargar días disponibles
+      await TareaHandler.loadDiasDisponibles(
+        proyecto.id,
+        proyecto.anio,
+        proyecto.mes
+      );
+      
+      // Resetear formulario con días pre-seleccionados
+      TareaHandler.resetParaCrear(form, diaIds);
+      
+      // Abrir modal
+      modal.style.display = 'flex';
+    }
+  });
+
   // Eliminar desde visualización
   document.getElementById('delete-from-view-btn')?.addEventListener('click', async () => {
     if (TareaHandler.tareaEnVista) {
@@ -396,6 +429,14 @@ const pageTitle = 'Proyecto - Mis Horas';
 
   // Modal de mes (ver todo)
   document.getElementById('ver-todo-btn')?.addEventListener('click', () => {
+    const proyecto = proyectoHandlers.state.proyectoActual;
+    if (proyecto) {
+      const mesModalTitle = document.getElementById('mes-modal-title');
+      if (mesModalTitle) {
+        const mesNombre = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][proyecto.mes - 1];
+        mesModalTitle.textContent = `${mesNombre} ${proyecto.anio}`;
+      }
+    }
     mesModal.style.display = 'flex';
   });
 
@@ -579,8 +620,17 @@ const pageTitle = 'Proyecto - Mis Horas';
       const sidebarNombre = document.getElementById('proyecto-nombre-sidebar');
       if (sidebarNombre) sidebarNombre.textContent = proyecto.nombre;
     }
+    
+    // Inicializar modo de selección múltiple
+    proyectoHandlers.initMultiSelect();
+  });
+
+  // Limpiar al salir
+  window.addEventListener('beforeunload', () => {
+    proyectoHandlers.cleanupMultiSelect();
   });
 </script>
+
     </div>
   </ProtectedRoute>
 </BaseLayout>
