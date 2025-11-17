@@ -10,10 +10,6 @@ RUN npm ci --no-audit --no-fund && npm cache clean --force
 # Stage 2: Runtime - Aplicación final
 FROM node:20-alpine
 
-# Configurar locale UTF-8
-ENV LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
-
 WORKDIR /app
 
 # Crear usuario no-root por seguridad
