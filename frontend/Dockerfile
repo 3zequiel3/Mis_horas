@@ -19,7 +19,9 @@ COPY .env .env
 
 # Copiar código fuente
 COPY frontend/src ./src
-COPY frontend/public ./public
+
+# Crear directorio public (vacío si no existe)
+RUN mkdir -p ./public
 
 # Cambiar propietario de archivos
 RUN chown -R nodejs:nodejs /app
