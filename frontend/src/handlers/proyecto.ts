@@ -311,6 +311,13 @@ function renderTablaDias(
 
     const row = document.createElement('tr');
     const fecha = new Date(dia.fecha);
+    
+    // Agregar clase según las horas trabajadas
+    if ((dia.horas_trabajadas || 0) === 0) {
+      row.classList.add('dia-sin-horas');
+    } else {
+      row.classList.add('dia-con-horas');
+    }
 
     const columnasExtras = useHorasReales()
       ? `<td title="Horas Reales"><strong>${horasAFormato(horasAMostrar)}</strong></td>`

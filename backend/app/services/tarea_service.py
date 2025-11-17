@@ -113,11 +113,12 @@ class TareaService:
     
     @staticmethod
     def obtener_dias_disponibles(proyecto_id: int, anio: int, mes: int, tarea_excluir_id=None):
-        """Obtiene días disponibles"""
+        """Obtiene días disponibles que tengan horas trabajadas"""
         todos_dias = Dia.query.filter(
             Dia.proyecto_id == proyecto_id,
             func.extract('year', Dia.fecha) == anio,
-            func.extract('month', Dia.fecha) == mes
+            func.extract('month', Dia.fecha) == mes,
+            Dia.horas_trabajadas > 0  # Solo días con horas trabajadas
         ).order_by(Dia.fecha.asc()).all()
         
         # Días ocupados
