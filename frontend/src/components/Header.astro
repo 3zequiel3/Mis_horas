@@ -12,6 +12,13 @@ const { children } = Astro.props;
       <div class="nav-brand">
         <h1>🕒 Mis Horas</h1>
       </div>
+      
+      <button class="hamburger-toggle" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
       <div class="nav-menu">
         <a href="/dashboard" class="nav-link">Dashboard</a>
         <a href="/proyectos" class="nav-link">Proyectos</a>
@@ -109,21 +116,100 @@ const { children } = Astro.props;
     box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
   }
 
+  /* Hamburger Menu */
+  .hamburger-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    z-index: 1001;
+  }
+
+  .hamburger-toggle span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background: var(--text-primary);
+    border-radius: 3px;
+    transition: all 0.3s ease;
+  }
+
+  .hamburger-toggle.active span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+  }
+
+  .hamburger-toggle.active span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .hamburger-toggle.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -6px);
+  }
+
   @media (max-width: 768px) {
+    .hamburger-toggle {
+      display: flex;
+    }
+
+    .navbar-content {
+      position: relative;
+    }
+
     .nav-menu {
-      gap: 1rem;
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 280px;
+      height: 100vh;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
       flex-direction: column;
-      width: 100%;
+      gap: 0;
+      padding: 5rem 0 2rem 0;
+      box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
+      transition: right 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+
+    .nav-menu.active {
+      right: 0;
     }
 
     .nav-link {
       width: 100%;
-      text-align: center;
+      text-align: left;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.2s ease;
     }
 
-    .navbar-content {
-      flex-direction: column;
-      gap: 1.5rem;
+    .nav-link::after {
+      display: none;
+    }
+
+    .nav-link:hover {
+      background: rgba(102, 126, 234, 0.1);
+      padding-left: 2.5rem;
+    }
+
+    .nav-link-primary {
+      margin: 1rem 2rem;
+      width: calc(100% - 4rem);
+      text-align: center;
+      padding: 0.75rem 1rem;
+    }
+
+    .nav-link-primary:hover {
+      transform: translateY(0);
+      padding-left: 1rem;
+    }
+
+    #logout-btn {
+      margin: 1rem 2rem;
+      width: calc(100% - 4rem);
     }
 
     .nav-brand h1 {
@@ -135,6 +221,10 @@ const { children } = Astro.props;
 <script>
   import { AlertUtils } from '../utils/swal';
   import { authHandlers } from '../handlers/auth';
+  import { initHamburgerMenu } from '../utils/hamburger';
+
+  // Inicializar menú hamburguesa
+  initHamburgerMenu();
 
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
     const result = await AlertUtils.confirm(
