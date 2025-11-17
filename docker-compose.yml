@@ -1,12 +1,14 @@
 services:
   # ============================================================
   # BASE DE DATOS MYSQL 8.0
-  # SIN PUERTO PÚBLICO - Acceso solo desde red interna
+  # Puerto público: 21100
   # ============================================================
   db:
     image: mysql:8.0
     container_name: mis_horas_db
     restart: always
+    ports:
+      - "${DB_PUBLIC_PORT}:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
