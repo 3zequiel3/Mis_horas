@@ -22,6 +22,7 @@ export class ApiService {
   protected static async get<T>(endpoint: string): Promise<T> {
     const response = await fetch(`${API_URL}${endpoint}`, {
       headers: this.getHeaders(),
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -41,6 +42,7 @@ export class ApiService {
         ...this.getHeaders(),
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: data ? JSON.stringify(data) : undefined,
     });
 
@@ -61,6 +63,7 @@ export class ApiService {
         ...this.getHeaders(),
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: data ? JSON.stringify(data) : undefined,
     });
 
@@ -78,6 +81,7 @@ export class ApiService {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'DELETE',
       headers: this.getHeaders(),
+      credentials: 'include',
     });
 
     if (!response.ok) {

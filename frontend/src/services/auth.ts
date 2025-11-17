@@ -170,6 +170,7 @@ export class AuthService {
     const response = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ username, email, password, nombre_completo }),
     });
 
@@ -189,6 +190,7 @@ export class AuthService {
     const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ username, password, remember_me: rememberMe }),
     });
 

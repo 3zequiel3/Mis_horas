@@ -38,9 +38,13 @@ def create_app():
     # Inicializar extensiones
     db.init_app(app)
     
-    # CORS
+    # CORS - Configuración completa
     cors_origins_list = CORS_ORIGINS.split(',')
-    CORS(app, origins=cors_origins_list, supports_credentials=True)
+    CORS(app, 
+         origins=cors_origins_list, 
+         supports_credentials=True,
+         allow_headers=["Content-Type", "Authorization"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
     
     # Registrar blueprints
     from app.routes import auth_bp, proyecto_bp, tarea_bp, dia_bp, usuario_bp

@@ -1,3 +1,13 @@
+# Stage 1: Builder - Instalar dependencias
+FROM node:20-alpine as builder
+
+WORKDIR /app
+
+COPY frontend/package.json frontend/package-lock.json ./
+
+RUN npm ci --no-audit --no-fund && npm cache clean --force
+
+# Stage 2: Runtime - Aplicación final
 FROM node:20-alpine
 
 WORKDIR /app
@@ -5,32 +15,25 @@ WORKDIR /app
 # Crear usuario no-root por seguridad
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
-# Copiar solo package*.json PRIMERO (mejor caché)
-COPY frontend/package.json frontend/package-lock.json ./
-
-# Instalar dependencias (npm ci es más determinístico que npm install)
-RUN npm ci --no-audit --no-fund && npm cache clean --force
+# Copiar node_modules del builder
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 
 # Copiar archivos de configuración
-COPY frontend/astro.config.mjs frontend/tsconfig.json ./
+COPY --chown=nodejs:nodejs frontend/package.json frontend/package-lock.json ./
+COPY --chown=nodejs:nodejs frontend/astro.config.mjs frontend/tsconfig.json ./
 
 # Copiar .env
-COPY .env .env
+COPY --chown=nodejs:nodejs .env .env
 
 # Copiar código fuente
-COPY frontend/src ./src
+COPY --chown=nodejs:nodejs frontend/src ./src
 
-# Crear directorio public (vacío si no existe)
-RUN mkdir -p ./public
-
-# Cambiar propietario de archivos
-RUN chown -R nodejs:nodejs /app
+# Crear directorios necesarios
+RUN mkdir -p ./public ./.astro && chown -R nodejs:nodejs ./public ./.astro
 
 # Ejecutar como usuario no-root
 USER nodejs
 
-# Exponer puerto
 EXPOSE 3000
 
-# Comando por defecto (será sobrescrito en docker-compose para desarrollo)
 CMD ["npm", "run", "build"]

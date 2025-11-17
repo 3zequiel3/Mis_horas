@@ -18,9 +18,11 @@ export default defineConfig({
     ssr: {
       external: ['fsevents']
     },
-    // Exponer variables VITE_* desde el .env
     define: {
-      'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL)
+      // URLs diferentes para SSR (servidor) y cliente
+      'import.meta.env.VITE_API_URL_SERVER': JSON.stringify(process.env.VITE_API_URL || 'http://mis_horas_backend:5000'),
+      // Usar window.location.hostname para adaptar automáticamente al host actual
+      'import.meta.env.VITE_API_URL_CLIENT': JSON.stringify('__DYNAMIC__')
     }
   }
 });
