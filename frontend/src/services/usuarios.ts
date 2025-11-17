@@ -1,4 +1,4 @@
-import type { Usuario, UpdateProfileRequest, ChangePasswordRequest } from '../types';
+import type { Usuario, UpdateProfileRequest } from '../types';
 import { ApiService } from './api';
 
 /**
@@ -24,8 +24,7 @@ export class UsuarioService extends ApiService {
    * Actualiza el perfil del usuario
    */
   static async updateProfile(data: UpdateProfileRequest): Promise<Usuario> {
-    const result = await this.put('/api/auth/me', data);
-    return result.usuario;
+    return this.put('/api/auth/me', data);
   }
 
   /**
