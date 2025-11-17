@@ -53,7 +53,8 @@ class AuthService:
     
     @staticmethod
     def actualizar_perfil(user_id: int, nombre_completo: str = None, 
-                         email: str = None, foto_perfil: str = None):
+                         email: str = None, foto_perfil: str = None, 
+                         dia_inicio_semana: int = None):
         """Actualiza el perfil del usuario"""
         usuario = Usuario.query.filter(Usuario.id == user_id).first()
         
@@ -75,6 +76,8 @@ class AuthService:
             usuario.email = email
         if foto_perfil is not None:
             usuario.foto_perfil = foto_perfil
+        if dia_inicio_semana is not None:
+            usuario.dia_inicio_semana = dia_inicio_semana
         
         db.session.commit()
         return usuario, "Perfil actualizado"

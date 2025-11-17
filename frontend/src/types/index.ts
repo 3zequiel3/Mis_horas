@@ -7,6 +7,7 @@ export interface Usuario {
   foto_perfil?: string;
   activo: boolean;
   usar_horas_reales: boolean;
+  dia_inicio_semana: number; // 0=Domingo, 1=Lunes
   fecha_creacion: string;
   ultimo_acceso?: string;
 }

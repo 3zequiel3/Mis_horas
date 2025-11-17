@@ -132,7 +132,8 @@ def update_profile():
         user_id,
         nombre_completo=data.get('nombre_completo'),
         email=data.get('email'),
-        foto_perfil=data.get('foto_perfil')
+        foto_perfil=data.get('foto_perfil'),
+        dia_inicio_semana=data.get('dia_inicio_semana')
     )
     
     if not usuario:

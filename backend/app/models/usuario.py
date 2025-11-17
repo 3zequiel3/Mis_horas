@@ -14,6 +14,7 @@ class Usuario(db.Model):
     activo = db.Column(db.Boolean, default=True)
     mantener_sesion = db.Column(db.Boolean, default=False)
     usar_horas_reales = db.Column(db.Boolean, default=False)
+    dia_inicio_semana = db.Column(db.Integer, default=0)  # 0=Domingo, 1=Lunes
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     ultimo_acceso = db.Column(db.DateTime, nullable=True)
 
@@ -39,6 +40,7 @@ class Usuario(db.Model):
             'foto_perfil': self.foto_perfil,
             'activo': self.activo,
             'usar_horas_reales': self.usar_horas_reales,
+            'dia_inicio_semana': self.dia_inicio_semana,
             'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None,
             'ultimo_acceso': self.ultimo_acceso.isoformat() if self.ultimo_acceso else None,
         }

@@ -221,6 +221,7 @@ export class AuthService {
   static async updateProfile(
     nombre_completo?: string,
     email?: string,
+    dia_inicio_semana?: number,
     foto_perfil?: string
   ): Promise<{ usuario: Usuario }> {
     const response = await fetch(`${API_URL}/api/auth/me`, {
@@ -229,7 +230,7 @@ export class AuthService {
         ...this.getAuthHeaders(),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ nombre_completo, email, foto_perfil }),
+      body: JSON.stringify({ nombre_completo, email, dia_inicio_semana, foto_perfil }),
     });
 
     if (!response.ok) {

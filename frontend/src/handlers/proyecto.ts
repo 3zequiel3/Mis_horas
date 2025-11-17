@@ -73,10 +73,20 @@ function calcularHorasTarea(tarea: any): string {
 
 /**
  * Obtiene la semana actual en formato YYYY-MM-DD
+ * Respeta la preferencia del usuario para el día de inicio de semana
  */
 function getSemanActual(): string[] {
   const hoy = new Date();
-  const primDia = hoy.getDate() - hoy.getDay();
+  const diaActual = hoy.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+  const diaInicioSemana = state.usuarioActual?.dia_inicio_semana || 0; // 0 = Domingo, 1 = Lunes
+  
+  // Calcular el primer día de la semana
+  let diasAtras = diaActual - diaInicioSemana;
+  if (diasAtras < 0) {
+    diasAtras += 7;
+  }
+  
+  const primDia = hoy.getDate() - diasAtras;
   const semana = [];
 
   for (let i = primDia; i <= primDia + 6; i++) {

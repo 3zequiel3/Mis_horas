@@ -12,11 +12,13 @@ export const PerfilHandler = {
       const usernameInput = document.getElementById('username') as HTMLInputElement;
       const nombreInput = document.getElementById('nombre_completo') as HTMLInputElement;
       const horasRealesCheckbox = document.getElementById('usar-horas-reales') as HTMLInputElement;
+      const diaInicioSelect = document.getElementById('dia-inicio-semana') as HTMLSelectElement;
 
       if (usernameInput) usernameInput.value = user.username;
       if (emailInput) emailInput.value = user.email || '';
       if (nombreInput) nombreInput.value = user.nombre_completo || '';
       if (horasRealesCheckbox) horasRealesCheckbox.checked = user.usar_horas_reales || false;
+      if (diaInicioSelect) diaInicioSelect.value = String(user.dia_inicio_semana || 0);
     } catch (error) {
       console.error('Error cargando usuario:', error);
     }
@@ -73,18 +75,27 @@ export const PerfilHandler = {
     }
   },
 
-  // Actualiza configuración de horas reales
+  // Actualiza configuración de horas reales y día de inicio de semana
   async actualizarConfiguracion() {
     try {
       const horasRealesCheckbox = document.getElementById('usar-horas-reales') as HTMLInputElement;
+      const diaInicioSelect = document.getElementById('dia-inicio-semana') as HTMLSelectElement;
       const activar = horasRealesCheckbox.checked;
+      const diaInicio = parseInt(diaInicioSelect.value);
 
+      // Actualizar horas reales
       await AuthService.toggleHorasReales(activar);
+      
+      // Actualizar día de inicio de semana
+      await AuthService.updateProfile(undefined, undefined, diaInicio);
 
       await AlertUtils.success(
         '✓ Configuración actualizada',
-        activar ? 'Ahora usarás horas reales' : 'Volverás a usar horas estimadas'
+        'Tus preferencias han sido guardadas'
       );
+      
+      // Recargar la página para aplicar cambios
+      setTimeout(() => window.location.reload(), 1500);
     } catch (error) {
       console.error('Error:', error);
       await AlertUtils.error('Error', 'No se pudo actualizar la configuración');
