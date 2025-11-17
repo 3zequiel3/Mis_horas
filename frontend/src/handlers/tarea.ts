@@ -1,7 +1,4 @@
-/**
- * Handlers de Tareas - Lógica completa de gestión de tareas
- * Incluye: crear, editar, eliminar, visualizar tareas y gestión de días
- */
+// Gestión de tareas: crear, editar, eliminar y días asignados
 
 import { TareaService } from '../services/tarea';
 import { AlertUtils } from '../utils/swal';
@@ -13,14 +10,11 @@ export interface DiasInfo {
 }
 
 export const TareaHandler = {
-  // Estado
   diasSeleccionados: new Map<number, DiasInfo>(),
   diasDisponibles: new Map<number, DiasInfo>(),
   tareaEnVista: null as any,
 
-  /**
-   * Actualiza las opciones del select mostrando solo días no seleccionados
-   */
+  // Actualiza select de días (solo muestra los no seleccionados)
   actualizarSelectDias(diasSelect: HTMLSelectElement) {
     diasSelect.innerHTML = '<option value="">Seleccione los días</option>';
 
@@ -34,9 +28,7 @@ export const TareaHandler = {
     });
   },
 
-  /**
-   * Renderiza los días seleccionados como badges
-   */
+  // Renderiza badges de días seleccionados
   renderizarDiasSeleccionados(diasSelectedDiv: HTMLElement) {
     if (this.diasSeleccionados.size === 0) {
       diasSelectedDiv.innerHTML = '';
@@ -66,9 +58,7 @@ export const TareaHandler = {
     });
   },
 
-  /**
-   * Carga los días disponibles para la tarea
-   */
+  // Carga días disponibles para asignar a tarea
   async loadDiasDisponibles(
     proyectoId: number,
     anio: number,
@@ -103,9 +93,7 @@ export const TareaHandler = {
     }
   },
 
-  /**
-   * Limpia el formulario y estado para crear nueva tarea
-   */
+  // Limpia formulario para crear nueva tarea
   resetParaCrear(form: HTMLFormElement) {
     form.reset();
     this.diasSeleccionados.clear();
@@ -124,9 +112,7 @@ export const TareaHandler = {
     this.renderizarDiasSeleccionados(diasSelectedDiv);
   },
 
-  /**
-   * Prepara el formulario para editar una tarea
-   */
+  // Prepara formulario para editar una tarea existente
   async cargarParaEditar(tarea: any, proyectoId: number, anio: number, mes: number) {
     const form = document.getElementById('tarea-form') as HTMLFormElement;
     const modalTitle = document.getElementById('modal-title');
@@ -175,9 +161,7 @@ export const TareaHandler = {
     }
   },
 
-  /**
-   * Guarda la tarea (crear o actualizar)
-   */
+  // Guarda tarea nueva o actualiza existente
   async guardarTarea(
     form: HTMLFormElement,
     proyectoId: number,
@@ -232,9 +216,7 @@ export const TareaHandler = {
     }
   },
 
-  /**
-   * Renderiza el modal de visualización de tarea
-   */
+  // Renderiza detalles completos de una tarea
   renderizarVistaDetalle(tarea: any, usuarioUsaHorasReales: boolean) {
     const viewModalBody = document.getElementById('view-modal-body');
     const viewModalTitle = document.getElementById('view-modal-title');
@@ -315,9 +297,7 @@ export const TareaHandler = {
     }
   },
 
-  /**
-   * Elimina una tarea
-   */
+  // Elimina una tarea después de confirmación
   async eliminarTarea(tareaId: number, nombreTarea: string, onSuccess: () => Promise<void>) {
     const result = await AlertUtils.confirm(
       '¿Eliminar tarea?',

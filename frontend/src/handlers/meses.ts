@@ -1,7 +1,4 @@
-/**
- * Handlers de Meses - Gestión de meses del proyecto
- * Incluye: cargar, crear, navegar meses
- */
+// Gestión de meses: cargar, navegar y crear meses del proyecto
 
 import { ProyectoService } from '../services/proyecto';
 import { AlertUtils } from '../utils/swal';
@@ -25,9 +22,7 @@ const MESES_NOMBRES = [
 export const MesesHandler = {
   mesesDisponibles: [] as [number, number][],
 
-  /**
-   * Carga los meses disponibles del proyecto
-   */
+  // Carga meses disponibles del proyecto
   async loadMeses(proyectoId: number) {
     try {
       this.mesesDisponibles = await ProyectoService.getMeses(proyectoId);
@@ -37,16 +32,12 @@ export const MesesHandler = {
     }
   },
 
-  /**
-   * Verifica si un mes ya existe
-   */
+  // Verifica si un mes ya existe
   mesYaExiste(anio: number, mes: number): boolean {
     return this.mesesDisponibles.some(([a, m]) => a === anio && m === mes);
   },
 
-  /**
-   * Renderiza la lista de meses
-   */
+  // Renderiza lista de meses y agrega event listeners
   renderMeses(mesActivo?: { anio: number; mes: number }) {
     const mesesList = document.getElementById('meses-list');
     if (!mesesList) return;
@@ -84,9 +75,7 @@ export const MesesHandler = {
     });
   },
 
-  /**
-   * Actualiza la información del mes actual
-   */
+  // Actualiza el texto mostrado del mes actual
   updateMesInfo(mesActivo: { anio: number; mes: number }) {
     const mesInfo = document.getElementById('mes-info');
     const mesInfoText = document.getElementById('mes-info-text');
@@ -98,9 +87,7 @@ export const MesesHandler = {
     if (mesInfo) mesInfo.style.display = 'block';
   },
 
-  /**
-   * Abre el modal para agregar mes
-   */
+  // Abre modal para agregar nuevo mes
   openAddMesModal() {
     const modal = document.getElementById('add-mes-modal');
     if (modal) {
@@ -124,9 +111,7 @@ export const MesesHandler = {
     }
   },
 
-  /**
-   * Cierra el modal para agregar mes
-   */
+  // Cierra modal de agregar mes
   closeAddMesModal() {
     const modal = document.getElementById('add-mes-modal');
     if (modal) {
@@ -134,9 +119,7 @@ export const MesesHandler = {
     }
   },
 
-  /**
-   * Agrega un mes al proyecto
-   */
+  // Agrega un nuevo mes al proyecto
   async agregarMes(proyectoId: number, anio: number, mes: number) {
     try {
       await ProyectoService.addMes(proyectoId, anio, mes);
@@ -152,9 +135,7 @@ export const MesesHandler = {
     }
   },
 
-  /**
-   * Crea un mes automáticamente si no existe
-   */
+  // Crea mes automáticamente si no existe
   async crearMesAutomatico(proyectoId: number, anio: number, mes: number): Promise<boolean> {
     try {
       if (this.mesYaExiste(anio, mes)) {

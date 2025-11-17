@@ -1,14 +1,10 @@
-/**
- * Handler de Registro - Gestión del registro de nuevos usuarios
- */
+// Gestión del registro de nuevos usuarios
 
 import { AuthService } from '../services/auth';
 import { AlertUtils } from '../utils/swal';
 
 export const RegisterHandler = {
-  /**
-   * Valida que las contraseñas coincidan
-   */
+  // Valida que las contraseñas coincidan
   validarContraseñas(password: string, passwordConfirm: string): boolean {
     if (password !== passwordConfirm) {
       AlertUtils.error('Error', 'Las contraseñas no coinciden');
@@ -17,9 +13,7 @@ export const RegisterHandler = {
     return true;
   },
 
-  /**
-   * Valida que todos los campos requeridos estén llenos
-   */
+  // Valida que todos los campos requeridos estén llenos
   validarCampos(username: string, email: string, password: string): boolean {
     if (!username.trim() || !email.trim() || !password.trim()) {
       AlertUtils.error('Error', 'Por favor completa todos los campos requeridos');
@@ -28,9 +22,7 @@ export const RegisterHandler = {
     return true;
   },
 
-  /**
-   * Registra un nuevo usuario
-   */
+  // Registra un nuevo usuario en el sistema
   async registrar() {
     try {
       const username = (document.getElementById('username') as HTMLInputElement).value;
@@ -62,9 +54,7 @@ export const RegisterHandler = {
     }
   },
 
-  /**
-   * Muestra mensaje de éxito y redirige
-   */
+  // Muestra mensaje de éxito y redirige al login
   mostrarMensajeExito() {
     const successDiv = document.getElementById('success-message');
     if (successDiv) {
@@ -78,9 +68,7 @@ export const RegisterHandler = {
     }, 1500);
   },
 
-  /**
-   * Muestra mensaje de error
-   */
+  // Muestra mensaje de error en pantalla
   mostrarMensajeError(mensaje: string) {
     const errorDiv = document.getElementById('error-message');
     if (errorDiv) {

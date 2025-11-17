@@ -1,15 +1,10 @@
-/**
- * Handler de Perfil - Gestión de perfil y seguridad del usuario
- * Incluye: actualizar perfil, cambiar contraseña, configuraciones
- */
+// Gestión del perfil: datos, contraseña y configuraciones
 
 import { AuthService } from '../services/auth';
 import { AlertUtils } from '../utils/swal';
 
 export const PerfilHandler = {
-  /**
-   * Carga los datos del usuario actual
-   */
+  // Carga datos del usuario actual
   async loadUserData() {
     try {
       const user = await AuthService.getCurrentUser();
@@ -27,9 +22,7 @@ export const PerfilHandler = {
     }
   },
 
-  /**
-   * Guarda los cambios del perfil (email y nombre)
-   */
+  // Guarda cambios del perfil (email y nombre)
   async guardarPerfil() {
     try {
       const emailInput = document.getElementById('email') as HTMLInputElement;
@@ -50,9 +43,7 @@ export const PerfilHandler = {
     }
   },
 
-  /**
-   * Cambia la contraseña del usuario
-   */
+  // Cambia la contraseña del usuario
   async cambiarContraseña() {
     try {
       const passwordActualInput = document.getElementById('password_actual') as HTMLInputElement;
@@ -82,9 +73,7 @@ export const PerfilHandler = {
     }
   },
 
-  /**
-   * Actualiza la configuración de horas reales
-   */
+  // Actualiza configuración de horas reales
   async actualizarConfiguracion() {
     try {
       const horasRealesCheckbox = document.getElementById('usar-horas-reales') as HTMLInputElement;
@@ -102,9 +91,7 @@ export const PerfilHandler = {
     }
   },
 
-  /**
-   * Muestra mensaje de éxito
-   */
+  // Muestra mensaje de éxito en pantalla
   mostrarMensajeExito() {
     const successMsg = document.getElementById('success-message');
     if (successMsg) {

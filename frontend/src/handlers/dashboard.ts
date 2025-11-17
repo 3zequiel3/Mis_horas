@@ -1,14 +1,10 @@
-/**
- * Handler de Dashboard - Carga de estadísticas y proyectos
- */
+// Carga de estadísticas y proyectos
 
 import { ProyectosService } from '../services/proyectos';
 import { AlertUtils } from '../utils/swal';
 
 export const DashboardHandler = {
-  /**
-   * Carga las estadísticas del usuario
-   */
+  // Carga las estadísticas del usuario desde el servidor
   async cargarEstadisticas() {
     try {
       const stats = await ProyectosService.getEstadisticas();
@@ -28,9 +24,7 @@ export const DashboardHandler = {
     }
   },
 
-  /**
-   * Carga y renderiza los proyectos del usuario
-   */
+  // Carga y renderiza los proyectos del usuario
   async cargarProyectos() {
     try {
       const proyectos = await ProyectosService.getProyectos();
@@ -73,9 +67,7 @@ export const DashboardHandler = {
     }
   },
 
-  /**
-   * Carga todo el dashboard (estadísticas y proyectos)
-   */
+  // Carga estadísticas y proyectos al iniciar dashboard
   async cargarDashboard() {
     try {
       await this.cargarEstadisticas();

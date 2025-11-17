@@ -1,15 +1,10 @@
-/**
- * Handler de Proyecto - Gestión de creación de proyectos
- * Incluye: crear proyecto, llenar años/meses
- */
+// Gestión de creación de proyectos: datos, años, meses
 
 import { ProyectosService } from '../services/proyectos';
 import { AlertUtils } from '../utils/swal';
 
 export const ProyectoFormHandler = {
-  /**
-   * Llena el select de años con un rango
-   */
+  // Llena el select de años con un rango de -5 a +5 desde actual
   inicializarAnios() {
     const anioSelect = document.getElementById('anio') as HTMLSelectElement;
     const currentYear = new Date().getFullYear();
@@ -23,18 +18,14 @@ export const ProyectoFormHandler = {
     }
   },
 
-  /**
-   * Selecciona el mes actual por defecto
-   */
+  // Selecciona el mes actual en el select por defecto
   inicializarMes() {
     const mesSelect = document.getElementById('mes') as HTMLSelectElement;
     const currentMonth = new Date().getMonth() + 1;
     mesSelect.value = currentMonth.toString();
   },
 
-  /**
-   * Valida los datos del formulario
-   */
+  // Valida que el nombre, año y mes sean válidos
   validarFormulario(nombre: string, anio: number, mes: number): boolean {
     if (!nombre.trim()) {
       AlertUtils.error('Error', 'El nombre del proyecto es requerido');
@@ -49,9 +40,7 @@ export const ProyectoFormHandler = {
     return true;
   },
 
-  /**
-   * Crea un nuevo proyecto
-   */
+  // Crea un nuevo proyecto en el servidor
   async crearProyecto() {
     try {
       const nombre = (document.getElementById('nombre') as HTMLInputElement).value;
@@ -83,9 +72,7 @@ export const ProyectoFormHandler = {
     }
   },
 
-  /**
-   * Muestra mensaje de éxito y redirige
-   */
+  // Muestra mensaje de éxito y redirige a proyectos
   mostrarMensajeExito() {
     const successMsg = document.getElementById('success-message');
     if (successMsg) {
@@ -96,9 +83,7 @@ export const ProyectoFormHandler = {
     }
   },
 
-  /**
-   * Muestra mensaje de error
-   */
+  // Muestra mensaje de error en pantalla
   mostrarMensajeError() {
     const errorMsg = document.getElementById('error-message');
     if (errorMsg) {

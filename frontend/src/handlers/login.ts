@@ -1,14 +1,10 @@
-/**
- * Handler de Login - Gestión del inicio de sesión
- */
+// Gestión del inicio de sesión
 
 import { AuthService } from '../services/auth';
 import { AlertUtils } from '../utils/swal';
 
 export const LoginHandler = {
-  /**
-   * Valida que los campos requeridos estén llenos
-   */
+  // Valida que los campos requeridos estén llenos
   validarCampos(username: string, password: string): boolean {
     if (!username.trim() || !password.trim()) {
       AlertUtils.error('Error', 'Por favor completa todos los campos');
@@ -17,9 +13,7 @@ export const LoginHandler = {
     return true;
   },
 
-  /**
-   * Realiza el login del usuario
-   */
+  // Realiza el login del usuario
   async login() {
     try {
       const username = (document.getElementById('username') as HTMLInputElement).value;
@@ -45,9 +39,7 @@ export const LoginHandler = {
     }
   },
 
-  /**
-   * Muestra mensaje de éxito y redirige
-   */
+  // Muestra mensaje de éxito y redirige al dashboard
   async mostrarMensajeExito() {
     await AlertUtils.fire({
       title: '¡Bienvenido!',
@@ -62,9 +54,7 @@ export const LoginHandler = {
     });
   },
 
-  /**
-   * Muestra mensaje de error
-   */
+  // Muestra mensaje de error en pantalla
   mostrarMensajeError(mensaje: string) {
     const errorDiv = document.getElementById('error-message');
     if (errorDiv) {
