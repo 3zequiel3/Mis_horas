@@ -1,0 +1,100 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import ProtectedRoute from '../components/ProtectedRoute.astro';
+import '../styles/proyectos.css';
+
+const pageTitle = 'Proyectos - Mis Horas';
+---
+
+<BaseLayout title={pageTitle}>
+  <ProtectedRoute>
+    <Header />
+    <div class="container">
+    <div class="proyectos-view">
+      <div class="view-header">
+        <div>
+          <h1>Mis Proyectos</h1>
+          <p>Administra y visualiza todos tus proyectos</p>
+        </div>
+        <a href="/nuevo-proyecto" class="btn btn-primary btn-lg">
+          + Nuevo Proyecto
+        </a>
+      </div>
+
+      <!-- Tabs de vista -->
+      <div class="view-tabs">
+        <button class="tab-btn active" data-tab="table">📊 Tabla</button>
+        <button class="tab-btn" data-tab="cards">📋 Tarjetas</button>
+        <button class="tab-btn" data-tab="grid">🎨 Grid</button>
+      </div>
+
+      <!-- Vista Tabla -->
+      <div class="tab-content active" id="table-view">
+        <div class="table-container">
+          <table class="proyectos-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Período</th>
+                <th>Estado</th>
+                <th>Creado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <tr class="loading-row">
+                <td colspan="6" class="text-center">Cargando proyectos...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Vista Tarjetas -->
+      <div class="tab-content" id="cards-view">
+        <div class="cards-container" id="cards-container">
+          <div class="loading-card">Cargando proyectos...</div>
+        </div>
+      </div>
+
+      <!-- Vista Grid -->
+      <div class="tab-content" id="grid-view">
+        <div class="grid-container" id="grid-container">
+          <div class="loading-grid">Cargando proyectos...</div>
+        </div>
+      </div>
+
+      <!-- Mensaje de error -->
+      <div id="error-message" class="alert alert-error" style="display: none;">
+        ✗ Error al cargar los proyectos
+      </div>
+
+      <!-- Mensaje vacío -->
+      <div id="empty-message" class="empty-state" style="display: none;">
+        <div class="empty-icon">📭</div>
+        <h3>No hay proyectos</h3>
+        <p>Comienza creando tu primer proyecto</p>
+        <a href="/nuevo-proyecto" class="btn btn-primary">Crear Proyecto</a>
+      </div>
+    </div>
+  </ProtectedRoute>
+</BaseLayout>
+
+<script>
+  import { AuthService } from '../services/auth';
+  import { proyectosHandlers } from '../handlers/proyectos';
+
+  // Verificar autenticación primero
+  if (!AuthService.isAuthenticated()) {
+    window.location.href = '/login';
+  }
+
+  // Exposer handlers globalmente
+  (window as any).proyectosHandlers = proyectosHandlers;
+
+  // Inicializar
+  proyectosHandlers.initializeTabs();
+  proyectosHandlers.loadProyectos();
+</script>

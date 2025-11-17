@@ -1,0 +1,164 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import ProtectedRoute from '../components/ProtectedRoute.astro';
+import '../styles/nuevo-proyecto.css';
+
+const pageTitle = 'Nuevo Proyecto - Mis Horas';
+---
+
+<BaseLayout title={pageTitle}>
+  <ProtectedRoute>
+    <Header />
+    <div class="container">
+    <div class="nuevo-proyecto-container">
+      <div class="proyecto-card">
+        <div class="card-header">
+          <h1>Crear Nuevo Proyecto</h1>
+          <p>Completa los campos para crear un nuevo proyecto de trabajo</p>
+        </div>
+
+        <form id="proyecto-form" class="proyecto-form">
+          <div class="form-group">
+            <label for="nombre">Nombre del Proyecto *</label>
+            <input
+              type="text"
+              id="nombre"
+              name="nombre"
+              placeholder="Ej: App Web Tienda"
+              required
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="anio">Año *</label>
+              <select id="anio" name="anio" required>
+                <option value="">Selecciona un año</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="mes">Mes *</label>
+              <select id="mes" name="mes" required>
+                <option value="">Selecciona un mes</option>
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="descripcion">Descripción (Opcional)</label>
+            <textarea
+              id="descripcion"
+              name="descripcion"
+              placeholder="Describe el propósito del proyecto..."
+              rows="4"
+            ></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-lg">
+              Crear Proyecto
+            </button>
+            <a href="/proyectos" class="btn btn-secondary btn-lg">
+              Cancelar
+            </a>
+          </div>
+        </form>
+
+        <div id="success-message" class="alert alert-success" style="display: none;">
+          ✓ Proyecto creado exitosamente
+        </div>
+
+        <div id="error-message" class="alert alert-error" style="display: none;">
+          ✗ Error al crear el proyecto
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+</style>
+
+<script>
+  import { AuthService } from '../services/auth';
+  import { ProyectosService } from '../services/proyectos';
+  import Swal from 'sweetalert2';
+
+  // Verificar autenticación primero
+  if (!AuthService.isAuthenticated()) {
+    window.location.href = '/login';
+  }
+
+  // Llenar años
+  const anioSelect = document.getElementById('anio') as HTMLSelectElement;
+  const currentYear = new Date().getFullYear();
+  for (let i = currentYear - 5; i <= currentYear + 5; i++) {
+    const option = document.createElement('option');
+    option.value = i.toString();
+    option.textContent = i.toString();
+    if (i === currentYear) option.selected = true;
+    anioSelect.appendChild(option);
+  }
+
+  // Llenar mes actual
+  const mesSelect = document.getElementById('mes') as HTMLSelectElement;
+  const currentMonth = new Date().getMonth() + 1;
+  mesSelect.value = currentMonth.toString();
+
+  // Manejo del formulario
+  const form = document.getElementById('proyecto-form') as HTMLFormElement;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const nombre = (document.getElementById('nombre') as HTMLInputElement).value;
+    const anio = parseInt((document.getElementById('anio') as HTMLSelectElement).value);
+    const mes = parseInt((document.getElementById('mes') as HTMLSelectElement).value);
+    const descripcion = (document.getElementById('descripcion') as HTMLTextAreaElement).value;
+
+    try {
+      await ProyectosService.createProyecto({
+        nombre,
+        anio,
+        mes,
+        descripcion: descripcion || undefined,
+      });
+
+      const successMsg = document.getElementById('success-message');
+      if (successMsg) {
+        successMsg.style.display = 'block';
+        setTimeout(() => {
+          window.location.href = '/proyectos';
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      const errorMsg = document.getElementById('error-message');
+      if (errorMsg) {
+        errorMsg.style.display = 'block';
+      }
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo crear el proyecto. Intenta nuevamente.',
+      });
+    }
+  });
+</script>
+    </div>
+  </ProtectedRoute>
+</BaseLayout>

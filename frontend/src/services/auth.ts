@@ -1,0 +1,305 @@
+import type { AuthResponse, Usuario } from '../types';
+import { getStorageItem, setStorageItem, removeStorageItem } from '../utils/storage';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// 30 días en segundos
+const REMEMBER_ME_DURATION = 30 * 24 * 60 * 60;
+
+// Helper para verificar si estamos en el cliente
+const isClient = () => typeof window !== 'undefined';
+
+// Helper para obtener sessionStorage o localStorage
+function getStorage(useSession: boolean = false): Storage | null {
+  if (!isClient()) return null;
+  
+  try {
+    return useSession ? window.sessionStorage : window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+import { isJWTExpired } from '../utils/jwt';
+
+export class AuthService {
+  private static readonly TOKEN_SESSION = 'auth_token_session';  // sessionStorage (se borra con pestaña)
+  private static readonly TOKEN_PERSIST = 'auth_token_persist';  // localStorage (persiste 30 días)
+  private static readonly USER_STORAGE = 'user';
+  private static readonly REMEMBER_ME_FLAG = 'remember_me_enabled';
+
+  static setToken(token: string, rememberMe: boolean = false): void {
+    if (!isClient()) return;
+
+    console.log('[AuthService.setToken] Guardando token', { rememberMe, tokenLength: token?.length || 0 });
+
+    if (rememberMe) {
+      // Guardar en localStorage con cookie de 30 días
+      const storage = getStorage(false);
+      if (storage) {
+        storage.setItem(this.TOKEN_PERSIST, token);
+        storage.setItem(this.REMEMBER_ME_FLAG, 'true');
+        console.log('[AuthService.setToken] Token guardado en localStorage');
+      }
+      
+      // También establecer cookie para que el servidor lo valide
+      this.setCookie('auth_token', token, {
+        maxAge: REMEMBER_ME_DURATION,
+        path: '/',
+        secure: true,
+        sameSite: 'Lax',
+      });
+    } else {
+      // Guardar en sessionStorage (se borra automáticamente al cerrar pestaña/navegador)
+      const storage = getStorage(true);
+      if (storage) {
+        storage.setItem(this.TOKEN_SESSION, token);
+        storage.removeItem(this.TOKEN_PERSIST);
+        storage.removeItem(this.REMEMBER_ME_FLAG);
+        console.log('[AuthService.setToken] Token guardado en sessionStorage');
+      } else {
+        console.error('[AuthService.setToken] No se pudo obtener sessionStorage');
+      }
+      
+      // NO establecer cookie - solo sessionStorage
+    }
+  }
+
+  private static setCookie(name: string, value: string, options?: { maxAge?: number; path?: string; secure?: boolean; sameSite?: string }): void {
+    if (!isClient()) return;
+
+    let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`;
+
+    if (options) {
+      if (options.maxAge) {
+        cookieString += `; Max-Age=${options.maxAge}`;
+      }
+      if (options.path) {
+        cookieString += `; Path=${options.path}`;
+      }
+      if (options.secure) {
+        cookieString += '; Secure';
+      }
+      if (options.sameSite) {
+        cookieString += `; SameSite=${options.sameSite}`;
+      }
+    }
+
+    document.cookie = cookieString;
+  }
+
+  private static removeCookie(name: string, path: string = '/'): void {
+    if (!isClient()) return;
+    
+    this.setCookie(name, '', {
+      maxAge: 0,
+      path,
+    });
+  }
+
+  static getToken(): string | null {
+    if (!isClient()) return null;
+
+    console.log('[AuthService.getToken] Buscando token...');
+
+    // Primero intentar obtener del sessionStorage (sesión actual)
+    const sessionStorage = getStorage(true);
+    if (sessionStorage) {
+      const sessionToken = sessionStorage.getItem(this.TOKEN_SESSION);
+      console.log('[AuthService.getToken] sessionStorage token:', !!sessionToken);
+      if (sessionToken && !isJWTExpired(sessionToken)) {
+        console.log('[AuthService.getToken] Token válido en sessionStorage');
+        return sessionToken;
+      }
+    }
+
+    // Luego intentar obtener del localStorage (mantener sesión)
+    const localStorage = getStorage(false);
+    if (localStorage) {
+      const persistToken = localStorage.getItem(this.TOKEN_PERSIST);
+      console.log('[AuthService.getToken] localStorage token:', !!persistToken);
+      if (persistToken && !isJWTExpired(persistToken)) {
+        console.log('[AuthService.getToken] Token válido en localStorage');
+        return persistToken;
+      }
+    }
+
+    // Si hay token expirado, limpiar
+    console.log('[AuthService.getToken] No se encontró token válido, limpiando...');
+    this.clearToken();
+    return null;
+  }
+
+  static clearToken(): void {
+    if (!isClient()) return;
+
+    // Limpiar sessionStorage
+    const sessionStorage = getStorage(true);
+    if (sessionStorage) {
+      sessionStorage.removeItem(this.TOKEN_SESSION);
+    }
+
+    // Limpiar localStorage
+    const localStorage = getStorage(false);
+    if (localStorage) {
+      localStorage.removeItem(this.TOKEN_PERSIST);
+      localStorage.removeItem(this.REMEMBER_ME_FLAG);
+    }
+
+    // Limpiar usuario
+    removeStorageItem(this.USER_STORAGE);
+
+    // Limpiar cookie si existe
+    this.removeCookie('auth_token', '/');
+  }
+
+  static isAuthenticated(): boolean {
+    if (!isClient()) return false;
+
+    const token = this.getToken();
+    return !!token && !isJWTExpired(token);
+  }
+
+  static async register(
+    username: string,
+    email: string,
+    password: string,
+    nombre_completo?: string
+  ): Promise<{ usuario: Usuario }> {
+    const response = await fetch(`${API_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password, nombre_completo }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error en el registro');
+    }
+
+    return response.json();
+  }
+
+  static async login(
+    username: string,
+    password: string,
+    rememberMe: boolean = false
+  ): Promise<AuthResponse> {
+    const response = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, remember_me: rememberMe }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error al iniciar sesión');
+    }
+
+    const data: AuthResponse = await response.json();
+    this.setToken(data.access_token, rememberMe);
+    setStorageItem(this.USER_STORAGE, JSON.stringify(data.usuario));
+
+    return data;
+  }
+
+  static async getCurrentUser(): Promise<Usuario> {
+    const response = await fetch(`${API_URL}/api/auth/me`, {
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al obtener usuario');
+    }
+
+    return response.json();
+  }
+
+  static async updateProfile(
+    nombre_completo?: string,
+    email?: string,
+    foto_perfil?: string
+  ): Promise<{ usuario: Usuario }> {
+    const response = await fetch(`${API_URL}/api/auth/me`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ nombre_completo, email, foto_perfil }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error al actualizar perfil');
+    }
+
+    return response.json();
+  }
+
+  static async changePassword(
+    password_actual: string,
+    password_nueva: string
+  ): Promise<{ message: string }> {
+    const response = await fetch(`${API_URL}/api/auth/change-password`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password_actual, password_nueva }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error al cambiar contraseña');
+    }
+
+    return response.json();
+  }
+
+  static async toggleHorasReales(activar: boolean): Promise<{ message: string }> {
+    const response = await fetch(`${API_URL}/api/auth/horas-reales`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ activar }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error al cambiar configuración');
+    }
+
+    return response.json();
+  }
+
+  static async logout(): Promise<void> {
+    const token = this.getToken();
+    
+    if (token) {
+      try {
+        // Llamar al endpoint del backend para confirmar logout
+        await fetch(`${API_URL}/api/auth/logout`, {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+        });
+      } catch (error) {
+        // Si falla la llamada al backend, igual limpiamos el cliente
+        console.error('Error al llamar logout en backend:', error);
+      }
+    }
+    
+    // Limpiar datos locales
+    this.clearToken();
+  }
+
+  private static getAuthHeaders(): Record<string, string> {
+    const token = this.getToken();
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  }
+}

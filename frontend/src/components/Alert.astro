@@ -1,0 +1,13 @@
+---
+interface Props {
+  type?: 'success' | 'error' | 'info' | 'warning';
+  message: string;
+}
+
+const { type = 'info', message } = Astro.props;
+const alertClass = `alert alert-${type}`;
+---
+
+<div class:list={[alertClass]} role="alert">
+  {message}
+</div>

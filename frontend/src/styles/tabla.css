@@ -1,0 +1,137 @@
+/* ===========================
+   TABLE STYLES
+   =========================== */
+
+.table-container {
+  overflow-x: auto;
+}
+
+.dias-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+  .dias-table th {
+    padding: 0.6rem 0.75rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }.dias-table th:first-child,
+.dias-table th:nth-child(2) {
+  text-align: left;
+}
+
+  .dias-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+    font-size: 0.85rem;
+  }.dias-table td:first-child,
+.dias-table td:nth-child(2) {
+  text-align: left;
+}
+
+  .dias-table td:nth-child(3) {
+    padding: 0.6rem 0.75rem;
+    width: 140px;
+    text-align: center;
+  }
+
+  .dias-table td:nth-child(4) {
+    padding: 0.6rem 0.75rem;
+    width: 120px;
+    text-align: center;
+  }.dias-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.dias-table tbody tr:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+  .totals-row td {
+    padding: 0.6rem 0.75rem;
+    text-align: center;
+    border-top: 2px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.85rem;
+    vertical-align: middle;
+  }
+
+  .totals-row td:first-child,
+  .totals-row td:nth-child(2) {
+    text-align: left;
+    width: auto;
+  }
+
+  .totals-row td:nth-child(3) {
+    width: 140px;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .totals-row td:nth-child(4) {
+    width: 120px;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+.text-center {
+  text-align: center;
+}
+
+/* Horas Input */
+.horas-input {
+    width: 70px !important;
+    max-width: 70px !important;
+    min-width: 70px !important;
+    padding: 0.4rem 0.6rem !important;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%) !important;
+  border: 2px solid rgba(102, 126, 234, 0.4) !important;
+  border-radius: 6px;
+  color: var(--text-primary);
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: all 0.3s ease;
+  cursor: text;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  margin: 0 auto !important;
+}
+
+.horas-input:hover {
+  border-color: rgba(102, 126, 234, 0.5);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%);
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.15);
+}
+
+.horas-input:focus {
+  outline: none;
+  border-color: #667eea;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+  box-shadow: 0 0 10px rgba(102, 126, 234, 0.4), inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.horas-input::placeholder {
+  color: rgba(102, 126, 234, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dias-table {
+    font-size: 0.8rem;
+  }
+
+  .dias-table th,
+  .dias-table td {
+    padding: 0.4rem;
+  }
+
+  .horas-input {
+    width: 60px;
+    padding: 0.3rem;
+  }
+}

@@ -1,0 +1,14 @@
+---
+const pageTitle = 'Mis Horas - Gestión de Tiempo';
+---
+
+<script>
+  import { AuthService } from '../services/auth';
+  
+  // Redirigir a dashboard si está autenticado, a login si no
+  if (AuthService.isAuthenticated()) {
+    window.location.href = '/dashboard';
+  } else {
+    window.location.href = '/login';
+  }
+</script>

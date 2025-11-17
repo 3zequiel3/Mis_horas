@@ -1,0 +1,134 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import '../styles/auth.css';
+
+const pageTitle = 'Registro - Mis Horas';
+---
+
+<BaseLayout title={pageTitle}>
+  <div class="container register-container">
+    <div class="register-card">
+      <div class="register-header">
+        <h2>Crea tu Cuenta</h2>
+        <p>Únete a Mis Horas hoy</p>
+      </div>
+      
+      <form id="register-form" class="form">
+        <div class="form-group">
+          <label for="username">Usuario</label>
+          <input type="text" id="username" name="username" placeholder="tu_usuario" required />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="tu@email.com" required />
+        </div>
+
+        <div class="form-group">
+          <label for="nombre_completo">Nombre Completo</label>
+          <input type="text" id="nombre_completo" name="nombre_completo" placeholder="Tu Nombre" />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" name="password" placeholder="••••••••" required />
+        </div>
+
+        <div class="form-group">
+          <label for="password-confirm">Confirmar Contraseña</label>
+          <input type="password" id="password-confirm" name="password-confirm" placeholder="••••••••" required />
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full">Registrarse</button>
+      </form>
+
+      <p class="text-center">
+        ¿Ya tienes cuenta? <a href="/login" class="link-primary">Inicia sesión aquí</a>
+      </p>
+
+      <div id="error-message"></div>
+      <div id="success-message"></div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+</style>
+
+<script>
+  import { AuthService } from '../services/auth';
+  import Swal from 'sweetalert2';
+
+  // Si está logueado, redirigir al dashboard
+  if (AuthService.isAuthenticated()) {
+    window.location.href = '/dashboard';
+  }
+
+  document.getElementById('register-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const username = (document.getElementById('username') as HTMLInputElement).value;
+    const email = (document.getElementById('email') as HTMLInputElement).value;
+    const nombre_completo = (document.getElementById('nombre_completo') as HTMLInputElement).value;
+    const password = (document.getElementById('password') as HTMLInputElement).value;
+    const passwordConfirm = (document.getElementById('password-confirm') as HTMLInputElement).value;
+
+    const errorDiv = document.getElementById('error-message');
+    const successDiv = document.getElementById('success-message');
+
+    if (password !== passwordConfirm) {
+      if (errorDiv) {
+        errorDiv.textContent = 'Las contraseñas no coinciden';
+        errorDiv.style.display = 'block';
+      }
+      
+      await Swal.fire({
+        title: 'Error',
+        text: 'Las contraseñas no coinciden',
+        icon: 'error',
+        background: '#1a1a2e',
+        color: '#ffffff',
+        confirmButtonColor: '#f093fb'
+      });
+      return;
+    }
+
+    try {
+      await AuthService.register(username, email, password, nombre_completo);
+      
+      if (successDiv) {
+        successDiv.textContent = '✅ Cuenta creada exitosamente. Redirigiendo al login...';
+        successDiv.style.display = 'block';
+      }
+      
+      await Swal.fire({
+        title: '¡Registro Exitoso!',
+        text: 'Tu cuenta ha sido creada. Redirigiendo al login...',
+        icon: 'success',
+        background: '#1a1a2e',
+        color: '#ffffff',
+        confirmButtonColor: '#43e97b',
+        didOpen: () => {
+          Swal.showLoading();
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 1500);
+        }
+      });
+    } catch (error) {
+      if (errorDiv) {
+        errorDiv.textContent = (error as Error).message;
+        errorDiv.style.display = 'block';
+      }
+      
+      await Swal.fire({
+        title: 'Error al Registrar',
+        text: (error as Error).message,
+        icon: 'error',
+        background: '#1a1a2e',
+        color: '#ffffff',
+        confirmButtonColor: '#f093fb'
+      });
+    }
+  });
+</script>

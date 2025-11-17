@@ -1,0 +1,219 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import ProtectedRoute from '../components/ProtectedRoute.astro';
+
+const pageTitle = 'Mi Perfil - Mis Horas';
+---
+
+<script>
+  import '../styles/perfil.css';
+</script>
+
+<BaseLayout title={pageTitle}>
+  <ProtectedRoute>
+    <Header />
+    <div class="container">
+    <div class="perfil-container">
+      <div class="perfil-card">
+        <div class="card-header">
+          <h1>Mi Perfil</h1>
+          <p>Administra tu información personal</p>
+        </div>
+
+        <div class="perfil-content">
+          <!-- Información Básica -->
+          <div class="section">
+            <h2>Información Personal</h2>
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" id="username" readonly />
+            </div>
+
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="email" />
+            </div>
+
+            <div class="form-group">
+              <label>Nombre Completo</label>
+              <input type="text" id="nombre_completo" />
+            </div>
+
+            <button id="save-profile-btn" class="btn btn-primary">
+              💾 Guardar Cambios
+            </button>
+          </div>
+
+          <!-- Seguridad -->
+          <div class="section">
+            <h2>Seguridad</h2>
+            <div class="form-group">
+              <label>Contraseña Actual</label>
+              <input type="password" id="password_actual" />
+            </div>
+
+            <div class="form-group">
+              <label>Nueva Contraseña</label>
+              <input type="password" id="password_nueva" />
+            </div>
+
+            <button id="change-password-btn" class="btn btn-primary">
+              🔐 Cambiar Contraseña
+            </button>
+          </div>
+
+          <!-- Configuración de Horas -->
+          <div class="section">
+            <h2>Configuración</h2>
+            <div class="config-item">
+              <label for="usar-horas-reales">
+                <input type="checkbox" id="usar-horas-reales" />
+                Usar Horas Reales
+              </label>
+              <p class="help-text">
+                Si está activado, se usarán horas reales en lugar de horas estimadas
+              </p>
+            </div>
+
+            <button id="toggle-horas-btn" class="btn btn-secondary">
+              ⏱️ Actualizar Configuración
+            </button>
+          </div>
+        </div>
+
+        <div id="success-message" class="alert alert-success" style="display: none;">
+          ✓ Cambios guardados exitosamente
+        </div>
+
+        <div id="error-message" class="alert alert-error" style="display: none;">
+          ✗ Error al guardar los cambios
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style></style>
+
+<script>
+  import { AuthService } from '../services/auth';
+  import { UsuarioService } from '../services/usuarios';
+  import Swal from 'sweetalert2';
+
+  // Verificar autenticación primero
+  if (!AuthService.isAuthenticated()) {
+    window.location.href = '/login';
+  }
+
+  // Cargar datos del usuario
+  async function loadUserData() {
+    try {
+      const user = await AuthService.getCurrentUser();
+      (document.getElementById('username') as HTMLInputElement).value = user.username;
+      (document.getElementById('email') as HTMLInputElement).value = user.email || '';
+      (document.getElementById('nombre_completo') as HTMLInputElement).value = user.nombre_completo || '';
+      (document.getElementById('usar-horas-reales') as HTMLInputElement).checked = user.usar_horas_reales || false;
+    } catch (error) {
+      console.error('Error cargando usuario:', error);
+    }
+  }
+
+  // Guardar perfil
+  document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
+    try {
+      const email = (document.getElementById('email') as HTMLInputElement).value;
+      const nombre_completo = (document.getElementById('nombre_completo') as HTMLInputElement).value;
+
+      await AuthService.updateProfile(nombre_completo, email);
+
+      const successMsg = document.getElementById('success-message')!;
+      successMsg.style.display = 'block';
+      setTimeout(() => {
+        successMsg.style.display = 'none';
+      }, 3000);
+
+      Swal.fire({
+        icon: 'success',
+        title: '✓ Perfil actualizado',
+        text: 'Tus cambios han sido guardados',
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      const errorMsg = document.getElementById('error-message')!;
+      errorMsg.style.display = 'block';
+      setTimeout(() => {
+        errorMsg.style.display = 'none';
+      }, 3000);
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo actualizar el perfil',
+      });
+    }
+  });
+
+  // Cambiar contraseña
+  document.getElementById('change-password-btn')?.addEventListener('click', async () => {
+    try {
+      const password_actual = (document.getElementById('password_actual') as HTMLInputElement).value;
+      const password_nueva = (document.getElementById('password_nueva') as HTMLInputElement).value;
+
+      if (!password_actual || !password_nueva) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Campos requeridos',
+          text: 'Completa ambas contraseñas',
+        });
+        return;
+      }
+
+      await AuthService.changePassword(password_actual, password_nueva);
+
+      (document.getElementById('password_actual') as HTMLInputElement).value = '';
+      (document.getElementById('password_nueva') as HTMLInputElement).value = '';
+
+      Swal.fire({
+        icon: 'success',
+        title: '✓ Contraseña actualizada',
+        text: 'Tu contraseña ha sido cambiada correctamente',
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo cambiar la contraseña',
+      });
+    }
+  });
+
+  // Toggle horas reales
+  document.getElementById('toggle-horas-btn')?.addEventListener('click', async () => {
+    try {
+      const activar = (document.getElementById('usar-horas-reales') as HTMLInputElement).checked;
+      await AuthService.toggleHorasReales(activar);
+
+      Swal.fire({
+        icon: 'success',
+        title: '✓ Configuración actualizada',
+        text: activar ? 'Ahora usarás horas reales' : 'Volverás a usar horas estimadas',
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo actualizar la configuración',
+      });
+    }
+  });
+
+  loadUserData();
+</script>
+
+      </div>
+    </div>
+  </ProtectedRoute>
+</BaseLayout>

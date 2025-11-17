@@ -1,46 +1,77 @@
 services:
-  app:
-    build: .
-    container_name: gestor-horas
-    ports:
-      - "21000:8501"
-    environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_USER: mis_horas
-      DB_PASSWORD: mis_horas
-      DB_NAME: mis_horas
-    depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - .:/app
-      - /app/venv
-    command: >
-      streamlit run app.py 
-      --server.address=0.0.0.0 
-      --server.port=8501 
-      --server.headless=true
-      --server.enableCORS=false
-      --server.enableXsrfProtection=false
-
+  # Base de datos MySQL
   db:
     image: mysql:8.0
     container_name: mis_horas_db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: mis_horas
-      MYSQL_USER: mis_horas
-      MYSQL_PASSWORD: mis_horas
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-mis_horas}
+      MYSQL_USER: ${DB_USER:-mis_horas}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-mis_horas}
     ports:
-      - "21003:3306"
+      - "${DB_PORT:-3306}:3306"
     volumes:
-      - mysql_data:/var/lib/mysql  # CAMBIADO: usar volumen nombrado
+      - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-root}"]
+      timeout: 5s
       retries: 10
+      interval: 10s
+      start_period: 10s
+    networks:
+      - mishoras-network
+
+  # Backend Flask
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mis_horas_backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    environment:
+      FLASK_ENV: ${FLASK_ENV:-production}
+      FLASK_DEBUG: "False"
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-mis_horas}
+      DB_PASSWORD: ${DB_PASSWORD:-mis_horas}
+      DB_NAME: ${DB_NAME:-mis_horas}
+      SECRET_KEY: ${SECRET_KEY:-tu-clave-secreta-cambiar-en-produccion}
+      JWT_EXPIRATION_HOURS: ${JWT_EXPIRATION_HOURS:-720}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:4321}
+      API_HOST: 0.0.0.0
+      API_PORT: 5000
+    depends_on:
+      - db
+    networks:
+      - mishoras-network
+    command: python main.py
+
+  # Frontend Astro
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mis_horas_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      VITE_API_URL: ${VITE_API_URL:-http://backend:5000}
+    depends_on:
+      - backend
+    networks:
+      - mishoras-network
+    command: node ./dist/server/entry.mjs
 
 volumes:
-  mysql_data:  # Volumen nombrado manejado por Dock er
+  mysql_data:
+    driver: local
+
+networks:
+  mishoras-network:
+    driver: bridge

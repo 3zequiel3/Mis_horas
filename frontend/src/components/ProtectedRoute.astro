@@ -1,0 +1,45 @@
+---
+/**
+ * Componente de protección de rutas
+ * Verifica autenticación en el CLIENTE (no en servidor)
+ * Redirige a login si no está autenticado
+ */
+
+interface Props {
+  children?: any;
+}
+
+const { children } = Astro.props;
+---
+
+<div id="protected-route-wrapper">
+  <slot />
+</div>
+
+<script>
+  import { AuthService } from '../services/auth';
+
+  // Esperar a que el DOM esté listo
+  document.addEventListener('DOMContentLoaded', () => {
+    // Verificar autenticación en el CLIENTE
+    if (!AuthService.isAuthenticated()) {
+      // Redirigir a login
+      window.location.href = '/login';
+    }
+  });
+
+  // También verificar al cargar la página (por si el DOMContentLoaded ya pasó)
+  if (document.readyState === 'loading') {
+    // Aún cargando
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!AuthService.isAuthenticated()) {
+        window.location.href = '/login';
+      }
+    });
+  } else {
+    // Ya está cargado
+    if (!AuthService.isAuthenticated()) {
+      window.location.href = '/login';
+    }
+  }
+</script>

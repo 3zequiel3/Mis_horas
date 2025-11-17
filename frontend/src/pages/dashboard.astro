@@ -1,0 +1,124 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import ProtectedRoute from '../components/ProtectedRoute.astro';
+import '../styles/dashboard.css';
+
+const pageTitle = 'Dashboard - Mis Horas';
+---
+
+<BaseLayout title={pageTitle}>
+  <ProtectedRoute>
+    <Header />
+    <div class="container">
+      <div class="dashboard">
+        <h1>📊 Dashboard</h1>
+        
+        <div class="stats-grid grid grid-cols-4">
+          <div class="stat-card card">
+            <div class="stat-label">Proyectos Activos</div>
+            <div class="stat-value" id="proyectos-count">0</div>
+          </div>
+          <div class="stat-card card">
+            <div class="stat-label">Horas Totales</div>
+            <div class="stat-value" id="total-hours">0h</div>
+          </div>
+          <div class="stat-card card">
+            <div class="stat-label">Horas Esta Semana</div>
+            <div class="stat-value" id="week-hours">0h</div>
+          </div>
+          <div class="stat-card card">
+            <div class="stat-label">Promedio Diario</div>
+            <div class="stat-value" id="avg-hours">0h</div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2>📋 Mis Proyectos</h2>
+            <a href="/proyectos" style="color: #667eea; text-decoration: none; font-weight: 600;">Ver todos →</a>
+          </div>
+          <div id="proyectos-container" class="projects-grid grid grid-cols-3">
+            <div class="loading">Cargando proyectos...</div>
+          </div>
+        </div>
+
+        <div id="error-message"></div>
+      </div>
+    </div>
+  </ProtectedRoute>
+</BaseLayout>
+
+<style>
+</style>
+
+<script>
+  import { ProyectosService } from '../services/proyectos';
+  import Swal from 'sweetalert2';
+
+  async function loadDashboard() {
+    try {
+      // Cargar estadísticas
+      console.log('Cargando estadísticas...');
+      const stats = await ProyectosService.getEstadisticas();
+      console.log('Estadísticas:', stats);
+      
+      document.getElementById('proyectos-count')!.textContent = stats.proyectos_activos.toString();
+      document.getElementById('total-hours')!.textContent = stats.total_horas.toFixed(1) + 'h';
+      document.getElementById('week-hours')!.textContent = stats.horas_semana.toFixed(1) + 'h';
+      document.getElementById('avg-hours')!.textContent = stats.promedio_diario.toFixed(1) + 'h';
+
+      // Cargar proyectos
+      console.log('Cargando proyectos...');
+      const proyectos = await ProyectosService.getProyectos();
+      console.log('Proyectos:', proyectos);
+      
+      const container = document.getElementById('proyectos-container')!;
+      container.innerHTML = '';
+
+      if (proyectos.length === 0) {
+        container.innerHTML = '<p>No hay proyectos. <a href="/nuevo-proyecto">Crear uno</a></p>';
+        return;
+      }
+
+      proyectos.forEach((proyecto) => {
+        const item = document.createElement('div');
+        item.className = 'project-item card';
+        const statusClass = proyecto.activo ? 'status-active' : 'status-inactive';
+        const statusText = proyecto.activo ? '✅ Activo' : '⏸️ Pausado';
+
+        item.innerHTML = `
+          <h3>${proyecto.nombre}</h3>
+          <p>${proyecto.descripcion || 'Sin descripción'}</p>
+          <span class="project-status ${statusClass}">${statusText}</span>
+          <div class="mt-4">
+            <small>${proyecto.mes}/${proyecto.anio}</small>
+          </div>
+        `;
+
+        item.onclick = () => {
+          localStorage.setItem('selected_proyecto', JSON.stringify(proyecto));
+          window.location.href = `/proyecto/${proyecto.id}`;
+        };
+
+        container.appendChild(item);
+      });
+    } catch (error) {
+      console.error('Error en dashboard:', error);
+      const errorDiv = document.getElementById('error-message')!;
+      errorDiv.textContent = (error as Error).message;
+      errorDiv.style.display = 'block';
+      
+      await Swal.fire({
+        title: 'Error',
+        text: (error as Error).message,
+        icon: 'error',
+        background: '#1a1a2e',
+        color: '#ffffff',
+        confirmButtonColor: '#667eea'
+      });
+    }
+  }
+
+  loadDashboard();
+</script>

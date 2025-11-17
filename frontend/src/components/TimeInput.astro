@@ -1,0 +1,33 @@
+---
+interface Props {
+  id?: string;
+  placeholder?: string;
+  value?: string;
+  onChange?: string;
+  min?: number;
+  max?: number;
+}
+
+const { id, placeholder, value = '', onChange, min, max } = Astro.props;
+---
+
+<input
+  type="text"
+  id={id}
+  placeholder={placeholder}
+  value={value}
+  data-change={onChange}
+  data-min={min}
+  data-max={max}
+/>
+
+<script>
+  document.querySelectorAll('input[data-change]').forEach((input) => {
+    input.addEventListener('change', (e) => {
+      const event = new CustomEvent('timeInputChange', {
+        detail: { id: (e.target as HTMLInputElement).id, value: (e.target as HTMLInputElement).value },
+      });
+      document.dispatchEvent(event);
+    });
+  });
+</script>

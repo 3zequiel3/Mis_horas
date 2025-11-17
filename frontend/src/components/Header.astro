@@ -1,0 +1,167 @@
+---
+interface Props {
+  children?: string;
+}
+
+const { children } = Astro.props;
+---
+
+<header class="header">
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <div class="nav-brand">
+        <h1>🕒 Mis Horas</h1>
+      </div>
+      <div class="nav-menu">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/dashboard" class="nav-link">Dashboard</a>
+        <a href="/proyectos" class="nav-link">Proyectos</a>
+        <a href="/nuevo-proyecto" class="nav-link nav-link-primary">+ Nuevo</a>
+        <a href="/perfil" class="nav-link">Perfil</a>
+        <button id="logout-btn" class="btn btn-danger btn-sm">Cerrar Sesión</button>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<style>
+  .header {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    color: white;
+    padding: 1rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    margin-bottom: 2rem;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+  }
+
+  .navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .navbar-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .nav-brand h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+  }
+
+  .nav-menu {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  .nav-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    position: relative;
+  }
+
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease;
+  }
+
+  .nav-link:hover {
+    color: var(--text-primary);
+  }
+
+  .nav-link:hover::after {
+    width: 100%;
+  }
+
+  .nav-link-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white !important;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    position: relative;
+  }
+
+  .nav-link-primary::after {
+    display: none;
+  }
+
+  .nav-link-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+  }
+
+  @media (max-width: 768px) {
+    .nav-menu {
+      gap: 1rem;
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .nav-link {
+      width: 100%;
+      text-align: center;
+    }
+
+    .navbar-content {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .nav-brand h1 {
+      font-size: 1.25rem;
+    }
+  }
+</style>
+
+<script>
+  import Swal from 'sweetalert2';
+  import { authHandlers } from '../handlers/auth';
+
+  document.getElementById('logout-btn')?.addEventListener('click', async () => {
+    const result = await Swal.fire({
+      title: '¿Cerrar Sesión?',
+      text: 'Serás desconectado de tu cuenta',
+      icon: 'question',
+      background: '#1a1a2e',
+      color: '#ffffff',
+      confirmButtonColor: '#667eea',
+      cancelButtonColor: '#f5576c',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cerrar sesión',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await authHandlers.logout();
+      } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+        await Swal.fire({
+          title: 'Error',
+          text: 'No se pudo cerrar la sesión',
+          icon: 'error',
+          background: '#1a1a2e',
+          color: '#ffffff',
+          confirmButtonColor: '#667eea'
+        });
+      }
+    }
+  });
+</script>
