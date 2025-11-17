@@ -1,5 +1,9 @@
 import { defineConfig } from 'astro/config';
 import node from '@astrojs/node';
+import dotenv from 'dotenv';
+
+// Cargar variables del .env
+dotenv.config();
 
 export default defineConfig({
   output: 'server',
@@ -13,6 +17,10 @@ export default defineConfig({
   vite: {
     ssr: {
       external: ['fsevents']
+    },
+    // Exponer variables VITE_* desde el .env
+    define: {
+      'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL)
     }
   }
 });

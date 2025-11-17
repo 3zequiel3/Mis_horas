@@ -98,119 +98,30 @@ const pageTitle = 'Mi Perfil - Mis Horas';
 
 <script>
   import { AuthService } from '../services/auth';
-  import { UsuarioService } from '../services/usuarios';
-  import Swal from 'sweetalert2';
+  import { PerfilHandler } from '../handlers/perfil';
 
-  // Verificar autenticación primero
+  // Verificar autenticación
   if (!AuthService.isAuthenticated()) {
     window.location.href = '/login';
   }
 
-  // Cargar datos del usuario
-  async function loadUserData() {
-    try {
-      const user = await AuthService.getCurrentUser();
-      (document.getElementById('username') as HTMLInputElement).value = user.username;
-      (document.getElementById('email') as HTMLInputElement).value = user.email || '';
-      (document.getElementById('nombre_completo') as HTMLInputElement).value = user.nombre_completo || '';
-      (document.getElementById('usar-horas-reales') as HTMLInputElement).checked = user.usar_horas_reales || false;
-    } catch (error) {
-      console.error('Error cargando usuario:', error);
-    }
-  }
-
   // Guardar perfil
   document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
-    try {
-      const email = (document.getElementById('email') as HTMLInputElement).value;
-      const nombre_completo = (document.getElementById('nombre_completo') as HTMLInputElement).value;
-
-      await AuthService.updateProfile(nombre_completo, email);
-
-      const successMsg = document.getElementById('success-message')!;
-      successMsg.style.display = 'block';
-      setTimeout(() => {
-        successMsg.style.display = 'none';
-      }, 3000);
-
-      Swal.fire({
-        icon: 'success',
-        title: '✓ Perfil actualizado',
-        text: 'Tus cambios han sido guardados',
-      });
-    } catch (error) {
-      console.error('Error:', error);
-      const errorMsg = document.getElementById('error-message')!;
-      errorMsg.style.display = 'block';
-      setTimeout(() => {
-        errorMsg.style.display = 'none';
-      }, 3000);
-
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo actualizar el perfil',
-      });
-    }
+    await PerfilHandler.guardarPerfil();
   });
 
   // Cambiar contraseña
   document.getElementById('change-password-btn')?.addEventListener('click', async () => {
-    try {
-      const password_actual = (document.getElementById('password_actual') as HTMLInputElement).value;
-      const password_nueva = (document.getElementById('password_nueva') as HTMLInputElement).value;
-
-      if (!password_actual || !password_nueva) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Campos requeridos',
-          text: 'Completa ambas contraseñas',
-        });
-        return;
-      }
-
-      await AuthService.changePassword(password_actual, password_nueva);
-
-      (document.getElementById('password_actual') as HTMLInputElement).value = '';
-      (document.getElementById('password_nueva') as HTMLInputElement).value = '';
-
-      Swal.fire({
-        icon: 'success',
-        title: '✓ Contraseña actualizada',
-        text: 'Tu contraseña ha sido cambiada correctamente',
-      });
-    } catch (error) {
-      console.error('Error:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo cambiar la contraseña',
-      });
-    }
+    await PerfilHandler.cambiarContraseña();
   });
 
-  // Toggle horas reales
+  // Actualizar configuración
   document.getElementById('toggle-horas-btn')?.addEventListener('click', async () => {
-    try {
-      const activar = (document.getElementById('usar-horas-reales') as HTMLInputElement).checked;
-      await AuthService.toggleHorasReales(activar);
-
-      Swal.fire({
-        icon: 'success',
-        title: '✓ Configuración actualizada',
-        text: activar ? 'Ahora usarás horas reales' : 'Volverás a usar horas estimadas',
-      });
-    } catch (error) {
-      console.error('Error:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo actualizar la configuración',
-      });
-    }
+    await PerfilHandler.actualizarConfiguracion();
   });
 
-  loadUserData();
+  // Cargar datos del usuario
+  PerfilHandler.loadUserData();
 </script>
 
       </div>

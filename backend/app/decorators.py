@@ -1,9 +1,7 @@
 from flask import request, jsonify
 from functools import wraps
+from app.config import SECRET_KEY
 import jwt
-import os
-
-SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
 def get_token_from_request():
     """Extrae el token JWT del header Authorization"""

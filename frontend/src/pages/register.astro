@@ -57,78 +57,16 @@ const pageTitle = 'Registro - Mis Horas';
 
 <script>
   import { AuthService } from '../services/auth';
-  import Swal from 'sweetalert2';
+  import { RegisterHandler } from '../handlers/register';
 
   // Si está logueado, redirigir al dashboard
   if (AuthService.isAuthenticated()) {
     window.location.href = '/dashboard';
   }
 
+  // Manejar envío del formulario
   document.getElementById('register-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const username = (document.getElementById('username') as HTMLInputElement).value;
-    const email = (document.getElementById('email') as HTMLInputElement).value;
-    const nombre_completo = (document.getElementById('nombre_completo') as HTMLInputElement).value;
-    const password = (document.getElementById('password') as HTMLInputElement).value;
-    const passwordConfirm = (document.getElementById('password-confirm') as HTMLInputElement).value;
-
-    const errorDiv = document.getElementById('error-message');
-    const successDiv = document.getElementById('success-message');
-
-    if (password !== passwordConfirm) {
-      if (errorDiv) {
-        errorDiv.textContent = 'Las contraseñas no coinciden';
-        errorDiv.style.display = 'block';
-      }
-      
-      await Swal.fire({
-        title: 'Error',
-        text: 'Las contraseñas no coinciden',
-        icon: 'error',
-        background: '#1a1a2e',
-        color: '#ffffff',
-        confirmButtonColor: '#f093fb'
-      });
-      return;
-    }
-
-    try {
-      await AuthService.register(username, email, password, nombre_completo);
-      
-      if (successDiv) {
-        successDiv.textContent = '✅ Cuenta creada exitosamente. Redirigiendo al login...';
-        successDiv.style.display = 'block';
-      }
-      
-      await Swal.fire({
-        title: '¡Registro Exitoso!',
-        text: 'Tu cuenta ha sido creada. Redirigiendo al login...',
-        icon: 'success',
-        background: '#1a1a2e',
-        color: '#ffffff',
-        confirmButtonColor: '#43e97b',
-        didOpen: () => {
-          Swal.showLoading();
-          setTimeout(() => {
-            window.location.href = '/login';
-          }, 1500);
-        }
-      });
-    } catch (error) {
-      if (errorDiv) {
-        errorDiv.textContent = (error as Error).message;
-        errorDiv.style.display = 'block';
-      }
-      
-      await Swal.fire({
-        title: 'Error al Registrar',
-        text: (error as Error).message,
-        icon: 'error',
-        background: '#1a1a2e',
-        color: '#ffffff',
-        confirmButtonColor: '#f093fb'
-      });
-    }
+    await RegisterHandler.registrar();
   });
 </script>

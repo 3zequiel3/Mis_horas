@@ -9,6 +9,8 @@ import '../../styles/modales.css';
 import '../../styles/sidebar-meses.css';
 
 const pageTitle = 'Proyecto - Mis Horas';
+
+// Los handlers y servicios se importan en el script
 ---
 
 <BaseLayout title={pageTitle}>
@@ -270,424 +272,129 @@ const pageTitle = 'Proyecto - Mis Horas';
   import { TareaService } from '../../services/tarea';
   import { generateTasksPDF } from '../../utils/pdf';
   import { MESES_ES } from '../../utils/formatters';
-  import Swal from 'sweetalert2';
+  import { AlertUtils } from '../../utils/swal';
+  import { TareaHandler } from '../../handlers/tarea';
+  import { MesesHandler } from '../../handlers/meses';
 
-  // Verificar autenticación primero
+  // Verificar autenticación
   if (!AuthService.isAuthenticated()) {
     window.location.href = '/login';
   }
 
-  // Exposer handlers globalmente
+  // Exponer handlers globalmente
   (window as any).proyectoHandlers = proyectoHandlers;
 
-  // Inicializar modales básicos
+  // Referencias a modales y elementos
   const modal = document.getElementById('tarea-modal')!;
   const mesModal = document.getElementById('mes-modal')!;
   const form = document.getElementById('tarea-form') as HTMLFormElement;
   const diasSelect = document.getElementById('dias-select') as HTMLSelectElement;
   const diasSelectedDiv = document.getElementById('dias-selected')!;
 
-  // Estado para días seleccionados y disponibles
-  let diasSeleccionados = new Map<number, { id: number; fecha: string; texto: string }>();
-  let diasDisponibles = new Map<number, { id: number; fecha: string; texto: string }>();
+  // ========== GESTIÓN DE TAREAS ==========
 
-  /**
-   * Actualiza las opciones del select mostrando solo días no seleccionados
-   */
-  function actualizarSelectDias() {
-    diasSelect.innerHTML = '<option value="">Seleccione los días</option>';
-
-    diasDisponibles.forEach((dia) => {
-      if (!diasSeleccionados.has(dia.id)) {
-        const option = document.createElement('option');
-        option.value = dia.id.toString();
-        option.textContent = dia.texto;
-        diasSelect.appendChild(option);
-      }
-    });
-  }
-
-  /**
-   * Renderiza los días seleccionados
-   */
-  function renderizarDiasSeleccionados() {
-    if (diasSeleccionados.size === 0) {
-      diasSelectedDiv.innerHTML = '';
-      return;
-    }
-
-    diasSelectedDiv.innerHTML = Array.from(diasSeleccionados.values())
-      .map(
-        (dia) => `
-      <div class="dia-badge">
-        <span>${dia.texto}</span>
-        <button type="button" class="dia-remove" data-dia-id="${dia.id}">✕</button>
-      </div>
-    `
-      )
-      .join('');
-
-    // Agregar event listeners a los botones de eliminar
-    diasSelectedDiv.querySelectorAll('.dia-remove').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const diaId = parseInt((btn as HTMLElement).getAttribute('data-dia-id') || '0');
-        diasSeleccionados.delete(diaId);
-        actualizarSelectDias();
-        renderizarDiasSeleccionados();
-      });
-    });
-  }
-
-  /**
-   * Carga los días disponibles para la tarea
-   */
-  async function loadDiasDisponibles() {
-    try {
-      if (!proyectoHandlers.state.proyectoActual) return;
-
-      const proyecto = proyectoHandlers.state.proyectoActual;
-      const dias = await TareaService.getDiasDisponibles(
-        proyecto.id,
-        proyecto.anio,
-        proyecto.mes
-      );
-
-      diasDisponibles.clear();
-      diasSeleccionados.clear();
-
-      // Crear mapa de días disponibles
-      dias.forEach((dia: any) => {
-        const fechaFormato = new Date(dia.fecha).toLocaleDateString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          weekday: 'short',
-        });
-
-        diasDisponibles.set(dia.id, {
-          id: dia.id,
-          fecha: dia.fecha,
-          texto: fechaFormato,
-        });
-      });
-
-      actualizarSelectDias();
-      renderizarDiasSeleccionados();
-    } catch (error) {
-      console.error('Error cargando días:', error);
-      diasSelect.innerHTML = '<option disabled>Error al cargar días</option>';
-    }
-  }
-
-  // Event listeners del modal
+  // Nueva tarea
   document.getElementById('nueva-tarea-btn')?.addEventListener('click', async () => {
-    form.reset();
-    diasSeleccionados.clear();
-    
-    // Resetear modal a modo creación
-    const modalTitle = document.getElementById('modal-title');
-    const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
-    if (modalTitle) modalTitle.textContent = 'Nueva Tarea';
-    if (submitBtn) {
-      submitBtn.textContent = 'Crear Tarea';
-      submitBtn.dataset.editMode = 'false';
-      submitBtn.dataset.tareaId = '0';
+    TareaHandler.resetParaCrear(form);
+    const proyecto = proyectoHandlers.state.proyectoActual;
+    if (proyecto) {
+      await TareaHandler.loadDiasDisponibles(proyecto.id, proyecto.anio, proyecto.mes);
     }
-    
-    await loadDiasDisponibles();
     modal.style.display = 'flex';
   });
 
-  // Cerrar modal de visualización
-  document.getElementById('view-modal-close')?.addEventListener('click', () => {
-    const viewModal = document.getElementById('view-tarea-modal')!;
-    viewModal.style.display = 'none';
-  });
-
-  document.getElementById('view-modal-close-btn')?.addEventListener('click', () => {
-    const viewModal = document.getElementById('view-tarea-modal')!;
-    viewModal.style.display = 'none';
-  });
-
-  // Estado para tarea en visualización
-  let tareaEnVista: any = null;
-
-  // Evento para visualizar tarea
-  document.addEventListener('view-tarea', async (event: any) => {
-    const tarea = event.detail.tarea;
-    tareaEnVista = tarea; // Guardar referencia
-    const viewModal = document.getElementById('view-tarea-modal')!;
-    const viewModalTitle = document.getElementById('view-modal-title');
-    const viewModalBody = document.getElementById('view-modal-body');
-
-    if (viewModalTitle) {
-      viewModalTitle.textContent = tarea.titulo;
-    }
-
-    if (viewModalBody) {
-      // Calcular horas totales de la tarea
-      let horasTotales = 0;
-      let diasHtml = '';
-      
-      if (tarea.dias && tarea.dias.length > 0) {
-        tarea.dias.forEach((d: any) => {
-          const horasAMostrar = proyectoHandlers.state.usuarioActual?.usar_horas_reales
-            ? d.horas_reales || 0
-            : d.horas_trabajadas || 0;
-          
-          horasTotales += horasAMostrar;
-        });
-
-        diasHtml = tarea.dias
-          .map((d: any) => {
-            const fecha = new Date(d.fecha).toLocaleDateString('es-ES', {
-              day: '2-digit',
-              month: '2-digit',
-              year: '2-digit',
-              weekday: 'short',
-            });
-            
-            return `
-              <div class="dia-badge-item">
-                <span class="dia-badge-label">${fecha}</span>
-              </div>
-            `;
-          })
-          .join('');
-      } else {
-        diasHtml = '<div class="dias-empty"><p>Sin días asignados</p></div>';
-      }
-
-      viewModalBody.innerHTML = `
-        <div class="tarea-detalle-mejorada">
-          <div class="detalle-seccion">
-            <div class="seccion-header">
-              <h4 class="seccion-titulo">📝 Detalle</h4>
-            </div>
-            <p class="seccion-contenido">${tarea.detalle || 'Sin detalle'}</p>
-          </div>
-
-          <div class="detalle-seccion">
-            <div class="seccion-header">
-              <h4 class="seccion-titulo">❓ ¿Qué falta?</h4>
-            </div>
-            <p class="seccion-contenido">${tarea.que_falta || 'Nada pendiente'}</p>
-          </div>
-
-          <div class="detalle-seccion">
-            <div class="seccion-header">
-              <h4 class="seccion-titulo">⏱️ Horas totales</h4>
-            </div>
-            <div class="horas-totales-badge">
-              <span class="horas-numero">${horasTotales}h</span>
-              <span class="horas-label">Acumuladas</span>
-            </div>
-          </div>
-
-          <div class="detalle-seccion">
-            <div class="seccion-header">
-              <h4 class="seccion-titulo">📅 Días asignados</h4>
-            </div>
-            <div class="dias-desglose-inline">
-              ${diasHtml}
-            </div>
-          </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    viewModal.style.display = 'flex';
-  });
-
-  // Evento para editar desde visualización
-  document.getElementById('edit-from-view-btn')?.addEventListener('click', () => {
-    const viewModal = document.getElementById('view-tarea-modal')!;
-    
-    if (tareaEnVista) {
-      const event = new CustomEvent('edit-tarea', { detail: { tarea: tareaEnVista } });
-      document.dispatchEvent(event);
-      viewModal.style.display = 'none';
-    }
-  });
-
-  // Evento para eliminar tarea desde visualización
-  document.getElementById('delete-from-view-btn')?.addEventListener('click', async () => {
-    if (!tareaEnVista) return;
-
-    const result = await Swal.fire({
-      title: '¿Eliminar tarea?',
-      text: `Se eliminará la tarea "${tareaEnVista.titulo}" y sus días volverán a estar disponibles`,
-      icon: 'warning',
-      showCancelButton: true,
-      background: '#0f1419',
-      color: '#c8c8c8',
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#2d3746',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      iconColor: '#f59e0b',
-    });
-
-    if (result.isConfirmed) {
-      try {
-        await TareaService.deleteTarea(tareaEnVista.id);
-        
-        const viewModal = document.getElementById('view-tarea-modal')!;
-        viewModal.style.display = 'none';
-        
-        Swal.fire({
-          title: 'Eliminada',
-          text: 'La tarea ha sido eliminada correctamente',
-          icon: 'success',
-          background: '#0f1419',
-          color: '#c8c8c8',
-          confirmButtonColor: '#10b981',
-          iconColor: '#10b981',
-        });
-        
-        // Recargar tareas
-        await proyectoHandlers.loadTareas();
-      } catch (error) {
-        console.error('Error eliminando tarea:', error);
-        Swal.fire({
-          title: 'Error',
-          text: 'No se pudo eliminar la tarea',
-          icon: 'error',
-          background: '#0f1419',
-          color: '#c8c8c8',
-          confirmButtonColor: '#ef4444',
-          iconColor: '#ef4444',
-        });
-      }
-    }
-  });
-
+  // Cerrar modales de tareas
   document.getElementById('modal-close')?.addEventListener('click', () => {
     modal.style.display = 'none';
   });
-
   document.getElementById('modal-cancel')?.addEventListener('click', () => {
     modal.style.display = 'none';
   });
-
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.style.display = 'none';
   });
 
-  // Manejar cambios en el select
+  // Seleccionar días
   diasSelect.addEventListener('change', () => {
     if (diasSelect.value) {
       const diaId = parseInt(diasSelect.value);
-      const dia = diasDisponibles.get(diaId);
-
+      const dia = TareaHandler.diasDisponibles.get(diaId);
       if (dia) {
-        diasSeleccionados.set(diaId, dia);
-        actualizarSelectDias();
-        renderizarDiasSeleccionados();
-        diasSelect.value = ''; // Resetear select
+        TareaHandler.diasSeleccionados.set(diaId, dia);
+        TareaHandler.actualizarSelectDias(diasSelect);
+        TareaHandler.renderizarDiasSeleccionados(diasSelectedDiv);
+        diasSelect.value = '';
       }
     }
   });
 
-  // Manejar envío del formulario
+  // Guardar tarea (crear o actualizar)
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    try {
-      const titulo = (document.getElementById('tarea-titulo') as HTMLInputElement).value;
-      const detalle = (document.getElementById('tarea-detalle') as HTMLTextAreaElement).value;
-      const que_falta = (document.getElementById('tarea-que-falta') as HTMLTextAreaElement).value;
-      const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
-      const editMode = submitBtn?.dataset.editMode === 'true';
-      const tareaId = parseInt(submitBtn?.dataset.tareaId || '0');
-
-      if (!titulo.trim()) {
-        Swal.fire({
-          title: 'Error',
-          text: 'El título es requerido',
-          icon: 'error',
-          background: '#0f1419',
-          color: '#c8c8c8',
-          confirmButtonColor: '#ef4444',
-          iconColor: '#ef4444',
-        });
-        return;
-      }
-
-      // Convertir días seleccionados a array (puede ser vacío)
-      const diasIds = Array.from(diasSeleccionados.keys());
-
-      if (editMode && tareaId > 0) {
-        // Actualizar tarea existente - siempre pasar dias_ids (incluso si es array vacío)
-        const tareaActualizada = await TareaService.updateTarea(
-          tareaId,
-          titulo,
-          detalle,
-          que_falta,
-          diasIds  // Pasar array siempre (puede estar vacío)
-        );
-
-        Swal.fire({
-          title: 'Éxito',
-          text: 'Tarea actualizada correctamente',
-          icon: 'success',
-          background: '#0f1419',
-          color: '#c8c8c8',
-          confirmButtonColor: '#10b981',
-          iconColor: '#10b981',
-        });
-      } else {
-        // Crear nueva tarea
-        const nuevaTarea = await TareaService.createTarea(
-          proyectoHandlers.state.proyectoActual?.id || 0,
-          titulo,
-          detalle,
-          que_falta,
-          diasIds.length > 0 ? diasIds : undefined  // Para crear, undefined si no hay días
-        );
-
-        Swal.fire({
-          title: 'Éxito',
-          text: 'Tarea creada correctamente',
-          icon: 'success',
-          background: '#0f1419',
-          color: '#c8c8c8',
-          confirmButtonColor: '#10b981',
-          iconColor: '#10b981',
-        });
-      }
-
-      modal.style.display = 'none';
-      form.reset();
-      diasSeleccionados.clear();
-      diasSelectedDiv.innerHTML = '';
-
-      // Resetear botón
-      if (submitBtn) {
-        submitBtn.textContent = 'Crear Tarea';
-        submitBtn.dataset.editMode = 'false';
-        submitBtn.dataset.tareaId = '0';
-      }
-
-      // Recargar tareas
-      await proyectoHandlers.loadTareas();
-    } catch (error) {
-      console.error('Error con tarea:', error);
-      Swal.fire({
-        title: 'Error',
-        text: 'No se pudo guardar la tarea',
-        icon: 'error',
-        background: '#0f1419',
-        color: '#c8c8c8',
-        confirmButtonColor: '#ef4444',
-        iconColor: '#ef4444',
+    const proyecto = proyectoHandlers.state.proyectoActual;
+    if (proyecto) {
+      const success = await TareaHandler.guardarTarea(form, proyecto.id, async () => {
+        modal.style.display = 'none';
+        TareaHandler.diasSeleccionados.clear();
+        await proyectoHandlers.loadTareas();
       });
+      if (success) {
+        TareaHandler.renderizarDiasSeleccionados(diasSelectedDiv);
+      }
     }
   });
 
-  // Modal de mes
+  // Visualizar tarea
+  document.addEventListener('view-tarea', (event: any) => {
+    const tarea = event.detail.tarea;
+    TareaHandler.tareaEnVista = tarea;
+    const usaHorasReales = proyectoHandlers.state.usuarioActual?.usar_horas_reales || false;
+    TareaHandler.renderizarVistaDetalle(tarea, usaHorasReales);
+    document.getElementById('view-tarea-modal')!.style.display = 'flex';
+  });
+
+  // Cerrar modal de visualización
+  document.getElementById('view-modal-close')?.addEventListener('click', () => {
+    document.getElementById('view-tarea-modal')!.style.display = 'none';
+  });
+  document.getElementById('view-modal-close-btn')?.addEventListener('click', () => {
+    document.getElementById('view-tarea-modal')!.style.display = 'none';
+  });
+
+  // Editar desde visualización
+  document.getElementById('edit-from-view-btn')?.addEventListener('click', async () => {
+    document.getElementById('view-tarea-modal')!.style.display = 'none';
+    if (TareaHandler.tareaEnVista) {
+      const proyecto = proyectoHandlers.state.proyectoActual;
+      if (proyecto) {
+        await TareaHandler.cargarParaEditar(
+          TareaHandler.tareaEnVista,
+          proyecto.id,
+          proyecto.anio,
+          proyecto.mes
+        );
+        modal.style.display = 'flex';
+      }
+    }
+  });
+
+  // Eliminar desde visualización
+  document.getElementById('delete-from-view-btn')?.addEventListener('click', async () => {
+    if (TareaHandler.tareaEnVista) {
+      document.getElementById('view-tarea-modal')!.style.display = 'none';
+      await TareaHandler.eliminarTarea(
+        TareaHandler.tareaEnVista.id,
+        TareaHandler.tareaEnVista.titulo,
+        async () => {
+          await proyectoHandlers.loadTareas();
+        }
+      );
+    }
+  });
+
+  // ========== GESTIÓN DE MESES ==========
+
+  // Modal de mes (ver todo)
   document.getElementById('ver-todo-btn')?.addEventListener('click', () => {
     mesModal.style.display = 'flex';
   });
@@ -704,20 +411,99 @@ const pageTitle = 'Proyecto - Mis Horas';
     if (e.target === mesModal) mesModal.style.display = 'none';
   });
 
+  // Agregar mes
+  document.getElementById('add-mes-btn')?.addEventListener('click', () => {
+    MesesHandler.openAddMesModal();
+  });
+
+  document.getElementById('close-add-mes')?.addEventListener('click', () => {
+    MesesHandler.closeAddMesModal();
+  });
+
+  document.getElementById('add-mes-modal')?.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('add-mes-modal')) {
+      MesesHandler.closeAddMesModal();
+    }
+  });
+
+  // Formulario agregar mes
+  document.getElementById('add-mes-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const anio = parseInt((document.getElementById('nuevo-mes-year') as HTMLInputElement).value);
+      const mes = parseInt((document.getElementById('nuevo-mes-mes') as HTMLSelectElement).value);
+
+      if (!anio || !mes) {
+        await AlertUtils.error('Error', 'Por favor seleccione un mes y año válidos');
+        return;
+      }
+
+      const fechaSeleccionada = new Date(anio, mes - 1, 1);
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+
+      if (fechaSeleccionada < hoy) {
+        const result = await AlertUtils.question(
+          '¿Deseas continuar?',
+          'La fecha seleccionada es anterior a hoy.'
+        );
+        if (result.isConfirmed) {
+          const proyecto = proyectoHandlers.state.proyectoActual;
+          if (proyecto) await MesesHandler.agregarMes(proyecto.id, anio, mes);
+        }
+      } else {
+        const proyecto = proyectoHandlers.state.proyectoActual;
+        if (proyecto) await MesesHandler.agregarMes(proyecto.id, anio, mes);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      await AlertUtils.error('Error', 'No se pudo agregar el mes');
+    }
+  });
+
+  // Evento cuando se selecciona un mes
+  document.addEventListener('mes-selected', async (event: any) => {
+    const { anio, mes } = event.detail;
+    const proyecto = proyectoHandlers.state.proyectoActual;
+
+    if (proyecto) {
+      const mesCreado = await MesesHandler.crearMesAutomatico(proyecto.id, anio, mes);
+
+      if (!mesCreado) {
+        await AlertUtils.error('Error', 'No se pudo crear el mes automáticamente');
+        return;
+      }
+
+      // Actualizar proyecto
+      proyecto.anio = anio;
+      proyecto.mes = mes;
+      proyectoHandlers.state.mesActual = mes;
+      proyectoHandlers.state.anioActual = anio;
+
+      // Recargar datos
+      await proyectoHandlers.loadDias();
+      await proyectoHandlers.loadTareas();
+      proyectoHandlers.updateTotalPanel();
+
+      // Actualizar UI
+      const periodoEl = document.getElementById('proyecto-periodo');
+      if (periodoEl) {
+        periodoEl.textContent = `${MESES_ES[mes as keyof typeof MESES_ES]} ${anio}`;
+      }
+
+      MesesHandler.renderMeses({ anio, mes });
+      MesesHandler.updateMesInfo({ anio, mes });
+    }
+  });
+
+  // ========== ACCIONES GENERALES ==========
+
   // Exportar PDF
   document.getElementById('exportar-pdf-btn')?.addEventListener('click', async () => {
     try {
       const proyecto = proyectoHandlers.state.proyectoActual;
       if (!proyecto) {
-        Swal.fire({
-          title: 'Error',
-          text: 'Proyecto no disponible',
-          icon: 'error',
-          background: '#0f1419',
-          color: '#c8c8c8',
-          confirmButtonColor: '#ef4444',
-          iconColor: '#ef4444',
-        });
+        await AlertUtils.error('Error', 'Proyecto no disponible');
         return;
       }
 
@@ -725,64 +511,29 @@ const pageTitle = 'Proyecto - Mis Horas';
       const tareas = proyectoHandlers.state.tareasActuales;
 
       if (tareas.length === 0) {
-        Swal.fire({
-          title: 'Información',
-          text: 'No hay tareas para exportar',
-          icon: 'info',
-          background: '#0f1419',
-          color: '#c8c8c8',
-          confirmButtonColor: '#667eea',
-          iconColor: '#667eea',
-        });
+        await AlertUtils.info('Información', 'No hay tareas para exportar');
         return;
       }
 
-      // Mostrar alerta de carga
-      Swal.fire({
-        title: 'Generando PDF...',
-        allowOutsideClick: false,
-        background: '#0f1419',
-        color: '#c8c8c8',
-        didOpen: async () => {
-          Swal.showLoading();
-          try {
-            await generateTasksPDF(proyecto.nombre, mes, proyecto.anio, tareas, proyectoHandlers.state.diasActuales);
-            Swal.hideLoading();
-            Swal.fire({
-              title: 'Éxito',
-              text: 'PDF descargado correctamente',
-              icon: 'success',
-              background: '#0f1419',
-              color: '#c8c8c8',
-              confirmButtonColor: '#10b981',
-              iconColor: '#10b981',
-            });
-          } catch (error) {
-            console.error('Error generando PDF:', error);
-            Swal.hideLoading();
-            Swal.fire({
-              title: 'Error',
-              text: 'No se pudo generar el PDF',
-              icon: 'error',
-              background: '#0f1419',
-              color: '#c8c8c8',
-              confirmButtonColor: '#ef4444',
-              iconColor: '#ef4444',
-            });
-          }
-        },
-      });
+      AlertUtils.loading('Generando PDF...');
+      try {
+        await generateTasksPDF(
+          proyecto.nombre,
+          mes,
+          proyecto.anio,
+          tareas,
+          proyectoHandlers.state.diasActuales
+        );
+        AlertUtils.close();
+        await AlertUtils.success('Éxito', 'PDF descargado correctamente');
+      } catch (error) {
+        console.error('Error generando PDF:', error);
+        AlertUtils.close();
+        await AlertUtils.error('Error', 'No se pudo generar el PDF');
+      }
     } catch (error) {
       console.error('Error:', error);
-      Swal.fire({
-        title: 'Error',
-        text: 'Error al exportar PDF',
-        icon: 'error',
-        background: '#0f1419',
-        color: '#c8c8c8',
-        confirmButtonColor: '#ef4444',
-        iconColor: '#ef4444',
-      });
+      await AlertUtils.error('Error', 'Error al exportar PDF');
     }
   });
 
@@ -793,410 +544,41 @@ const pageTitle = 'Proyecto - Mis Horas';
 
     const isActive = proyecto.activo;
     const action = isActive ? 'Finalizar' : 'Reactivar';
-    const newState = !isActive;
 
-    const result = await Swal.fire({
-      title: `¿${action} proyecto?`,
-      text: isActive 
-        ? 'Esto marcará el proyecto como inactivo' 
+    const result = await AlertUtils.confirm(
+      `¿${action} proyecto?`,
+      isActive
+        ? 'Esto marcará el proyecto como inactivo'
         : 'Esto reactivará el proyecto',
-      icon: 'question',
-      showCancelButton: true,
-      background: '#0f1419',
-      color: '#c8c8c8',
-      confirmButtonColor: '#667eea',
-      cancelButtonColor: '#2d3746',
-      confirmButtonText: `Sí, ${action.toLowerCase()}`,
-      cancelButtonText: 'Cancelar',
-      iconColor: '#667eea',
-    });
+      `Sí, ${action.toLowerCase()}`,
+      'Cancelar'
+    );
 
     if (result.isConfirmed) {
       try {
-        await ProyectoService.cambiarEstado(proyectoHandlers.state.proyectoActual?.id || 0, newState);
+        await ProyectoService.cambiarEstado(proyecto.id, !isActive);
         await proyectoHandlers.loadProyecto();
-        Swal.fire({
-          title: 'Éxito',
-          text: `Proyecto ${action.toLowerCase()}do correctamente`,
-          icon: 'success',
-          background: '#0f1419',
-          color: '#c8c8c8',
-          confirmButtonColor: '#10b981',
-          iconColor: '#10b981',
-        });
+        await AlertUtils.success('Éxito', `Proyecto ${action.toLowerCase()}do correctamente`);
       } catch (error) {
-        Swal.fire({
-          title: 'Error',
-          text: `No se pudo ${action.toLowerCase()} el proyecto`,
-          icon: 'error',
-          background: '#0f1419',
-          color: '#c8c8c8',
-          confirmButtonColor: '#ef4444',
-          iconColor: '#ef4444',
-        });
+        await AlertUtils.error('Error', `No se pudo ${action.toLowerCase()} el proyecto`);
       }
     }
   });
 
-  // Evento para editar tareas
-  document.addEventListener('edit-tarea', async (event: any) => {
-    const tarea = event.detail.tarea;
-    const viewModal = document.getElementById('view-tarea-modal')!;
+  // ========== INICIALIZACIÓN ==========
 
-    try {
-      // Cerrar modal de visualización si está abierto
-      if (viewModal.style.display === 'flex') {
-        viewModal.style.display = 'none';
-      }
+  // Inicializar al cargar la página
+  proyectoHandlers.loadProyecto().then(async () => {
+    const proyecto = proyectoHandlers.state.proyectoActual;
+    if (proyecto) {
+      // Cargar meses
+      await MesesHandler.loadMeses(proyecto.id);
+      MesesHandler.updateMesInfo({ anio: proyecto.anio, mes: proyecto.mes });
 
-      // Cambiar título del modal
-      const modalTitle = document.getElementById('modal-title');
-      if (modalTitle) {
-        modalTitle.textContent = `Editar Tarea: ${tarea.titulo}`;
-      }
-
-      // Llenar formulario con datos de la tarea
-      (document.getElementById('tarea-titulo') as HTMLInputElement).value = tarea.titulo;
-      (document.getElementById('tarea-detalle') as HTMLTextAreaElement).value = tarea.detalle || '';
-      (document.getElementById('tarea-que-falta') as HTMLTextAreaElement).value = tarea.que_falta || '';
-
-      // Cargar días disponibles
-      const proyecto = proyectoHandlers.state.proyectoActual;
-      if (!proyecto) return;
-
-      const dias = await TareaService.getDiasDisponibles(
-        proyecto.id,
-        proyecto.anio,
-        proyecto.mes,
-        tarea.id // Excluir esta tarea de los ocupados
-      );
-
-      // Actualizar mapas de días
-      diasDisponibles.clear();
-      diasSeleccionados.clear();
-
-      dias.forEach((dia: any) => {
-        const fechaFormato = new Date(dia.fecha).toLocaleDateString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          weekday: 'short',
-        });
-
-        diasDisponibles.set(dia.id, {
-          id: dia.id,
-          fecha: dia.fecha,
-          texto: fechaFormato,
-        });
-      });
-
-      // Cargar días seleccionados de la tarea actual
-      if (tarea.dias && Array.isArray(tarea.dias)) {
-        tarea.dias.forEach((dia: any) => {
-          const fechaFormato = new Date(dia.fecha).toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            weekday: 'short',
-          });
-
-          diasSeleccionados.set(dia.id, {
-            id: dia.id,
-            fecha: dia.fecha,
-            texto: fechaFormato,
-          });
-        });
-      }
-
-      // Actualizar UI
-      actualizarSelectDias();
-      renderizarDiasSeleccionados();
-
-      // Cambiar botón submit a modo edición
-      const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
-      if (submitBtn) {
-        submitBtn.textContent = 'Guardar cambios';
-        submitBtn.dataset.editMode = 'true';
-        submitBtn.dataset.tareaId = tarea.id.toString();
-      }
-
-      // Mostrar modal
-      modal.style.display = 'flex';
-    } catch (error) {
-      console.error('Error editando tarea:', error);
-      Swal.fire('Error', 'No se pudo cargar la tarea', 'error');
+      // Actualizar nombre del sidebar
+      const sidebarNombre = document.getElementById('proyecto-nombre-sidebar');
+      if (sidebarNombre) sidebarNombre.textContent = proyecto.nombre;
     }
-  });
-
-  // ========== MANEJO DE MESES ==========
-  
-  let mesesDisponibles: [number, number][] = [];
-  const MESES_NOMBRES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-
-  /**
-   * Carga los meses disponibles del proyecto
-   */
-  async function loadMeses() {
-    try {
-      if (!proyectoHandlers.state.proyectoActual) return;
-
-      mesesDisponibles = await ProyectoService.getMeses(proyectoHandlers.state.proyectoActual.id);
-      renderMeses();
-    } catch (error) {
-      console.error('Error cargando meses:', error);
-    }
-  }
-
-  /**
-   * Verifica si un mes ya existe en los meses disponibles
-   */
-  function mesMestaDisponible(anio: number, mes: number): boolean {
-    return mesesDisponibles.some(([a, m]) => a === anio && m === mes);
-  }
-
-  /**
-   * Crea un mes automáticamente si no existe
-   */
-  async function crearMesAutomatico(anio: number, mes: number): Promise<boolean> {
-    try {
-      if (!proyectoHandlers.state.proyectoActual) return false;
-      
-      // Verificar si el mes ya existe
-      if (mesMestaDisponible(anio, mes)) {
-        return true;
-      }
-
-      // Crear el mes automáticamente
-      await ProyectoService.addMes(proyectoHandlers.state.proyectoActual.id, anio, mes);
-      
-      // Recargar la lista de meses
-      await loadMeses();
-      return true;
-    } catch (error) {
-      console.error('Error creando mes automáticamente:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Renderiza la lista de meses
-   */
-  function renderMeses() {
-    const mesesList = document.getElementById('meses-list');
-    if (!mesesList) return;
-
-    if (mesesDisponibles.length === 0) {
-      mesesList.innerHTML = '<div class="mes-item">Sin meses</div>';
-      return;
-    }
-
-    mesesList.innerHTML = mesesDisponibles
-      .map(([anio, mes]) => {
-        const mesNombre = MESES_NOMBRES[mes - 1];
-        const isActive = proyectoHandlers.state.proyectoActual?.anio === anio && 
-                        proyectoHandlers.state.proyectoActual?.mes === mes;
-        
-        return `
-          <div class="mes-item ${isActive ? 'active' : ''}" data-anio="${anio}" data-mes="${mes}">
-            <span>${mesNombre} ${anio}</span>
-            <span class="mes-badge">${anio}</span>
-          </div>
-        `;
-      })
-      .join('');
-
-    // Agregar event listeners
-    mesesList.querySelectorAll('.mes-item').forEach((element) => {
-      element.addEventListener('click', async (e) => {
-        const anio = parseInt(element.getAttribute('data-anio') || '0');
-        const mes = parseInt(element.getAttribute('data-mes') || '0');
-
-        if (anio > 0 && mes > 0) {
-          // Intentar crear el mes automáticamente si no existe
-          const mesCreado = await crearMesAutomatico(anio, mes);
-          
-          if (!mesCreado) {
-            Swal.fire({
-              title: 'Error',
-              text: 'No se pudo crear el mes automáticamente',
-              icon: 'error',
-              background: '#0f1419',
-              color: '#c8c8c8',
-              confirmButtonColor: '#ef4444',
-              iconColor: '#ef4444',
-            });
-            return;
-          }
-
-          // Obtener el proyecto y actualizarlo
-          if (proyectoHandlers.state.proyectoActual) {
-            // Almacenamos qué mes estamos viendo
-            const mesAnterior = `${proyectoHandlers.state.proyectoActual.anio}-${proyectoHandlers.state.proyectoActual.mes}`;
-            const mesActual = `${anio}-${mes}`;
-            
-            // Cambiar el mes y año del estado actual
-            proyectoHandlers.state.proyectoActual.anio = anio;
-            proyectoHandlers.state.proyectoActual.mes = mes;
-            proyectoHandlers.state.mesActual = mes;
-            proyectoHandlers.state.anioActual = anio;
-            
-            // Recargar datos
-            await proyectoHandlers.loadDias();
-            await proyectoHandlers.loadTareas();
-            proyectoHandlers.updateTotalPanel();
-            
-            // Actualizar UI del header
-            const periodoEl = document.getElementById('proyecto-periodo');
-            if (periodoEl) {
-              periodoEl.textContent = `${MESES_ES[mes as keyof typeof MESES_ES]} ${anio}`;
-            }
-            
-            renderMeses();
-            updateMesInfo();
-          }
-        }
-      });
-    });
-  }
-
-  /**
-   * Actualiza la información del mes actual
-   */
-  function updateMesInfo() {
-    const mesInfo = document.getElementById('mes-info');
-    const mesInfoText = document.getElementById('mes-info-text');
-    
-    if (!proyectoHandlers.state.proyectoActual) return;
-
-    const mesNombre = MESES_NOMBRES[proyectoHandlers.state.proyectoActual.mes - 1];
-    const text = `${mesNombre} ${proyectoHandlers.state.proyectoActual.anio}`;
-    
-    if (mesInfoText) mesInfoText.textContent = text;
-    if (mesInfo) mesInfo.style.display = 'block';
-  }
-
-  /**
-   * Abre el modal para agregar mes
-   */
-  function openAddMesModal() {
-    const modal = document.getElementById('add-mes-modal');
-    if (modal) {
-      modal.classList.add('show');
-
-      // Pre-rellenar el año y mes actual + 1
-      const hoy = new Date();
-      let proximoMes = hoy.getMonth() + 2; // +1 para siguiente mes, +1 para 0-indexed
-      let proximoAnio = hoy.getFullYear();
-
-      if (proximoMes > 12) {
-        proximoMes = 1;
-        proximoAnio++;
-      }
-
-      const yearInput = document.getElementById('nuevo-mes-year') as HTMLInputElement;
-      const mesInput = document.getElementById('nuevo-mes-mes') as HTMLSelectElement;
-
-      if (yearInput) yearInput.value = proximoAnio.toString();
-      if (mesInput) mesInput.value = proximoMes.toString();
-    }
-  }
-
-  /**
-   * Cierra el modal para agregar mes
-   */
-  function closeAddMesModal() {
-    const modal = document.getElementById('add-mes-modal');
-    if (modal) {
-      modal.classList.remove('show');
-    }
-  }
-
-  // Event listeners para agregar mes
-  document.getElementById('add-mes-btn')?.addEventListener('click', openAddMesModal);
-  document.getElementById('close-add-mes')?.addEventListener('click', closeAddMesModal);
-
-  // Cerrar al hacer click fuera del formulario
-  document.getElementById('add-mes-modal')?.addEventListener('click', (e) => {
-    if (e.target === document.getElementById('add-mes-modal')) {
-      closeAddMesModal();
-    }
-  });
-
-  // Manejar envío del formulario
-  document.getElementById('add-mes-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    try {
-      const anio = parseInt((document.getElementById('nuevo-mes-year') as HTMLInputElement).value);
-      const mes = parseInt((document.getElementById('nuevo-mes-mes') as HTMLSelectElement).value);
-
-      if (!anio || !mes) {
-        Swal.fire('Error', 'Por favor seleccione un mes y año válidos', 'error');
-        return;
-      }
-
-      // Verificar que no sea una fecha pasada
-      const fechaSeleccionada = new Date(anio, mes - 1, 1);
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-
-      if (fechaSeleccionada < hoy) {
-        Swal.fire({
-          title: '¿Deseas continuar?',
-          text: 'La fecha seleccionada es anterior a hoy.',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'Sí, agregar',
-          cancelButtonText: 'Cancelar',
-        }).then(async (result) => {
-          if (result.isConfirmed) {
-            await agregarMes(anio, mes);
-          }
-        });
-      } else {
-        await agregarMes(anio, mes);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      Swal.fire('Error', 'No se pudo agregar el mes', 'error');
-    }
-  });
-
-  /**
-   * Agrega un mes al proyecto
-   */
-  async function agregarMes(anio: number, mes: number) {
-    try {
-      if (!proyectoHandlers.state.proyectoActual) return;
-
-      await ProyectoService.addMes(proyectoHandlers.state.proyectoActual.id, anio, mes);
-      
-      closeAddMesModal();
-      Swal.fire('Éxito', 'Mes agregado correctamente', 'success');
-      
-      // Recargar meses
-      await loadMeses();
-    } catch (error) {
-      console.error('Error agregando mes:', error);
-      Swal.fire('Error', 'No se pudo agregar el mes', 'error');
-    }
-  }
-
-  /**
-   * Inicializa los meses después de cargar el proyecto
-   */
-  async function initMeses() {
-    await loadMeses();
-    updateMesInfo();
-    
-    // Actualizar nombre del sidebar
-    const sidebarNombre = document.getElementById('proyecto-nombre-sidebar');
-    if (sidebarNombre && proyectoHandlers.state.proyectoActual) {
-      sidebarNombre.textContent = proyectoHandlers.state.proyectoActual.nombre;
-    }
-  }
-
-  // Cargar proyecto
-  proyectoHandlers.loadProyecto().then(() => {
-    initMeses();
   });
 </script>
     </div>

@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.services import AuthService
+from app.config import SECRET_KEY, JWT_EXPIRATION_HOURS
 import jwt
 import os
 from datetime import datetime, timedelta
@@ -11,9 +12,6 @@ from app.routes.dia import dia_bp
 from app.routes.usuario import usuario_bp
 
 auth_bp = Blueprint('auth', __name__)
-
-SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
-TOKEN_EXPIRATION_HOURS = int(os.getenv('JWT_EXPIRATION_HOURS', 720))
 
 def generate_token(user_id: int, remember_me: bool = False) -> str:
     """Genera un JWT con información del usuario

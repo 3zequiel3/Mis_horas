@@ -1,7 +1,8 @@
 import type { AuthResponse, Usuario } from '../types';
 import { getStorageItem, setStorageItem, removeStorageItem } from '../utils/storage';
+import { ENV } from '../utils/env';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = ENV.VITE_API_URL;
 
 // 30 días en segundos
 const REMEMBER_ME_DURATION = 30 * 24 * 60 * 60;

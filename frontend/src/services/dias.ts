@@ -1,7 +1,8 @@
 import type { Dia, CreateDiaRequest, UpdateDiaRequest } from '../types';
 import { getAuthHeaders } from '../utils/auth';
+import { ENV } from '../utils/env';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = ENV.VITE_API_URL;
 
 export class DiasService {
   /**

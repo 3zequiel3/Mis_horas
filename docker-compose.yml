@@ -1,77 +1,103 @@
 services:
-  # Base de datos MySQL
+  # ============================================================
+  # BASE DE DATOS MYSQL 8.0
+  # SIN PUERTO PÚBLICO - Acceso solo desde red interna
+  # ============================================================
   db:
     image: mysql:8.0
     container_name: mis_horas_db
-    restart: unless-stopped
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: ${DB_NAME:-mis_horas}
-      MYSQL_USER: ${DB_USER:-mis_horas}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-mis_horas}
-    ports:
-      - "${DB_PORT:-3306}:3306"
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-root}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       timeout: 5s
       retries: 10
       interval: 10s
-      start_period: 10s
+      start_period: 20s
     networks:
       - mishoras-network
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
-  # Backend Flask
+  # ============================================================
+  # BACKEND FLASK (PYTHON)
+  # Puerto público: 22000 (rango 21000-33000)
+  # ============================================================
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./backend/Dockerfile
     container_name: mis_horas_backend
-    restart: unless-stopped
+    restart: always
     ports:
-      - "${BACKEND_PORT:-5000}:5000"
+      - "${BACKEND_PUBLIC_PORT}:5000"
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+      - ./.env:/app/.env
     environment:
-      FLASK_ENV: ${FLASK_ENV:-production}
-      FLASK_DEBUG: "False"
+      FLASK_ENV: ${FLASK_ENV}
+      FLASK_DEBUG: ${FLASK_DEBUG}
       DB_HOST: db
       DB_PORT: 3306
-      DB_USER: ${DB_USER:-mis_horas}
-      DB_PASSWORD: ${DB_PASSWORD:-mis_horas}
-      DB_NAME: ${DB_NAME:-mis_horas}
-      SECRET_KEY: ${SECRET_KEY:-tu-clave-secreta-cambiar-en-produccion}
-      JWT_EXPIRATION_HOURS: ${JWT_EXPIRATION_HOURS:-720}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:4321}
-      API_HOST: 0.0.0.0
-      API_PORT: 5000
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      SECRET_KEY: ${SECRET_KEY}
+      JWT_EXPIRATION_HOURS: ${JWT_EXPIRATION_HOURS}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      API_HOST: ${API_HOST}
+      API_PORT: ${API_PORT}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - mishoras-network
     command: python main.py
 
-  # Frontend Astro
+  # ============================================================
+  # FRONTEND ASTRO (NODE.JS)
+  # Puerto público: 21000 (rango 21000-33000)
+  # ============================================================
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./frontend/Dockerfile
     container_name: mis_horas_frontend
-    restart: unless-stopped
+    restart: always
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${FRONTEND_PUBLIC_PORT}:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./.env:/app/.env
+      - ./frontend/astro.config.mjs:/app/astro.config.mjs
+      - ./frontend/package.json:/app/package.json
+      - ./frontend/tsconfig.json:/app/tsconfig.json
     environment:
-      NODE_ENV: ${NODE_ENV:-production}
-      VITE_API_URL: ${VITE_API_URL:-http://backend:5000}
+      NODE_ENV: ${NODE_ENV}
+      VITE_API_URL: ${VITE_API_URL}
     depends_on:
       - backend
     networks:
       - mishoras-network
-    command: node ./dist/server/entry.mjs
+    command: npm run dev
 
+# ============================================================
+# VOLÚMENES
+# ============================================================
 volumes:
   mysql_data:
     driver: local
 
+# ============================================================
+# REDES
+# ============================================================
 networks:
   mishoras-network:
     driver: bridge

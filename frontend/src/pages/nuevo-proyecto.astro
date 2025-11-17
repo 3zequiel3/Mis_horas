@@ -95,68 +95,22 @@ const pageTitle = 'Nuevo Proyecto - Mis Horas';
 
 <script>
   import { AuthService } from '../services/auth';
-  import { ProyectosService } from '../services/proyectos';
-  import Swal from 'sweetalert2';
+  import { ProyectoFormHandler } from '../handlers/nuevo-proyecto';
 
-  // Verificar autenticación primero
+  // Verificar autenticación
   if (!AuthService.isAuthenticated()) {
     window.location.href = '/login';
   }
 
-  // Llenar años
-  const anioSelect = document.getElementById('anio') as HTMLSelectElement;
-  const currentYear = new Date().getFullYear();
-  for (let i = currentYear - 5; i <= currentYear + 5; i++) {
-    const option = document.createElement('option');
-    option.value = i.toString();
-    option.textContent = i.toString();
-    if (i === currentYear) option.selected = true;
-    anioSelect.appendChild(option);
-  }
-
-  // Llenar mes actual
-  const mesSelect = document.getElementById('mes') as HTMLSelectElement;
-  const currentMonth = new Date().getMonth() + 1;
-  mesSelect.value = currentMonth.toString();
+  // Inicializar select de años y meses
+  ProyectoFormHandler.inicializarAnios();
+  ProyectoFormHandler.inicializarMes();
 
   // Manejo del formulario
   const form = document.getElementById('proyecto-form') as HTMLFormElement;
-
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const nombre = (document.getElementById('nombre') as HTMLInputElement).value;
-    const anio = parseInt((document.getElementById('anio') as HTMLSelectElement).value);
-    const mes = parseInt((document.getElementById('mes') as HTMLSelectElement).value);
-    const descripcion = (document.getElementById('descripcion') as HTMLTextAreaElement).value;
-
-    try {
-      await ProyectosService.createProyecto({
-        nombre,
-        anio,
-        mes,
-        descripcion: descripcion || undefined,
-      });
-
-      const successMsg = document.getElementById('success-message');
-      if (successMsg) {
-        successMsg.style.display = 'block';
-        setTimeout(() => {
-          window.location.href = '/proyectos';
-        }, 1500);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      const errorMsg = document.getElementById('error-message');
-      if (errorMsg) {
-        errorMsg.style.display = 'block';
-      }
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo crear el proyecto. Intenta nuevamente.',
-      });
-    }
+    const success = await ProyectoFormHandler.crearProyecto();
   });
 </script>
     </div>

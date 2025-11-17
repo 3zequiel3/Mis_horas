@@ -1,0 +1,130 @@
+/**
+ * Handler de Perfil - Gestión de perfil y seguridad del usuario
+ * Incluye: actualizar perfil, cambiar contraseña, configuraciones
+ */
+
+import { AuthService } from '../services/auth';
+import { AlertUtils } from '../utils/swal';
+
+export const PerfilHandler = {
+  /**
+   * Carga los datos del usuario actual
+   */
+  async loadUserData() {
+    try {
+      const user = await AuthService.getCurrentUser();
+      const emailInput = document.getElementById('email') as HTMLInputElement;
+      const usernameInput = document.getElementById('username') as HTMLInputElement;
+      const nombreInput = document.getElementById('nombre_completo') as HTMLInputElement;
+      const horasRealesCheckbox = document.getElementById('usar-horas-reales') as HTMLInputElement;
+
+      if (usernameInput) usernameInput.value = user.username;
+      if (emailInput) emailInput.value = user.email || '';
+      if (nombreInput) nombreInput.value = user.nombre_completo || '';
+      if (horasRealesCheckbox) horasRealesCheckbox.checked = user.usar_horas_reales || false;
+    } catch (error) {
+      console.error('Error cargando usuario:', error);
+    }
+  },
+
+  /**
+   * Guarda los cambios del perfil (email y nombre)
+   */
+  async guardarPerfil() {
+    try {
+      const emailInput = document.getElementById('email') as HTMLInputElement;
+      const nombreInput = document.getElementById('nombre_completo') as HTMLInputElement;
+
+      const email = emailInput.value;
+      const nombre_completo = nombreInput.value;
+
+      await AuthService.updateProfile(nombre_completo, email);
+
+      // Mostrar mensaje de éxito
+      this.mostrarMensajeExito();
+      await AlertUtils.success('✓ Perfil actualizado', 'Tus cambios han sido guardados');
+    } catch (error) {
+      console.error('Error:', error);
+      this.mostrarMensajeError();
+      await AlertUtils.error('Error', 'No se pudo actualizar el perfil');
+    }
+  },
+
+  /**
+   * Cambia la contraseña del usuario
+   */
+  async cambiarContraseña() {
+    try {
+      const passwordActualInput = document.getElementById('password_actual') as HTMLInputElement;
+      const passwordNuevaInput = document.getElementById('password_nueva') as HTMLInputElement;
+
+      const password_actual = passwordActualInput.value;
+      const password_nueva = passwordNuevaInput.value;
+
+      if (!password_actual || !password_nueva) {
+        await AlertUtils.warning('Campos requeridos', 'Completa ambas contraseñas');
+        return;
+      }
+
+      await AuthService.changePassword(password_actual, password_nueva);
+
+      // Limpiar campos
+      passwordActualInput.value = '';
+      passwordNuevaInput.value = '';
+
+      await AlertUtils.success(
+        '✓ Contraseña actualizada',
+        'Tu contraseña ha sido cambiada correctamente'
+      );
+    } catch (error) {
+      console.error('Error:', error);
+      await AlertUtils.error('Error', 'No se pudo cambiar la contraseña');
+    }
+  },
+
+  /**
+   * Actualiza la configuración de horas reales
+   */
+  async actualizarConfiguracion() {
+    try {
+      const horasRealesCheckbox = document.getElementById('usar-horas-reales') as HTMLInputElement;
+      const activar = horasRealesCheckbox.checked;
+
+      await AuthService.toggleHorasReales(activar);
+
+      await AlertUtils.success(
+        '✓ Configuración actualizada',
+        activar ? 'Ahora usarás horas reales' : 'Volverás a usar horas estimadas'
+      );
+    } catch (error) {
+      console.error('Error:', error);
+      await AlertUtils.error('Error', 'No se pudo actualizar la configuración');
+    }
+  },
+
+  /**
+   * Muestra mensaje de éxito
+   */
+  mostrarMensajeExito() {
+    const successMsg = document.getElementById('success-message');
+    if (successMsg) {
+      successMsg.style.display = 'block';
+      setTimeout(() => {
+        successMsg.style.display = 'none';
+      }, 3000);
+    }
+  },
+
+  /**
+   * Muestra mensaje de error
+   */
+  mostrarMensajeError() {
+    const errorMsg = document.getElementById('error-message');
+    if (errorMsg) {
+      errorMsg.style.display = 'block';
+      setTimeout(() => {
+        errorMsg.style.display = 'none';
+      }, 3000);
+    }
+  },
+};

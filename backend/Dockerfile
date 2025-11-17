@@ -14,17 +14,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalar uv para dependencias rápidas
-RUN pip install --no-cache-dir uv
-
 # Copiar requirements.txt
-COPY requirements.txt .
+COPY backend/requirements.txt .
 
-# Instalar dependencias con uv en el sistema
-RUN uv pip install --no-cache-dir --system -r requirements.txt
+# Instalar dependencias
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar código
-COPY --chown=appuser:appuser . .
+# Copiar .env desde la raíz
+COPY .env .env
+
+# Copiar código del backend
+COPY --chown=appuser:appuser backend/ .
 
 # Cambiar a usuario no-root
 USER appuser

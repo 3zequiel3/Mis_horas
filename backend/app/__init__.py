@@ -3,6 +3,10 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 import os
 from dotenv import load_dotenv
+from app.config import (
+    DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME,
+    SECRET_KEY, CORS_ORIGINS
+)
 
 load_dotenv()
 
@@ -14,11 +18,11 @@ def create_app():
     
     # Configuración
     app.config['SQLALCHEMY_DATABASE_URI'] = (
-        f"mysql+pymysql://{os.getenv('DB_USER', 'mis_horas')}:"
-        f"{os.getenv('DB_PASSWORD', 'mis_horas')}@"
-        f"{os.getenv('DB_HOST', 'localhost')}:"
-        f"{os.getenv('DB_PORT', '3306')}/"
-        f"{os.getenv('DB_NAME', 'mis_horas')}"
+        f"mysql+pymysql://{DB_USER}:"
+        f"{DB_PASSWORD}@"
+        f"{DB_HOST}:"
+        f"{DB_PORT}/"
+        f"{DB_NAME}"
     )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
@@ -29,14 +33,14 @@ def create_app():
         'pool_pre_ping': True,  # Verifica la conexión antes de usar
         'pool_recycle': 3600,    # Recicla conexiones cada hora
     }
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+    app.config['SECRET_KEY'] = SECRET_KEY
     
     # Inicializar extensiones
     db.init_app(app)
     
     # CORS
-    cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:3000,http://localhost:4321').split(',')
-    CORS(app, origins=cors_origins, supports_credentials=True)
+    cors_origins_list = CORS_ORIGINS.split(',')
+    CORS(app, origins=cors_origins_list, supports_credentials=True)
     
     # Registrar blueprints
     from app.routes import auth_bp, proyecto_bp, tarea_bp, dia_bp, usuario_bp

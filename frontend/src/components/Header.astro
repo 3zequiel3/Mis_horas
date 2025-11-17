@@ -13,7 +13,6 @@ const { children } = Astro.props;
         <h1>🕒 Mis Horas</h1>
       </div>
       <div class="nav-menu">
-        <a href="/" class="nav-link">Inicio</a>
         <a href="/dashboard" class="nav-link">Dashboard</a>
         <a href="/proyectos" class="nav-link">Proyectos</a>
         <a href="/nuevo-proyecto" class="nav-link nav-link-primary">+ Nuevo</a>
@@ -131,38 +130,23 @@ const { children } = Astro.props;
 </style>
 
 <script>
-  import Swal from 'sweetalert2';
+  import { AlertUtils } from '../utils/swal';
   import { authHandlers } from '../handlers/auth';
 
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
-    const result = await Swal.fire({
-      title: '¿Cerrar Sesión?',
-      text: 'Serás desconectado de tu cuenta',
-      icon: 'question',
-      background: '#0f1419',
-      color: '#c8c8c8',
-      confirmButtonColor: '#667eea',
-      cancelButtonColor: '#2d3746',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, cerrar sesión',
-      cancelButtonText: 'Cancelar',
-      iconColor: '#667eea',
-    });
+    const result = await AlertUtils.confirm(
+      '¿Cerrar Sesión?',
+      'Serás desconectado de tu cuenta',
+      'Sí, cerrar sesión',
+      'Cancelar'
+    );
 
     if (result.isConfirmed) {
       try {
         await authHandlers.logout();
       } catch (error) {
         console.error('Error al cerrar sesión:', error);
-        await Swal.fire({
-          title: 'Error',
-          text: 'No se pudo cerrar la sesión',
-          icon: 'error',
-          background: '#0f1419',
-          color: '#c8c8c8',
-          confirmButtonColor: '#ef4444',
-          iconColor: '#ef4444',
-        });
+        await AlertUtils.error('Error', 'No se pudo cerrar la sesión');
       }
     }
   });
