@@ -10,6 +10,7 @@ from app.routes.proyecto import proyecto_bp
 from app.routes.tarea import tarea_bp
 from app.routes.dia import dia_bp
 from app.routes.usuario import usuario_bp
+from app.routes.empleado import empleado_bp
 
 auth_bp = Blueprint('auth', __name__)
 

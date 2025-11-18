@@ -7,14 +7,18 @@ import { ApiService } from './api';
  */
 export class DiaService extends ApiService {
   /**
-   * Obtiene todos los días de un mes específico
+   * Obtiene todos los días de un mes específico, opcionalmente filtrados por empleado
    */
   static async getDiasMes(
     proyecto_id: number,
     anio: number,
-    mes: number
+    mes: number,
+    empleado_id?: number
   ): Promise<Dia[]> {
-    return this.get(`/api/dias/mes/${proyecto_id}/${anio}/${mes}`);
+    const url = empleado_id 
+      ? `/api/dias/mes/${proyecto_id}/${anio}/${mes}?empleado_id=${empleado_id}`
+      : `/api/dias/mes/${proyecto_id}/${anio}/${mes}`;
+    return this.get(url);
   }
 
   /**

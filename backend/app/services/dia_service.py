@@ -8,13 +8,21 @@ from app.utils.formatters import formato_a_horas, horas_a_formato
 
 class DiaService:
     @staticmethod
-    def obtener_dias_mes(proyecto_id: int, anio: int, mes: int):
-        """Obtiene días del mes"""
-        return Dia.query.filter(
+    def obtener_dias_mes(proyecto_id: int, anio: int, mes: int, empleado_id: int = None):
+        """Obtiene días del mes, opcionalmente filtrados por empleado"""
+        query = Dia.query.filter(
             Dia.proyecto_id == proyecto_id,
             func.extract('year', Dia.fecha) == anio,
             func.extract('month', Dia.fecha) == mes
-        ).order_by(Dia.fecha.asc()).all()
+        )
+        
+        if empleado_id is not None:
+            query = query.filter(Dia.empleado_id == empleado_id)
+        else:
+            # Para proyectos personales, solo días sin empleado
+            query = query.filter(Dia.empleado_id.is_(None))
+        
+        return query.order_by(Dia.fecha.asc()).all()
     
     @staticmethod
     def obtener_dia_por_id(dia_id: int):

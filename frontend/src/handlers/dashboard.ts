@@ -56,7 +56,12 @@ export const DashboardHandler = {
         item.style.cursor = 'pointer';
         item.onclick = () => {
           localStorage.setItem('selected_proyecto', JSON.stringify(proyecto));
-          window.location.href = `/proyecto/${proyecto.id}`;
+          // Redirigir según tipo de proyecto
+          if (proyecto.tipo_proyecto === 'empleados') {
+            window.location.href = `/tablero-empleados/${proyecto.id}`;
+          } else {
+            window.location.href = `/proyecto/${proyecto.id}`;
+          }
         };
 
         container.appendChild(item);

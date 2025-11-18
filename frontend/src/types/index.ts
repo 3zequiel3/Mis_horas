@@ -37,6 +37,9 @@ export interface Proyecto {
   mes: number;
   usuario_id: number;
   activo: boolean;
+  tipo_proyecto: 'personal' | 'empleados';
+  horas_reales_activas: boolean;
+  empleados?: Empleado[];
   fecha_creacion?: string;
   fecha_actualizacion?: string;
 }
@@ -46,6 +49,18 @@ export interface CreateProyectoRequest {
   descripcion?: string;
   anio: number;
   mes: number;
+  tipo_proyecto: 'personal' | 'empleados';
+  empleados?: string[];
+  horas_reales_activas?: boolean;
+}
+
+// ==================== EMPLEADO ====================
+export interface Empleado {
+  id: number;
+  nombre: string;
+  proyecto_id: number;
+  activo: boolean;
+  fecha_creacion?: string;
 }
 
 export interface Estadisticas {
@@ -64,6 +79,7 @@ export interface Dia {
   horas_trabajadas: number;
   horas_reales: number;
   proyecto_id: number;
+  empleado_id?: number;
   creado_en?: string;
   actualizado_en?: string;
 }

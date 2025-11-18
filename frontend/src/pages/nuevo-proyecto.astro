@@ -4,7 +4,7 @@ import Header from '../components/Header.astro';
 import ProtectedRoute from '../components/ProtectedRoute.astro';
 import '../styles/nuevo-proyecto.css';
 
-const pageTitle = 'Nuevo Proyecto - Mis Horas';
+const pageTitle = 'Nuevo Tablero - Mis Horas';
 ---
 
 <BaseLayout title={pageTitle}>
@@ -14,13 +14,13 @@ const pageTitle = 'Nuevo Proyecto - Mis Horas';
     <div class="nuevo-proyecto-container">
       <div class="proyecto-card">
         <div class="card-header">
-          <h1>Crear Nuevo Proyecto</h1>
-          <p>Completa los campos para crear un nuevo proyecto de trabajo</p>
+          <h1>Crear Nuevo Tablero</h1>
+          <p>Completa los campos para crear un nuevo tablero de trabajo</p>
         </div>
 
         <form id="proyecto-form" class="proyecto-form">
           <div class="form-group">
-            <label for="nombre">Nombre del Proyecto *</label>
+            <label for="nombre">Nombre del Tablero *</label>
             <input
               type="text"
               id="nombre"
@@ -59,18 +59,44 @@ const pageTitle = 'Nuevo Proyecto - Mis Horas';
           </div>
 
           <div class="form-group">
+            <label for="tipo_proyecto">Tipo de Tablero *</label>
+            <select id="tipo_proyecto" name="tipo_proyecto" required>
+              <option value="personal">Trabajo Personal</option>
+              <option value="empleados">Con Empleados</option>
+            </select>
+          </div>
+
+          <div id="empleados-container" class="form-group" style="display: none;">
+            <label>Empleados</label>
+            <div id="empleados-list">
+              <div class="empleado-item">
+                <input type="text" class="empleado-input" placeholder="Nombre del empleado" maxlength="100" />
+                <button type="button" class="btn-remove-empleado">Eliminar</button>
+              </div>
+            </div>
+            <button type="button" id="add-empleado-btn" class="btn btn-secondary-outline">+ Agregar Empleado</button>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="horas_reales_activas" name="horas_reales_activas" />
+              Activar Horas Reales (para proyectos con empleados)
+            </label>
+          </div>
+
+          <div class="form-group">
             <label for="descripcion">Descripción (Opcional)</label>
             <textarea
               id="descripcion"
               name="descripcion"
-              placeholder="Describe el propósito del proyecto..."
+              placeholder="Describe el propósito del tablero..."
               rows="4"
             ></textarea>
           </div>
 
           <div class="form-actions">
             <button type="submit" class="btn btn-primary btn-lg">
-              Crear Proyecto
+              Crear Tablero
             </button>
             <a href="/proyectos" class="btn btn-secondary btn-lg">
               Cancelar
@@ -79,11 +105,11 @@ const pageTitle = 'Nuevo Proyecto - Mis Horas';
         </form>
 
         <div id="success-message" class="alert alert-success" style="display: none;">
-          ✓ Proyecto creado exitosamente
+          ✓ Tablero creado exitosamente
         </div>
 
         <div id="error-message" class="alert alert-error" style="display: none;">
-          ✗ Error al crear el proyecto
+          ✗ Error al crear el tablero
         </div>
       </div>
     </div>
@@ -105,6 +131,43 @@ const pageTitle = 'Nuevo Proyecto - Mis Horas';
   // Inicializar select de años y meses
   ProyectoFormHandler.inicializarAnios();
   ProyectoFormHandler.inicializarMes();
+
+  // Gestión de tipo de proyecto
+  const tipoProyectoSelect = document.getElementById('tipo_proyecto') as HTMLSelectElement;
+  const empleadosContainer = document.getElementById('empleados-container') as HTMLElement;
+  const addEmpleadoBtn = document.getElementById('add-empleado-btn') as HTMLButtonElement;
+  const empleadosList = document.getElementById('empleados-list') as HTMLElement;
+
+  tipoProyectoSelect?.addEventListener('change', () => {
+    if (tipoProyectoSelect.value === 'empleados') {
+      empleadosContainer.style.display = 'block';
+    } else {
+      empleadosContainer.style.display = 'none';
+    }
+  });
+
+  // Agregar empleado
+  addEmpleadoBtn?.addEventListener('click', () => {
+    const empleadoItem = document.createElement('div');
+    empleadoItem.className = 'empleado-item';
+    empleadoItem.innerHTML = `
+      <input type="text" class="empleado-input" placeholder="Nombre del empleado" maxlength="100" />
+      <button type="button" class="btn-remove-empleado">Eliminar</button>
+    `;
+    empleadosList.appendChild(empleadoItem);
+
+    // Agregar evento de eliminar
+    const removeBtn = empleadoItem.querySelector('.btn-remove-empleado');
+    removeBtn?.addEventListener('click', () => {
+      empleadoItem.remove();
+    });
+  });
+
+  // Eventos de eliminar para el primer empleado
+  document.querySelector('.btn-remove-empleado')?.addEventListener('click', function(e) {
+    const target = e.target as HTMLElement;
+    target.closest('.empleado-item')?.remove();
+  });
 
   // Manejo del formulario
   const form = document.getElementById('proyecto-form') as HTMLFormElement;

@@ -29,12 +29,25 @@ def create_proyecto(user_id):
     if not data or not all(k in data for k in ['nombre', 'anio', 'mes']):
         return jsonify({'error': 'Campos requeridos: nombre, anio, mes'}), 400
     
+    # Validar tipo de proyecto
+    tipo_proyecto = data.get('tipo_proyecto', 'personal')
+    if tipo_proyecto not in ['personal', 'empleados']:
+        return jsonify({'error': 'tipo_proyecto debe ser "personal" o "empleados"'}), 400
+    
+    # Si es proyecto con empleados, validar que se envíen empleados
+    empleados = data.get('empleados', [])
+    if tipo_proyecto == 'empleados' and not empleados:
+        return jsonify({'error': 'Se requiere al menos un empleado para proyectos con empleados'}), 400
+    
     proyecto = ProyectoService.crear_proyecto(
         nombre=data['nombre'],
         descripcion=data.get('descripcion', ''),
         anio=data['anio'],
         mes=data['mes'],
-        usuario_id=user_id
+        usuario_id=user_id,
+        tipo_proyecto=tipo_proyecto,
+        empleados=empleados,
+        horas_reales_activas=data.get('horas_reales_activas', False)
     )
     
     return jsonify(proyecto.to_dict()), 201
@@ -103,3 +116,23 @@ def delete_proyecto(user_id, proyecto_id):
         return jsonify({'error': 'Proyecto no encontrado'}), 404
     
     return jsonify({'message': 'Proyecto eliminado'}), 200
+
+@proyecto_bp.route('/<int:proyecto_id>/configuracion', methods=['PUT'])
+@token_required
+def update_configuracion(user_id, proyecto_id):
+    """Actualiza configuración del proyecto"""
+    data = request.get_json()
+    
+    proyecto = ProyectoService.obtener_proyecto_por_id(proyecto_id)
+    if not proyecto:
+        return jsonify({'error': 'Proyecto no encontrado'}), 404
+    
+    from app import db
+    
+    # Actualizar configuración
+    if 'horas_reales_activas' in data:
+        proyecto.horas_reales_activas = data['horas_reales_activas']
+    
+    db.session.commit()
+    
+    return jsonify(proyecto.to_dict()), 200

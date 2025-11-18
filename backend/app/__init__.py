@@ -47,12 +47,13 @@ def create_app():
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
     
     # Registrar blueprints
-    from app.routes import auth_bp, proyecto_bp, tarea_bp, dia_bp, usuario_bp
+    from app.routes import auth_bp, proyecto_bp, tarea_bp, dia_bp, usuario_bp, empleado_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(proyecto_bp, url_prefix='/api/proyectos')
     app.register_blueprint(tarea_bp, url_prefix='/api/tareas')
     app.register_blueprint(dia_bp, url_prefix='/api/dias')
     app.register_blueprint(usuario_bp, url_prefix='/api/usuarios')
+    app.register_blueprint(empleado_bp, url_prefix='/api')
     
     # Crear tablas de manera segura (lazy loading)
     @app.before_request

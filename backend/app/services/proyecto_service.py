@@ -2,6 +2,7 @@ from app import db
 from app.models.proyecto import Proyecto
 from app.models.dia import Dia
 from app.models.usuario import Usuario
+from app.models.empleado import Empleado
 from sqlalchemy import func
 from datetime import date, timedelta
 from app.utils.constants import DIAS_ES
@@ -11,7 +12,9 @@ from datetime import datetime as dt
 
 class ProyectoService:
     @staticmethod
-    def crear_proyecto(nombre: str, descripcion: str, anio: int, mes: int, usuario_id: int):
+    def crear_proyecto(nombre: str, descripcion: str, anio: int, mes: int, usuario_id: int, 
+                      tipo_proyecto: str = 'personal', empleados: list = None, 
+                      horas_reales_activas: bool = False):
         """Crea un nuevo proyecto"""
         proyecto = Proyecto(
             nombre=nombre,
@@ -19,12 +22,25 @@ class ProyectoService:
             anio=anio,
             mes=mes,
             usuario_id=usuario_id,
-            activo=True
+            activo=True,
+            tipo_proyecto=tipo_proyecto,
+            horas_reales_activas=horas_reales_activas
         )
         
         db.session.add(proyecto)
         db.session.commit()
         db.session.refresh(proyecto)
+        
+        # Si es proyecto con empleados, crear empleados
+        if tipo_proyecto == 'empleados' and empleados:
+            for nombre_empleado in empleados:
+                empleado = Empleado(
+                    nombre=nombre_empleado,
+                    proyecto_id=proyecto.id,
+                    activo=True
+                )
+                db.session.add(empleado)
+            db.session.commit()
         
         # Generar días
         ProyectoService.generar_dias_proyecto(proyecto)
@@ -40,18 +56,38 @@ class ProyectoService:
         
         month_range = calendar.monthrange(proyecto.anio, proyecto.mes)[1]
         
-        for day in range(1, month_range + 1):
-            fecha = dt(proyecto.anio, proyecto.mes, day).date()
-            weekday = fecha.weekday()
-            
-            dia = Dia(
-                fecha=fecha,
-                dia_semana=DIAS_ES[weekday],
-                horas_trabajadas=0,
-                horas_reales=0,
-                proyecto_id=proyecto.id,
-            )
-            db.session.add(dia)
+        if proyecto.tipo_proyecto == 'personal':
+            # Proyecto personal: crear días sin empleado
+            for day in range(1, month_range + 1):
+                fecha = dt(proyecto.anio, proyecto.mes, day).date()
+                weekday = fecha.weekday()
+                
+                dia = Dia(
+                    fecha=fecha,
+                    dia_semana=DIAS_ES[weekday],
+                    horas_trabajadas=0,
+                    horas_reales=0,
+                    proyecto_id=proyecto.id,
+                    empleado_id=None
+                )
+                db.session.add(dia)
+        else:
+            # Proyecto con empleados: crear días para cada empleado
+            empleados = Empleado.query.filter_by(proyecto_id=proyecto.id).all()
+            for empleado in empleados:
+                for day in range(1, month_range + 1):
+                    fecha = dt(proyecto.anio, proyecto.mes, day).date()
+                    weekday = fecha.weekday()
+                    
+                    dia = Dia(
+                        fecha=fecha,
+                        dia_semana=DIAS_ES[weekday],
+                        horas_trabajadas=0,
+                        horas_reales=0,
+                        proyecto_id=proyecto.id,
+                        empleado_id=empleado.id
+                    )
+                    db.session.add(dia)
         
         db.session.commit()
     
@@ -100,18 +136,39 @@ class ProyectoService:
         
         # Crear días
         month_range = calendar.monthrange(anio, mes)[1]
-        for day in range(1, month_range + 1):
-            fecha = dt(anio, mes, day).date()
-            weekday = fecha.weekday()
-            
-            dia = Dia(
-                fecha=fecha,
-                dia_semana=DIAS_ES[weekday],
-                horas_trabajadas=0,
-                horas_reales=0,
-                proyecto_id=proyecto_id,
-            )
-            db.session.add(dia)
+        
+        if proyecto.tipo_proyecto == 'personal':
+            # Proyecto personal
+            for day in range(1, month_range + 1):
+                fecha = dt(anio, mes, day).date()
+                weekday = fecha.weekday()
+                
+                dia = Dia(
+                    fecha=fecha,
+                    dia_semana=DIAS_ES[weekday],
+                    horas_trabajadas=0,
+                    horas_reales=0,
+                    proyecto_id=proyecto_id,
+                    empleado_id=None
+                )
+                db.session.add(dia)
+        else:
+            # Proyecto con empleados
+            empleados = Empleado.query.filter_by(proyecto_id=proyecto_id).all()
+            for empleado in empleados:
+                for day in range(1, month_range + 1):
+                    fecha = dt(anio, mes, day).date()
+                    weekday = fecha.weekday()
+                    
+                    dia = Dia(
+                        fecha=fecha,
+                        dia_semana=DIAS_ES[weekday],
+                        horas_trabajadas=0,
+                        horas_reales=0,
+                        proyecto_id=proyecto_id,
+                        empleado_id=empleado.id
+                    )
+                    db.session.add(dia)
         
         db.session.commit()
         return True

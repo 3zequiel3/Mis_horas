@@ -7,8 +7,9 @@ dia_bp = Blueprint('dias', __name__)
 @dia_bp.route('/mes/<int:proyecto_id>/<int:anio>/<int:mes>', methods=['GET'])
 @token_required
 def get_dias_mes(user_id, proyecto_id, anio, mes):
-    """Obtiene días de un mes específico"""
-    dias = DiaService.obtener_dias_mes(proyecto_id, anio, mes)
+    """Obtiene días de un mes específico, opcionalmente filtrados por empleado"""
+    empleado_id = request.args.get('empleado_id', type=int)
+    dias = DiaService.obtener_dias_mes(proyecto_id, anio, mes, empleado_id)
     return jsonify([d.to_dict() for d in dias]), 200
 
 @dia_bp.route('/<int:dia_id>', methods=['GET'])

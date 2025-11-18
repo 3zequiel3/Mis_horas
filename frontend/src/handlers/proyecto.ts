@@ -11,6 +11,7 @@ import { querySelector, querySelectorAll } from '../utils/dom';
 import { showErrorModal, showLoadingModal, closeModal } from '../utils/modals';
 import { MESES_ES, horasAFormato } from '../utils/formatters';
 import { MultiSelectTable } from '../utils/multiselect';
+import Swal from 'sweetalert2';
 
 export interface ProyectoDetailState {
   proyectoActual: Proyecto | null;
@@ -143,17 +144,247 @@ export async function loadProyecto(): Promise<void> {
     updateProjectHeader();
     updateProjectCard();
 
+    // Verificar si es proyecto con empleados y redirigir a la vista correcta
+    if (state.proyectoActual.tipo_proyecto === 'empleados') {
+      window.location.href = `/tablero-empleados/${proyectoId}`;
+      return;
+    }
+
     // Establecer mes y año
     state.mesActual = state.proyectoActual.mes;
     state.anioActual = state.proyectoActual.anio;
 
-    // Cargar datos
+    // Cargar datos para proyecto personal
     await loadDias();
     await loadTareas();
     updateTotalPanel();
   } catch (error) {
     console.error('Error cargando proyecto:', error);
     showErrorModal('Error', 'No se pudo cargar el proyecto');
+  }
+}
+
+/**
+ * Carga proyecto con empleados - muestra tabla por cada empleado
+ */
+async function loadProyectoConEmpleados(): Promise<void> {
+  try {
+    if (!state.proyectoActual || !state.proyectoActual.empleados) return;
+
+    const { EmpleadosService } = await import('../services/empleados');
+    const empleados = await EmpleadosService.getEmpleadosByProyecto(state.proyectoActual.id);
+
+    const diasColumn = document.querySelector('.dias-column');
+    if (!diasColumn) return;
+
+    // Limpiar contenido
+    diasColumn.innerHTML = '';
+
+    // Crear sección por cada empleado
+    for (let i = 0; i < empleados.length; i++) {
+      const empleado = empleados[i];
+      const isFirst = i === 0; // El primero estará abierto por defecto
+      
+      const diasEmpleado = await DiaService.getDiasMes(
+        state.proyectoActual.id,
+        state.anioActual,
+        state.mesActual,
+        empleado.id
+      );
+
+      // Obtener semana actual
+      const semanaFechas = getSemanActual();
+      const diasSemana = diasEmpleado.filter((dia) => {
+        const diaFecha = new Date(dia.fecha).toISOString().split('T')[0];
+        return semanaFechas.includes(diaFecha);
+      });
+
+      // Calcular totales
+      const totalTrabajadas = diasSemana.reduce((sum, dia) => sum + (dia.horas_trabajadas || 0), 0);
+      const totalReales = diasSemana.reduce((sum, dia) => sum + (dia.horas_reales || 0), 0);
+
+      // Crear HTML para el empleado con acordeón
+      const seccionHTML = `
+        <div class="section empleado-section" data-empleado-id="${empleado.id}">
+          <div class="empleado-accordion-header ${isFirst ? 'active' : ''}" data-empleado-accordion="${empleado.id}">
+            <h2>${empleado.nombre}</h2>
+          </div>
+          
+          <div class="empleado-accordion-content ${isFirst ? 'active' : ''}" data-empleado-content="${empleado.id}">
+            <div class="empleado-content-inner">
+              <div class="table-container">
+                <table class="dias-table">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Día</th>
+                      <th>Horas Trabajadas</th>
+                      ${state.proyectoActual.horas_reales_activas ? '<th>Horas Reales</th>' : ''}
+                    </tr>
+                  </thead>
+                  <tbody id="dias-tbody-${empleado.id}">
+                    ${renderDiasEmpleado(diasSemana, state.proyectoActual.horas_reales_activas)}
+                  </tbody>
+                  <tfoot>
+                    <tr class="totals-row">
+                      <td><strong>Total:</strong></td>
+                      <td></td>
+                      <td><strong>${horasAFormato(totalTrabajadas)}</strong></td>
+                      ${state.proyectoActual.horas_reales_activas ? `<td><strong>${horasAFormato(totalReales)}</strong></td>` : ''}
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <div class="empleado-actions">
+                <button class="btn btn-danger btn-export-empleado" data-empleado-id="${empleado.id}" data-empleado-nombre="${empleado.nombre}">
+                  📥 Exportar PDF - ${empleado.nombre}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      diasColumn.insertAdjacentHTML('beforeend', seccionHTML);
+    }
+
+    // Agregar event listeners para acordeones
+    document.querySelectorAll('.empleado-accordion-header').forEach(header => {
+      header.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const empleadoId = target.dataset.empleadoAccordion;
+        
+        // Toggle del acordeón clickeado
+        const content = document.querySelector(`[data-empleado-content="${empleadoId}"]`) as HTMLElement;
+        const isActive = target.classList.contains('active');
+        
+        if (isActive) {
+          target.classList.remove('active');
+          content.classList.remove('active');
+        } else {
+          target.classList.add('active');
+          content.classList.add('active');
+        }
+      });
+    });
+
+    // Agregar event listeners para exportar
+    document.querySelectorAll('.btn-export-empleado').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const empleadoId = target.dataset.empleadoId;
+        const empleadoNombre = target.dataset.empleadoNombre;
+        if (empleadoId && empleadoNombre) {
+          exportarPDFEmpleado(parseInt(empleadoId), empleadoNombre);
+        }
+      });
+    });
+
+    // Agregar event listeners para inputs de horas
+    document.querySelectorAll('.horas-input').forEach(input => {
+      input.addEventListener('blur', async (e) => {
+        const target = e.target as HTMLInputElement;
+        const diaId = parseInt(target.dataset.diaId || '0');
+        const horas = target.value;
+
+        if (diaId && horas) {
+          try {
+            await DiaService.updateHoras(diaId, horas);
+            // Recargar para actualizar totales
+            await loadProyectoConEmpleados();
+          } catch (error) {
+            console.error('Error actualizando horas:', error);
+          }
+        }
+      });
+
+      // También al presionar Enter
+      input.addEventListener('keypress', (e: Event) => {
+        const keyEvent = e as KeyboardEvent;
+        if (keyEvent.key === 'Enter') {
+          (e.target as HTMLInputElement).blur();
+        }
+      });
+    });
+
+  } catch (error) {
+    console.error('Error cargando proyecto con empleados:', error);
+  }
+}
+
+/**
+ * Renderiza los días de un empleado
+ */
+function renderDiasEmpleado(dias: Dia[], mostrarHorasReales: boolean): string {
+  if (!dias.length) {
+    return `<tr><td colspan="${mostrarHorasReales ? 4 : 3}" class="text-center">No hay días para mostrar</td></tr>`;
+  }
+
+  return dias.map(dia => {
+    const fecha = new Date(dia.fecha);
+    const horasTrabajadas = horasAFormato(dia.horas_trabajadas || 0);
+    const horasReales = horasAFormato(dia.horas_reales || 0);
+
+    return `
+      <tr data-dia-id="${dia.id}">
+        <td>${fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}</td>
+        <td>${dia.dia_semana}</td>
+        <td>
+          <input 
+            type="text" 
+            class="horas-input" 
+            value="${horasTrabajadas}" 
+            data-dia-id="${dia.id}"
+            placeholder="00:00"
+          />
+        </td>
+        ${mostrarHorasReales ? `<td>${horasReales}</td>` : ''}
+      </tr>
+    `;
+  }).join('');
+}
+
+/**
+ * Exporta PDF de un empleado específico
+ */
+async function exportarPDFEmpleado(empleadoId: number, empleadoNombre: string): Promise<void> {
+  try {
+    const { AlertUtils } = await import('../utils/swal');
+    AlertUtils.loading('Generando PDF...');
+
+    // Obtener todos los días del empleado del mes
+    const dias = await DiaService.getDiasMes(
+      state.proyectoActual!.id,
+      state.anioActual,
+      state.mesActual,
+      empleadoId
+    );
+
+    // Obtener tareas (filtrar por días del empleado)
+    const todasTareas = await TareaService.getTareasProyecto(state.proyectoActual!.id);
+    const tareasEmpleado = todasTareas.filter(tarea => 
+      tarea.dias && tarea.dias.some((dia: Dia) => dia.empleado_id === empleadoId)
+    );
+
+    const { generateTasksPDF } = await import('../utils/pdf');
+    const mes = MESES_ES[state.mesActual as keyof typeof MESES_ES] || `Mes ${state.mesActual}`;
+    
+    await generateTasksPDF(
+      `${state.proyectoActual!.nombre} - ${empleadoNombre}`,
+      mes,
+      state.anioActual,
+      tareasEmpleado,
+      dias
+    );
+
+    AlertUtils.close();
+    await AlertUtils.success('Éxito', 'PDF descargado correctamente');
+  } catch (error) {
+    console.error('Error generando PDF:', error);
+    const { AlertUtils } = await import('../utils/swal');
+    AlertUtils.close();
+    await AlertUtils.error('Error', 'No se pudo generar el PDF');
   }
 }
 
@@ -678,8 +909,8 @@ function initMultiSelectForTable(
  * Inicializa el modo de selección múltiple para las tablas
  */
 export function initMultiSelect(): void {
-  // Agregar controles a la sección de "Esta Semana"
-  const diasSection = querySelector<HTMLElement>('.dias-column .section');
+  // Agregar controles a la sección de "Esta Semana" (solo para proyectos personales, no empleados)
+  const diasSection = querySelector<HTMLElement>('.dias-column .section:not(.empleado-section)');
   if (diasSection) {
     // Buscar el h2 y convertir su contenedor en section-header
     const h2 = diasSection.querySelector('h2');
@@ -727,6 +958,75 @@ export function cleanupMultiSelect(): void {
 // Exports
 // ============================================================
 
+async function mostrarModalConfiguracion(): Promise<void> {
+  const { value: formValues } = await Swal.fire({
+    title: 'Configuración del Proyecto',
+    html: `
+      <div style="text-align: left; padding: 10px;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <input 
+            type="checkbox" 
+            id="horas-reales-checkbox" 
+            ${state.proyectoActual?.horas_reales_activas ? 'checked' : ''}
+            style="width: 18px; height: 18px; cursor: pointer;"
+          >
+          <span style="font-size: 15px; color: #c8c8c8;">Activar columna de Horas Reales</span>
+        </label>
+        <p style="color: #9ca3af; font-size: 13px; margin-top: 10px; margin-left: 28px;">
+          Cuando está activada, se mostrará una columna adicional para registrar las horas reales trabajadas.
+        </p>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Guardar',
+    cancelButtonText: 'Cancelar',
+    background: '#0f1419',
+    color: '#c8c8c8',
+    confirmButtonColor: '#667eea',
+    cancelButtonColor: '#2d3746',
+    preConfirm: () => {
+      const checkbox = document.getElementById('horas-reales-checkbox') as HTMLInputElement;
+      return {
+        horas_reales_activas: checkbox.checked
+      };
+    }
+  });
+
+  if (formValues && state.proyectoActual) {
+    try {
+      await ProyectoService.updateConfiguracion(
+        state.proyectoActual.id,
+        { horas_reales_activas: formValues.horas_reales_activas }
+      );
+      
+      await Swal.fire({
+        icon: 'success',
+        title: 'Configuración actualizada',
+        text: 'La página se recargará para aplicar los cambios',
+        showConfirmButton: false,
+        timer: 1500,
+        background: '#0f1419',
+        color: '#c8c8c8',
+        iconColor: '#10b981'
+      });
+
+      // Recargar página completa para aplicar cambios
+      window.location.reload();
+    } catch (error) {
+      console.error('Error actualizando configuración:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo actualizar la configuración',
+        background: '#0f1419',
+        color: '#c8c8c8',
+        iconColor: '#ef4444',
+        confirmButtonColor: '#ef4444'
+      });
+    }
+  }
+}
+
 export const proyectoHandlers = {
   state,
   loadProyecto,
@@ -735,4 +1035,5 @@ export const proyectoHandlers = {
   updateTotalPanel,
   initMultiSelect,
   cleanupMultiSelect,
+  mostrarModalConfiguracion,
 };

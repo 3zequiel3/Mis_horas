@@ -1,0 +1,496 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Header from '../../components/Header.astro';
+import ProtectedRoute from '../../components/ProtectedRoute.astro';
+import '../../styles/tabla.css';
+import '../../styles/tareas.css';
+import '../../styles/sidebar-meses.css';
+import '../../styles/empleados-btn.css';
+import '../../styles/tablero-empleados.css';
+
+const pageTitle = 'Tablero Empleados - Mis Horas';
+---
+
+<BaseLayout title={pageTitle}>
+  <ProtectedRoute>
+    <Header />
+    <div class="container">
+      <div class="proyecto-view">
+        <!-- Header del Proyecto -->
+        <div class="proyecto-header">
+          <div>
+            <h1 id="proyecto-nombre">Cargando...</h1>
+            <p id="proyecto-periodo" class="proyecto-periodo"></p>
+          </div>
+          <div class="header-actions">
+            <span id="proyecto-status" class="badge"></span>
+            <button id="config-btn" class="btn btn-secondary">⚙️ Configuración</button>
+            <button id="finalizar-btn" class="btn btn-success">✅ Finalizar</button>
+          </div>
+        </div>
+
+        <!-- Contenido Principal con Sidebar -->
+        <div class="proyecto-wrapper">
+          <!-- Sidebar Izquierdo: Meses + Tareas -->
+          <aside class="meses-sidebar">
+            <!-- Panel de Meses -->
+            <div class="sidebar-header">
+              <h3>📅 Meses</h3>
+              <p id="proyecto-nombre-sidebar">Cargando...</p>
+            </div>
+
+            <button class="add-mes-btn" id="add-mes-btn">+ Agregar mes</button>
+
+            <div class="meses-list" id="meses-list">
+              <div class="mes-item loading">Cargando meses...</div>
+            </div>
+
+            <div class="mes-info" id="mes-info" style="display: none;">
+              <strong>Mes actual:</strong> <span id="mes-info-text"></span>
+            </div>
+
+            <!-- Panel de Tareas (mismo estilo que proyecto) -->
+            <div class="tareas-panel-sidebar">
+              <div class="tareas-header">
+                <h2>📋 Tareas <span id="tareas-count" class="tareas-badge">0</span></h2>
+                <button id="nueva-tarea-btn" class="btn btn-small">+ Nueva tarea</button>
+              </div>
+
+              <!-- Lista de Tareas -->
+              <div id="tareas-list" class="tareas-list">
+                <div class="empty-tareas">
+                  <p>📭 Sin tareas aún</p>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <!-- Contenido Principal: Grid con Empleados y Panel Lateral -->
+          <div class="tablero-empleados-grid">
+            <!-- Columna Principal: Acordeones de Empleados -->
+            <div class="empleados-main-column">
+              <div id="empleados-container">
+                <div class="loading-row">
+                  <p>Cargando empleados...</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel Lateral: Información y Acciones -->
+            <div class="empleados-actions-panel">
+              <!-- Información del Tablero -->
+              <div class="tablero-info-card">
+                <h3 id="tablero-card-nombre">Tablero</h3>
+                <p id="tablero-card-descripcion">Sin descripción</p>
+                <div class="tablero-stats">
+                  <div class="tablero-stat-item">
+                    <span class="tablero-stat-label">Empleados</span>
+                    <span class="tablero-stat-value" id="total-empleados">0</span>
+                  </div>
+                  <div class="tablero-stat-item">
+                    <span class="tablero-stat-label">Total Horas</span>
+                    <span class="tablero-stat-value" id="total-horas">00:00</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Gestión de Empleados -->
+              <div class="empleados-management-panel">
+                <h3>👥 Gestionar Empleados</h3>
+                <div class="empleados-management-list" id="empleados-management-list">
+                  <p style="text-align: center; color: var(--text-secondary);">Cargando...</p>
+                </div>
+                <button class="quick-action-btn primary" id="add-empleado-btn">
+                  ➕ Agregar Empleado
+                </button>
+              </div>
+
+              <!-- Acciones Rápidas -->
+              <div class="quick-actions-panel">
+                <h3>⚡ Acciones Rápidas</h3>
+                <div class="quick-actions-grid">
+                  <button class="quick-action-btn" id="export-all-btn">
+                    📥 Exportar Todo (PDF)
+                  </button>
+                  <button class="quick-action-btn" id="view-stats-btn">
+                    📊 Ver Estadísticas
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal agregar mes -->
+        <div class="add-mes-modal" id="add-mes-modal">
+          <form class="add-mes-form" id="add-mes-form">
+            <h3>Agregar Nuevo Mes</h3>
+            
+            <div class="form-group">
+              <label for="nuevo-mes-year">Año:</label>
+              <input type="number" id="nuevo-mes-year" min="2020" max="2100" required />
+            </div>
+
+            <div class="form-group">
+              <label for="nuevo-mes-mes">Mes:</label>
+              <select id="nuevo-mes-mes" required>
+                <option value="">Seleccione un mes</option>
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+              </select>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary">Agregar</button>
+              <button type="button" class="btn-secondary" id="close-add-mes">Cancelar</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Modal para ver mes completo de empleado -->
+        <div id="empleado-mes-modal" class="modal" style="display: none;">
+          <div class="modal-content modal-large">
+            <div class="modal-header">
+              <h3 id="empleado-mes-modal-title">Mes Completo - Empleado</h3>
+              <button class="modal-close" id="empleado-mes-modal-close">✕</button>
+            </div>
+            <div class="mes-modal-body">
+              <div class="table-container">
+                <table class="dias-table" id="empleado-mes-dias-table">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Día</th>
+                      <th>Horas Trabajadas</th>
+                      <th id="empleado-th-horas-reales">Horas Reales</th>
+                    </tr>
+                  </thead>
+                  <tbody id="empleado-mes-dias-tbody">
+                    <tr class="loading-row">
+                      <td colspan="4" class="text-center">Cargando días...</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="totals-row">
+                      <td><strong>Total del Mes:</strong></td>
+                      <td></td>
+                      <td><strong id="empleado-mes-total-trabajadas">00:00</strong></td>
+                      <td id="empleado-td-total-reales"><strong id="empleado-mes-total-reales">00:00</strong></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" id="empleado-mes-modal-close-btn">Cerrar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal para visualizar tarea -->
+        <div id="view-tarea-modal" class="modal" style="display: none;">
+          <div class="modal-content modal-tarea">
+            <div class="modal-header">
+              <h3 id="view-modal-title">Detalle de Tarea</h3>
+              <button class="modal-close" id="view-modal-close">✕</button>
+            </div>
+            <div class="modal-body" id="view-modal-body">
+              <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-primary" id="edit-from-view-btn">✏️ Editar</button>
+              <button class="btn btn-danger" id="delete-from-view-btn">🗑️ Eliminar</button>
+              <button class="btn btn-secondary" id="view-modal-close-btn">Cerrar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal para nueva tarea -->
+        <div id="tarea-modal" class="modal" style="display: none;">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 id="modal-title">Nueva Tarea</h3>
+              <button class="modal-close" id="modal-close">✕</button>
+            </div>
+            <form id="tarea-form">
+              <div class="form-group">
+                <label>Título *</label>
+                <input type="text" id="tarea-titulo" required />
+              </div>
+              <div class="form-group">
+                <label>Detalle</label>
+                <textarea id="tarea-detalle" rows="3"></textarea>
+              </div>
+              <div class="form-group">
+                <label>¿Qué falta?</label>
+                <textarea id="tarea-que-falta" rows="2"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Seleccionar Días</label>
+                <div class="dias-selector">
+                  <div id="dias-selected" class="dias-selected"></div>
+                  <select id="dias-select" class="dias-select">
+                    <option value="">Seleccione los días</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Crear Tarea</button>
+                <button type="button" class="btn btn-secondary" id="modal-cancel">Cancelar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div id="error-message" class="alert alert-error" style="display: none;"></div>
+      </div>
+    </div>
+  </ProtectedRoute>
+</BaseLayout>
+
+<script>
+  import { AuthService } from '../../services/auth';
+  import { ProyectoService } from '../../services/proyecto';
+  import { TareaService } from '../../services/tarea';
+  import { AlertUtils } from '../../utils/swal';
+  import { MESES_ES } from '../../utils/formatters';
+  import { MesesHandler } from '../../handlers/meses';
+  import { TareaHandler } from '../../handlers/tarea';
+  import { tableroEmpleadosHandlers } from '../../handlers/tablero-empleados';
+
+  // Verificar autenticación
+  if (!AuthService.isAuthenticated()) {
+    window.location.href = '/login';
+  }
+
+  // Exponer handlers globalmente
+  (window as any).tableroEmpleadosHandlers = tableroEmpleadosHandlers;
+
+  // Referencias a modales y elementos
+  const modal = document.getElementById('tarea-modal')!;
+  const viewModal = document.getElementById('view-tarea-modal')!;
+  const form = document.getElementById('tarea-form') as HTMLFormElement;
+  const diasSelect = document.getElementById('dias-select') as HTMLSelectElement;
+
+  // ========== GESTIÓN DE MESES ==========
+
+  // Agregar mes
+  document.getElementById('add-mes-btn')?.addEventListener('click', () => {
+    MesesHandler.openAddMesModal();
+  });
+
+  document.getElementById('close-add-mes')?.addEventListener('click', () => {
+    MesesHandler.closeAddMesModal();
+  });
+
+  document.getElementById('add-mes-modal')?.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('add-mes-modal')) {
+      MesesHandler.closeAddMesModal();
+    }
+  });
+
+  // Formulario agregar mes
+  document.getElementById('add-mes-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const anio = parseInt((document.getElementById('nuevo-mes-year') as HTMLInputElement).value);
+      const mes = parseInt((document.getElementById('nuevo-mes-mes') as HTMLSelectElement).value);
+
+      if (!anio || !mes) {
+        await AlertUtils.error('Error', 'Por favor seleccione un mes y año válidos');
+        return;
+      }
+
+      const proyecto = tableroEmpleadosHandlers.state.proyectoActual;
+      if (proyecto) await MesesHandler.agregarMes(proyecto.id, anio, mes);
+    } catch (error) {
+      console.error('Error:', error);
+      await AlertUtils.error('Error', 'No se pudo agregar el mes');
+    }
+  });
+
+  // Evento cuando se selecciona un mes
+  document.addEventListener('mes-selected', async (event: any) => {
+    const { anio, mes } = event.detail;
+    const proyecto = tableroEmpleadosHandlers.state.proyectoActual;
+
+    if (proyecto) {
+      const mesCreado = await MesesHandler.crearMesAutomatico(proyecto.id, anio, mes);
+
+      if (!mesCreado) {
+        await AlertUtils.error('Error', 'No se pudo crear el mes automáticamente');
+        return;
+      }
+
+      // Actualizar proyecto
+      proyecto.anio = anio;
+      proyecto.mes = mes;
+      tableroEmpleadosHandlers.state.mesActual = mes;
+      tableroEmpleadosHandlers.state.anioActual = anio;
+
+      // Recargar empleados y tareas
+      await tableroEmpleadosHandlers.loadProyectoConEmpleados();
+      await tableroEmpleadosHandlers.loadTareas();
+
+      // Actualizar UI
+      const periodoEl = document.getElementById('proyecto-periodo');
+      if (periodoEl) {
+        periodoEl.textContent = `${MESES_ES[mes as keyof typeof MESES_ES]} ${anio}`;
+      }
+
+      MesesHandler.renderMeses({ anio, mes });
+      MesesHandler.updateMesInfo({ anio, mes });
+    }
+  });
+
+  // ========== GESTIÓN DE TAREAS ==========
+
+  // Abrir modal para nueva tarea
+  document.getElementById('nueva-tarea-btn')?.addEventListener('click', async () => {
+    const proyecto = tableroEmpleadosHandlers.state.proyectoActual;
+    if (!proyecto) return;
+
+    await TareaHandler.loadDiasDisponibles(proyecto.id, proyecto.anio, proyecto.mes);
+    TareaHandler.resetParaCrear(form);
+    modal.style.display = 'flex';
+  });
+
+  // Cerrar modales
+  document.getElementById('modal-close')?.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  document.getElementById('modal-cancel')?.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  document.getElementById('view-modal-close')?.addEventListener('click', () => {
+    viewModal.style.display = 'none';
+  });
+
+  document.getElementById('view-modal-close-btn')?.addEventListener('click', () => {
+    viewModal.style.display = 'none';
+  });
+
+  // Cerrar al hacer clic fuera del modal
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) modal.style.display = 'none';
+  });
+
+  viewModal?.addEventListener('click', (e) => {
+    if (e.target === viewModal) viewModal.style.display = 'none';
+  });
+
+  // Seleccionar días
+  diasSelect?.addEventListener('change', (e) => {
+    const select = e.target as HTMLSelectElement;
+    const selectedOption = select.options[select.selectedIndex];
+    
+    if (select.value) {
+      const diaId = parseInt(select.value);
+      const diaInfo = TareaHandler.diasDisponibles.get(diaId);
+      
+      if (diaInfo) {
+        TareaHandler.diasSeleccionados.set(diaId, diaInfo);
+        TareaHandler.diasDisponibles.delete(diaId);
+        TareaHandler.actualizarSelectDias(select);
+        TareaHandler.renderizarDiasSeleccionados(document.getElementById('dias-selected')!);
+      }
+    }
+  });
+
+  // Enviar formulario de tarea
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const proyecto = tableroEmpleadosHandlers.state.proyectoActual;
+    if (!proyecto) return;
+
+    const success = await TareaHandler.guardarTarea(form, proyecto.id, async () => {
+      await tableroEmpleadosHandlers.loadTareas();
+      modal.style.display = 'none';
+    });
+  });
+
+  // Botón de Configuración
+  document.getElementById('config-btn')?.addEventListener('click', () => {
+    tableroEmpleadosHandlers.mostrarModalConfiguracion();
+  });
+
+  // Finalizar o Reactivar proyecto
+  document.getElementById('finalizar-btn')?.addEventListener('click', async () => {
+    const proyecto = tableroEmpleadosHandlers.state.proyectoActual;
+    if (!proyecto) return;
+
+    const isActive = proyecto.activo;
+    const action = isActive ? 'Finalizar' : 'Reactivar';
+
+    const result = await AlertUtils.confirm(
+      `¿${action} tablero?`,
+      isActive
+        ? 'Esto marcará el tablero como inactivo'
+        : 'Esto reactivará el tablero',
+      `Sí, ${action.toLowerCase()}`,
+      'Cancelar'
+    );
+
+    if (result.isConfirmed) {
+      try {
+        await ProyectoService.cambiarEstado(proyecto.id, !isActive);
+        await tableroEmpleadosHandlers.loadProyecto();
+        await AlertUtils.success('Éxito', `Tablero ${action.toLowerCase()}do correctamente`);
+      } catch (error) {
+        await AlertUtils.error('Error', `No se pudo ${action.toLowerCase()} el tablero`);
+      }
+    }
+  });
+
+  // ========== INICIALIZACIÓN ==========
+
+  tableroEmpleadosHandlers.loadProyecto().then(async () => {
+    const proyecto = tableroEmpleadosHandlers.state.proyectoActual;
+    if (proyecto) {
+      // Cargar meses
+      await MesesHandler.loadMeses(proyecto.id);
+      MesesHandler.updateMesInfo({ anio: proyecto.anio, mes: proyecto.mes });
+
+      // Cargar tareas
+      await tableroEmpleadosHandlers.loadTareas();
+
+      // Actualizar nombre del sidebar
+      const sidebarNombre = document.getElementById('proyecto-nombre-sidebar');
+      if (sidebarNombre) sidebarNombre.textContent = proyecto.nombre;
+    }
+  });
+
+  // Delegar eventos para botones de "Ver Todo el Mes" y exportar (dinámicos)
+  document.addEventListener('click', async (e) => {
+    const target = e.target as HTMLElement;
+    
+    // Botón Ver Todo el Mes
+    if (target.classList.contains('btn-ver-mes-empleado')) {
+      const empleadoId = parseInt(target.getAttribute('data-empleado-id') || '0');
+      const nombreEmpleado = target.getAttribute('data-empleado-nombre') || '';
+      await tableroEmpleadosHandlers.verMesCompletoEmpleado(empleadoId, nombreEmpleado);
+    }
+
+    // Botón Exportar PDF (mantener funcionalidad existente si la hay)
+    if (target.classList.contains('btn-export-empleado')) {
+      const empleadoId = parseInt(target.getAttribute('data-empleado-id') || '0');
+      const nombreEmpleado = target.getAttribute('data-empleado-nombre') || '';
+      // Lógica de exportar PDF aquí
+      await AlertUtils.info('Exportar PDF', `Exportando PDF de ${nombreEmpleado}...`);
+    }
+  });
+</script>
+  </ProtectedRoute>
+</BaseLayout>

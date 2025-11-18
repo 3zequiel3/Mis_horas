@@ -98,19 +98,21 @@ function renderCardsView(): void {
 
   cardsContainer.innerHTML = state.proyectos
     .map(
-      (p) => `
-    <div class="proyecto-card" onclick="if(window.innerWidth > 768) window.location.href='/proyecto/${p.id}'">
+      (p) => {
+        const url = p.tipo_proyecto === 'empleados' ? `/tablero-empleados/${p.id}` : `/proyecto/${p.id}`;
+        return `
+    <div class="proyecto-card" onclick="if(window.innerWidth > 768) window.location.href='${url}'">
       <h3>${p.nombre}</h3>
       <p>${p.descripcion || 'Sin descripción'}</p>
       
       <div class="proyecto-card-info">
         <div class="proyecto-card-info-item">
-          <span class="proyecto-card-info-label">Período</span>
-          <span class="proyecto-card-info-value">${MESES_ES[p.mes as keyof typeof MESES_ES]} ${p.anio}</span>
+          <span class="proyecto-card-info-label">Tipo</span>
+          <span class="proyecto-card-info-value">${p.tipo_proyecto === 'empleados' ? '👥 Empleados' : '👤 Personal'}</span>
         </div>
         <div class="proyecto-card-info-item">
-          <span class="proyecto-card-info-label">Creado</span>
-          <span class="proyecto-card-info-value">${formatDate(p.fecha_creacion)}</span>
+          <span class="proyecto-card-info-label">Período</span>
+          <span class="proyecto-card-info-value">${MESES_ES[p.mes as keyof typeof MESES_ES]} ${p.anio}</span>
         </div>
         <div class="proyecto-card-info-item">
           <span class="proyecto-card-info-label">Estado</span>
@@ -122,12 +124,13 @@ function renderCardsView(): void {
       
       <div class="proyecto-card-footer">
         <div class="proyecto-card-actions">
-          <a href="/proyecto/${p.id}" class="btn-sm" onclick="event.stopPropagation()">👁️ Ver</a>
+          <a href="${url}" class="btn-sm" onclick="event.stopPropagation()">👁️ Ver</a>
           <button class="btn-sm btn-danger" onclick="event.stopPropagation(); window.proyectosHandlers.deleteProyecto(${p.id})">🗑️ Eliminar</button>
         </div>
       </div>
     </div>
-  `
+  `;
+      }
     )
     .join('');
 }

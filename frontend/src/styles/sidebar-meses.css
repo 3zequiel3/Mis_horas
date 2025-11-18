@@ -282,3 +282,158 @@
     font-size: 0.85rem;
   }
 }
+
+/* ===========================
+   PANEL DE TAREAS EN SIDEBAR
+   =========================== */
+
+.tareas-panel-sidebar {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.tareas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.tareas-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tareas-badge {
+  background: rgba(102, 126, 234, 0.15);
+  color: #667eea;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.btn-small {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-small:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.tareas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.tareas-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.tareas-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.tareas-list::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.3);
+  border-radius: 10px;
+}
+
+.empty-tareas {
+  text-align: center;
+  padding: 2rem 0.5rem;
+  color: var(--text-secondary);
+}
+
+.empty-tareas p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.tarea-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tarea-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(102, 126, 234, 0.3);
+  transform: translateX(2px);
+}
+
+.tarea-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tarea-titulo {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  line-height: 1.3;
+}
+
+.tarea-horas {
+  background: rgba(67, 233, 123, 0.15);
+  color: #43e97b;
+  padding: 0.15rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tarea-detalle {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.tarea-footer {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tarea-dias-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}

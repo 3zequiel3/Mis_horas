@@ -47,10 +47,30 @@ export const ProyectoFormHandler = {
       const anio = parseInt((document.getElementById('anio') as HTMLSelectElement).value);
       const mes = parseInt((document.getElementById('mes') as HTMLSelectElement).value);
       const descripcion = (document.getElementById('descripcion') as HTMLTextAreaElement).value;
+      const tipoProyecto = (document.getElementById('tipo_proyecto') as HTMLSelectElement)?.value || 'personal';
+      const horasRealesActivas = (document.getElementById('horas_reales_activas') as HTMLInputElement)?.checked || false;
 
       // Validar
       if (!this.validarFormulario(nombre, anio, mes)) {
         return false;
+      }
+
+      // Obtener empleados si es proyecto con empleados
+      let empleados: string[] = [];
+      if (tipoProyecto === 'empleados') {
+        const empleadosInputs = document.querySelectorAll('.empleado-input') as NodeListOf<HTMLInputElement>;
+        empleados = Array.from(empleadosInputs)
+          .map(input => input.value
+            .replace(/[\r\n\t]/g, ' ')  // Reemplazar saltos de línea y tabs por espacio
+            .replace(/\s+/g, ' ')       // Normalizar múltiples espacios a uno solo
+            .trim()                      // Eliminar espacios al inicio y final
+          )
+          .filter(nombre => nombre !== '');
+
+        if (empleados.length === 0) {
+          await AlertUtils.error('Error', 'Debes agregar al menos un empleado');
+          return false;
+        }
       }
 
       // Crear proyecto
@@ -59,6 +79,9 @@ export const ProyectoFormHandler = {
         anio,
         mes,
         descripcion: descripcion || undefined,
+        tipo_proyecto: tipoProyecto as 'personal' | 'empleados',
+        empleados: empleados.length > 0 ? empleados : undefined,
+        horas_reales_activas: horasRealesActivas,
       });
 
       // Mostrar éxito
@@ -67,7 +90,7 @@ export const ProyectoFormHandler = {
     } catch (error) {
       console.error('Error:', error);
       this.mostrarMensajeError();
-      await AlertUtils.error('Error', 'No se pudo crear el proyecto. Intenta nuevamente.');
+      await AlertUtils.error('Error', 'No se pudo crear el tablero. Intenta nuevamente.');
       return false;
     }
   },

@@ -66,4 +66,14 @@ export class ProyectoService extends ApiService {
   static async getEstadisticas(): Promise<Estadisticas> {
     return this.get('/api/proyectos/estadisticas');
   }
+
+  /**
+   * Actualiza configuración del proyecto
+   */
+  static async updateConfiguracion(
+    proyecto_id: number,
+    data: { horas_reales_activas?: boolean }
+  ): Promise<Proyecto> {
+    return this.put(`/api/proyectos/${proyecto_id}/configuracion`, data);
+  }
 }

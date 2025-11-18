@@ -8,7 +8,7 @@ import '../../styles/tareas.css';
 import '../../styles/modales.css';
 import '../../styles/sidebar-meses.css';
 
-const pageTitle = 'Proyecto - Mis Horas';
+const pageTitle = 'Tablero - Mis Horas';
 
 // Los handlers y servicios se importan en el script
 ---
@@ -26,6 +26,7 @@ const pageTitle = 'Proyecto - Mis Horas';
         </div>
         <div class="header-actions">
           <span id="proyecto-status" class="badge"></span>
+          <button id="config-btn" class="btn btn-secondary">⚙️ Configuración</button>
           <button id="ver-todo-btn" class="btn btn-primary-outline">📅 Ver Todo el Mes</button>
           <button id="finalizar-btn" class="btn btn-success">✅ Finalizar</button>
         </div>
@@ -576,6 +577,11 @@ const pageTitle = 'Proyecto - Mis Horas';
       console.error('Error:', error);
       await AlertUtils.error('Error', 'Error al exportar PDF');
     }
+  });
+
+  // Botón de Configuración
+  document.getElementById('config-btn')?.addEventListener('click', () => {
+    proyectoHandlers.mostrarModalConfiguracion();
   });
 
   // Finalizar o Reactivar proyecto

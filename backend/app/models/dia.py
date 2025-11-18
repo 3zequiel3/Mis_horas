@@ -16,8 +16,10 @@ class Dia(db.Model):
     horas_trabajadas = db.Column(db.Float, default=0)
     horas_reales = db.Column(db.Float, default=0)
     proyecto_id = db.Column(db.Integer, db.ForeignKey("proyectos.id"), nullable=False)
+    empleado_id = db.Column(db.Integer, db.ForeignKey("empleados.id"), nullable=True)  # Null para proyectos personales
 
     proyecto = db.relationship("Proyecto", back_populates="dias")
+    empleado = db.relationship("Empleado", back_populates="dias")
     tareas = db.relationship("Tarea", secondary=tarea_dia, back_populates="dias")
 
     def to_dict(self):
@@ -29,4 +31,5 @@ class Dia(db.Model):
             'horas_trabajadas': self.horas_trabajadas,
             'horas_reales': self.horas_reales,
             'proyecto_id': self.proyecto_id,
+            'empleado_id': self.empleado_id,
         }
