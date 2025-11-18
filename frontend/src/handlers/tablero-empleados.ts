@@ -17,14 +17,19 @@ interface TableroEmpleadosState {
   usuarioActual: Usuario | null;
 }
 
-export const tableroEmpleadosHandlers = {
+export const TableroEmpleadosHandler = {
   state: {
-    proyectoActual: null,
-    empleados: [],
-    mesActual: new Date().getMonth() + 1,
+    proyectoActual: null as Proyecto | null,
+    empleados: [] as Empleado[],
+    mesActual: 1,
     anioActual: new Date().getFullYear(),
-    usuarioActual: null,
-  } as TableroEmpleadosState,
+    semanaInicio: new Date(),
+  },
+  
+  // Mantener referencias de los handlers
+  acordeonHandler: null as ((e: Event) => void) | null,
+  blurHandler: null as ((e: Event) => void) | null,
+  keypressHandler: null as ((e: Event) => void) | null,
 
   /**
    * Carga el usuario actual
@@ -238,7 +243,7 @@ export const tableroEmpleadosHandlers = {
       // Crear sección por cada empleado
       for (let i = 0; i < empleados.length; i++) {
         const empleado = empleados[i];
-        const isFirst = i === 0; // El primero estará abierto por defecto
+        const isFirst = false; // Todos cerrados por defecto
         
         const diasEmpleado = await DiaService.getDiasMes(
           this.state.proyectoActual.id,
@@ -310,64 +315,97 @@ export const tableroEmpleadosHandlers = {
         diasColumn.insertAdjacentHTML('beforeend', seccionHTML);
       }
 
-      // Agregar event listeners para acordeones
-      document.querySelectorAll('.empleado-accordion-header').forEach(header => {
-        header.addEventListener('click', (e) => {
-          const target = e.currentTarget as HTMLElement;
-          const empleadoId = target.dataset.empleadoAccordion;
+      // Remover listeners anteriores si existen
+      if (this.acordeonHandler) {
+        diasColumn.removeEventListener('click', this.acordeonHandler);
+      }
+      if (this.blurHandler) {
+        diasColumn.removeEventListener('blur', this.blurHandler, true);
+      }
+      if (this.keypressHandler) {
+        diasColumn.removeEventListener('keypress', this.keypressHandler);
+      }
+
+      // Crear y guardar el handler de acordeones
+      this.acordeonHandler = (e: Event) => {
+        const target = e.target as HTMLElement;
+        const header = target.closest('.empleado-accordion-header') as HTMLElement;
+        
+        if (header) {
+          e.stopPropagation();
+          const empleadoId = header.getAttribute('data-empleado-accordion');
+          
+          if (!empleadoId) return;
           
           // Toggle del acordeón clickeado
           const content = document.querySelector(`[data-empleado-content="${empleadoId}"]`) as HTMLElement;
-          const isActive = target.classList.contains('active');
           
-          if (isActive) {
-            target.classList.remove('active');
-            content.classList.remove('active');
-          } else {
-            target.classList.add('active');
-            content.classList.add('active');
+          if (content) {
+            const isActive = header.classList.contains('active');
+            
+            if (isActive) {
+              header.classList.remove('active');
+              content.classList.remove('active');
+            } else {
+              header.classList.add('active');
+              content.classList.add('active');
+            }
           }
-        });
-      });
+        }
+      };
 
-      // Agregar event listeners para exportar
-      document.querySelectorAll('.btn-export-empleado').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const target = e.currentTarget as HTMLElement;
-          const empleadoId = target.dataset.empleadoId;
-          const empleadoNombre = target.dataset.empleadoNombre;
-          if (empleadoId && empleadoNombre) {
-            this.exportarPDFEmpleado(parseInt(empleadoId), empleadoNombre);
-          }
-        });
-      });
-
-      // Agregar event listeners para inputs de horas
-      document.querySelectorAll('.horas-input').forEach(input => {
-        input.addEventListener('blur', async (e) => {
-          const target = e.target as HTMLInputElement;
-          const diaId = parseInt(target.dataset.diaId || '0');
-          const horas = target.value;
+      // Handler para blur de inputs
+      this.blurHandler = async (e: Event) => {
+        const target = e.target as HTMLElement;
+        
+        if (target.classList.contains('horas-input')) {
+          const input = target as HTMLInputElement;
+          const diaId = parseInt(input.dataset.diaId || '0');
+          const horas = input.value;
 
           if (diaId && horas) {
             try {
               await DiaService.updateHoras(diaId, horas);
+              
+              // Guardar estado de acordeones abiertos antes de recargar
+              const acordeonesAbiertos = Array.from(
+                document.querySelectorAll('.empleado-accordion-header.active')
+              ).map(header => (header as HTMLElement).getAttribute('data-empleado-accordion'));
+              
               // Recargar para actualizar totales
               await this.loadProyectoConEmpleados();
+              
+              // Restaurar estado de acordeones
+              acordeonesAbiertos.forEach(empleadoId => {
+                const header = document.querySelector(`[data-empleado-accordion="${empleadoId}"]`) as HTMLElement;
+                const content = document.querySelector(`[data-empleado-content="${empleadoId}"]`) as HTMLElement;
+                if (header && content) {
+                  header.classList.add('active');
+                  content.classList.add('active');
+                }
+              });
             } catch (error) {
               console.error('Error actualizando horas:', error);
             }
           }
-        });
+        }
+      };
 
-        // También al presionar Enter
-        input.addEventListener('keypress', (e: Event) => {
+      // Handler para Enter en inputs
+      this.keypressHandler = (e: Event) => {
+        const target = e.target as HTMLElement;
+        if (target.classList.contains('horas-input')) {
           const keyEvent = e as KeyboardEvent;
           if (keyEvent.key === 'Enter') {
-            (e.target as HTMLInputElement).blur();
+            (target as HTMLInputElement).blur();
           }
-        });
-      });
+        }
+      };
+
+      // Agregar los event listeners
+      diasColumn.addEventListener('click', this.acordeonHandler);
+      diasColumn.addEventListener('blur', this.blurHandler, true);
+      diasColumn.addEventListener('keypress', this.keypressHandler);
 
     } catch (error) {
       console.error('Error cargando proyecto con empleados:', error);
@@ -627,52 +665,64 @@ export const tableroEmpleadosHandlers = {
         </div>
       `).join('');
 
-      // Agregar eventos de click a las tareas
-      const tareaItems = tareasList.querySelectorAll('.tarea-item');
-      tareaItems.forEach(item => {
-        item.addEventListener('click', async () => {
-          const tareaId = parseInt(item.getAttribute('data-tarea-id') || '0');
-          const tarea = tareas.find((t: any) => t.id === tareaId);
-          if (tarea) {
-            const { TareaHandler } = await import('./tarea');
-            const viewModal = document.getElementById('view-tarea-modal');
-            const viewBody = document.getElementById('view-modal-body');
-            
-            if (viewModal && viewBody) {
-              const mostrarHorasReales = this.state.proyectoActual?.horas_reales_activas || false;
-              TareaHandler.renderizarVistaDetalle(tarea, mostrarHorasReales);
-              viewModal.style.display = 'flex';
+      // Usar delegación de eventos en lugar de múltiples listeners
+      const existingHandler = (tareasList as any).__clickHandler__;
+      if (existingHandler) {
+        tareasList.removeEventListener('click', existingHandler);
+      }
 
-              // Configurar botones de editar y eliminar
-              const editBtn = document.getElementById('edit-from-view-btn');
-              const deleteBtn = document.getElementById('delete-from-view-btn');
+      const clickHandler = async (e: Event) => {
+        const target = e.target as HTMLElement;
+        const item = target.closest('.tarea-item') as HTMLElement;
+        
+        if (!item) return;
 
-              if (editBtn) {
-                editBtn.onclick = async () => {
-                  viewModal.style.display = 'none';
-                  await TareaHandler.cargarParaEditar(
-                    tarea,
-                    this.state.proyectoActual!.id,
-                    this.state.anioActual,
-                    this.state.mesActual
-                  );
-                  const modal = document.getElementById('tarea-modal');
-                  if (modal) modal.style.display = 'flex';
-                };
-              }
+        const tareaId = parseInt(item.getAttribute('data-tarea-id') || '0');
+        const tarea = tareas.find((t: any) => t.id === tareaId);
+        
+        if (tarea) {
+          const { TareaHandler } = await import('./tarea');
+          const viewModal = document.getElementById('view-tarea-modal');
+          const viewBody = document.getElementById('view-modal-body');
+          
+          if (viewModal && viewBody) {
+            const mostrarHorasReales = this.state.proyectoActual?.horas_reales_activas || false;
+            TareaHandler.renderizarVistaDetalle(tarea, mostrarHorasReales);
+            viewModal.style.display = 'flex';
 
-              if (deleteBtn) {
-                deleteBtn.onclick = async () => {
-                  viewModal.style.display = 'none';
-                  await TareaHandler.eliminarTarea(tarea.id, tarea.titulo, async () => {
-                    await this.loadTareas();
-                  });
-                };
-              }
+            // Configurar botones de editar y eliminar
+            const editBtn = document.getElementById('edit-from-view-btn');
+            const deleteBtn = document.getElementById('delete-from-view-btn');
+
+            if (editBtn) {
+              editBtn.onclick = async () => {
+                viewModal.style.display = 'none';
+                await TareaHandler.cargarParaEditar(
+                  tarea,
+                  this.state.proyectoActual!.id,
+                  this.state.anioActual,
+                  this.state.mesActual
+                );
+                const modal = document.getElementById('tarea-modal');
+                if (modal) modal.style.display = 'flex';
+              };
+            }
+
+            if (deleteBtn) {
+              deleteBtn.onclick = async () => {
+                viewModal.style.display = 'none';
+                await TareaHandler.eliminarTarea(tarea.id, tarea.titulo, async () => {
+                  await this.loadTareas();
+                });
+              };
             }
           }
-        });
-      });
+        }
+      };
+
+      // Guardar referencia y agregar listener
+      (tareasList as any).__clickHandler__ = clickHandler;
+      tareasList.addEventListener('click', clickHandler);
     } catch (error) {
       console.error('Error cargando tareas:', error);
     }

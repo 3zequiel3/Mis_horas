@@ -11,15 +11,15 @@
 
 /* Sidebar */
 .meses-sidebar {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-  border: 1px solid rgba(102, 126, 234, 0.2);
-  border-radius: 10px;
-  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
   height: fit-content;
   position: sticky;
   top: 1rem;
   max-height: calc(100vh - 2rem);
   overflow-y: auto;
+  padding-right: 0.5rem;
 }
 
 .meses-sidebar::-webkit-scrollbar {
@@ -284,13 +284,15 @@
 }
 
 /* ===========================
-   PANEL DE TAREAS EN SIDEBAR
+   CARDS EN SIDEBAR
    =========================== */
 
-.tareas-panel-sidebar {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(102, 126, 234, 0.2);
+.sidebar-card {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .tareas-header {

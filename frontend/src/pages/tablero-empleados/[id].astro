@@ -33,27 +33,29 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
         <div class="proyecto-wrapper">
           <!-- Sidebar Izquierdo: Meses + Tareas -->
           <aside class="meses-sidebar">
-            <!-- Panel de Meses -->
-            <div class="sidebar-header">
-              <h3>📅 Meses</h3>
-              <p id="proyecto-nombre-sidebar">Cargando...</p>
+            <!-- Card de Meses -->
+            <div class="sidebar-card">
+              <div class="sidebar-header">
+                <h3>📅 Meses</h3>
+                <p id="proyecto-nombre-sidebar">Cargando...</p>
+              </div>
+
+              <button class="add-mes-btn" id="add-mes-btn">+ Agregar mes</button>
+
+              <div class="meses-list" id="meses-list">
+                <div class="mes-item loading">Cargando meses...</div>
+              </div>
+
+              <div class="mes-info" id="mes-info" style="display: none;">
+                <strong>Mes actual:</strong> <span id="mes-info-text"></span>
+              </div>
             </div>
 
-            <button class="add-mes-btn" id="add-mes-btn">+ Agregar mes</button>
-
-            <div class="meses-list" id="meses-list">
-              <div class="mes-item loading">Cargando meses...</div>
-            </div>
-
-            <div class="mes-info" id="mes-info" style="display: none;">
-              <strong>Mes actual:</strong> <span id="mes-info-text"></span>
-            </div>
-
-            <!-- Panel de Tareas (mismo estilo que proyecto) -->
-            <div class="tareas-panel-sidebar">
+            <!-- Card de Tareas (separada) -->
+            <div class="sidebar-card tareas-card">
               <div class="tareas-header">
                 <h2>📋 Tareas <span id="tareas-count" class="tareas-badge">0</span></h2>
-                <button id="nueva-tarea-btn" class="btn btn-small">+ Nueva tarea</button>
+                <button id="nueva-tarea-btn" class="btn btn-small">+ Nueva</button>
               </div>
 
               <!-- Lista de Tareas -->
@@ -262,11 +264,14 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
   import { AuthService } from '../../services/auth';
   import { ProyectoService } from '../../services/proyecto';
   import { TareaService } from '../../services/tarea';
+  import { EmpleadosService } from '../../services/empleados';
+  import { DiaService } from '../../services/dia';
   import { AlertUtils } from '../../utils/swal';
   import { MESES_ES } from '../../utils/formatters';
   import { MesesHandler } from '../../handlers/meses';
   import { TareaHandler } from '../../handlers/tarea';
-  import { tableroEmpleadosHandlers } from '../../handlers/tablero-empleados';
+  import { TableroEmpleadosHandler } from '../../handlers/tablero-empleados';
+  import Swal from 'sweetalert2';
 
   // Verificar autenticación
   if (!AuthService.isAuthenticated()) {
@@ -274,7 +279,7 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
   }
 
   // Exponer handlers globalmente
-  (window as any).tableroEmpleadosHandlers = tableroEmpleadosHandlers;
+  (window as any).TableroEmpleadosHandler = TableroEmpleadosHandler;
 
   // Referencias a modales y elementos
   const modal = document.getElementById('tarea-modal')!;
@@ -311,7 +316,7 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
         return;
       }
 
-      const proyecto = tableroEmpleadosHandlers.state.proyectoActual;
+      const proyecto = TableroEmpleadosHandler.state.proyectoActual;
       if (proyecto) await MesesHandler.agregarMes(proyecto.id, anio, mes);
     } catch (error) {
       console.error('Error:', error);
@@ -322,7 +327,7 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
   // Evento cuando se selecciona un mes
   document.addEventListener('mes-selected', async (event: any) => {
     const { anio, mes } = event.detail;
-    const proyecto = tableroEmpleadosHandlers.state.proyectoActual;
+    const proyecto = TableroEmpleadosHandler.state.proyectoActual;
 
     if (proyecto) {
       const mesCreado = await MesesHandler.crearMesAutomatico(proyecto.id, anio, mes);
@@ -335,12 +340,12 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
       // Actualizar proyecto
       proyecto.anio = anio;
       proyecto.mes = mes;
-      tableroEmpleadosHandlers.state.mesActual = mes;
-      tableroEmpleadosHandlers.state.anioActual = anio;
+      TableroEmpleadosHandler.state.mesActual = mes;
+      TableroEmpleadosHandler.state.anioActual = anio;
 
       // Recargar empleados y tareas
-      await tableroEmpleadosHandlers.loadProyectoConEmpleados();
-      await tableroEmpleadosHandlers.loadTareas();
+      await TableroEmpleadosHandler.loadProyectoConEmpleados();
+      await TableroEmpleadosHandler.loadTareas();
 
       // Actualizar UI
       const periodoEl = document.getElementById('proyecto-periodo');
@@ -357,7 +362,7 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
 
   // Abrir modal para nueva tarea
   document.getElementById('nueva-tarea-btn')?.addEventListener('click', async () => {
-    const proyecto = tableroEmpleadosHandlers.state.proyectoActual;
+    const proyecto = TableroEmpleadosHandler.state.proyectoActual;
     if (!proyecto) return;
 
     await TareaHandler.loadDiasDisponibles(proyecto.id, proyecto.anio, proyecto.mes);
@@ -412,23 +417,77 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
   // Enviar formulario de tarea
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const proyecto = tableroEmpleadosHandlers.state.proyectoActual;
+    const proyecto = TableroEmpleadosHandler.state.proyectoActual;
     if (!proyecto) return;
 
     const success = await TareaHandler.guardarTarea(form, proyecto.id, async () => {
-      await tableroEmpleadosHandlers.loadTareas();
+      await TableroEmpleadosHandler.loadTareas();
       modal.style.display = 'none';
     });
   });
 
+  // ========== GESTIÓN DE EMPLEADOS ==========
+
+  // Agregar empleado
+  document.getElementById('add-empleado-btn')?.addEventListener('click', async () => {
+    const proyecto = TableroEmpleadosHandler.state.proyectoActual;
+    if (!proyecto) return;
+
+    const { value: nombreEmpleado } = await Swal.fire({
+      title: 'Agregar Empleado',
+      input: 'text',
+      inputLabel: 'Nombre del empleado',
+      inputPlaceholder: 'Ej: Juan Pérez',
+      showCancelButton: true,
+      confirmButtonText: 'Agregar',
+      cancelButtonText: 'Cancelar',
+      background: '#0f1419',
+      color: '#c8c8c8',
+      confirmButtonColor: '#667eea',
+      cancelButtonColor: '#2d3746',
+      inputValidator: (value: string) => {
+        if (!value || value.trim().length === 0) {
+          return 'El nombre es requerido';
+        }
+        if (value.trim().length < 3) {
+          return 'El nombre debe tener al menos 3 caracteres';
+        }
+        return null;
+      }
+    });
+
+    if (nombreEmpleado) {
+      try {
+        await EmpleadosService.addEmpleado(proyecto.id, nombreEmpleado.trim());
+        
+        await Swal.fire({
+          icon: 'success',
+          title: 'Empleado agregado',
+          text: `${nombreEmpleado} ha sido agregado al tablero`,
+          showConfirmButton: false,
+          timer: 1500,
+          background: '#0f1419',
+          color: '#c8c8c8',
+          iconColor: '#10b981'
+        });
+
+        // Recargar empleados
+        await TableroEmpleadosHandler.loadProyectoConEmpleados();
+      } catch (error) {
+        console.error('Error agregando empleado:', error);
+        await AlertUtils.error('Error', 'No se pudo agregar el empleado');
+      }
+    }
+  });
+
   // Botón de Configuración
   document.getElementById('config-btn')?.addEventListener('click', () => {
-    tableroEmpleadosHandlers.mostrarModalConfiguracion();
+    TableroEmpleadosHandler.mostrarModalConfiguracion();
   });
 
   // Finalizar o Reactivar proyecto
   document.getElementById('finalizar-btn')?.addEventListener('click', async () => {
-    const proyecto = tableroEmpleadosHandlers.state.proyectoActual;
+    const proyecto = TableroEmpleadosHandler.state.proyectoActual;
     if (!proyecto) return;
 
     const isActive = proyecto.activo;
@@ -446,7 +505,7 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
     if (result.isConfirmed) {
       try {
         await ProyectoService.cambiarEstado(proyecto.id, !isActive);
-        await tableroEmpleadosHandlers.loadProyecto();
+        await TableroEmpleadosHandler.loadProyecto();
         await AlertUtils.success('Éxito', `Tablero ${action.toLowerCase()}do correctamente`);
       } catch (error) {
         await AlertUtils.error('Error', `No se pudo ${action.toLowerCase()} el tablero`);
@@ -456,20 +515,87 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
 
   // ========== INICIALIZACIÓN ==========
 
-  tableroEmpleadosHandlers.loadProyecto().then(async () => {
-    const proyecto = tableroEmpleadosHandlers.state.proyectoActual;
+  TableroEmpleadosHandler.loadProyecto().then(async () => {
+    const proyecto = TableroEmpleadosHandler.state.proyectoActual;
     if (proyecto) {
       // Cargar meses
       await MesesHandler.loadMeses(proyecto.id);
       MesesHandler.updateMesInfo({ anio: proyecto.anio, mes: proyecto.mes });
 
       // Cargar tareas
-      await tableroEmpleadosHandlers.loadTareas();
+      await TableroEmpleadosHandler.loadTareas();
 
       // Actualizar nombre del sidebar
       const sidebarNombre = document.getElementById('proyecto-nombre-sidebar');
       if (sidebarNombre) sidebarNombre.textContent = proyecto.nombre;
     }
+  });
+
+  // ========== ACCIONES RÁPIDAS ==========
+
+  // Exportar Todo (PDF)
+  document.getElementById('export-all-btn')?.addEventListener('click', async () => {
+    const proyecto = TableroEmpleadosHandler.state.proyectoActual;
+    if (!proyecto) return;
+
+    await AlertUtils.info(
+      'Exportar Todo',
+      'Se generarán PDFs individuales para cada empleado del tablero'
+    );
+
+    // TODO: Implementar exportación masiva
+    // Por ahora solo muestra el mensaje
+  });
+
+  // Ver Estadísticas
+  document.getElementById('view-stats-btn')?.addEventListener('click', async () => {
+    const proyecto = TableroEmpleadosHandler.state.proyectoActual;
+    if (!proyecto) return;
+
+    const empleados = TableroEmpleadosHandler.state.empleados;
+    const totalEmpleados = empleados.length;
+    
+    // Calcular estadísticas
+    let totalHorasAcumuladas = 0;
+    for (const empleado of empleados) {
+      const dias = await DiaService.getDiasMes(
+        proyecto.id,
+        TableroEmpleadosHandler.state.anioActual,
+        TableroEmpleadosHandler.state.mesActual,
+        empleado.id
+      );
+      totalHorasAcumuladas += dias.reduce((sum: number, dia: any) => sum + (dia.horas_trabajadas || 0), 0);
+    }
+
+    const { horasAFormato } = await import('../../utils/formatters');
+
+    await Swal.fire({
+      title: '📊 Estadísticas del Tablero',
+      html: `
+        <div style="text-align: left; padding: 10px;">
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #667eea;">Total Empleados:</strong>
+            <span style="float: right; color: #c8c8c8;">${totalEmpleados}</span>
+          </div>
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #667eea;">Horas Totales:</strong>
+            <span style="float: right; color: #c8c8c8;">${horasAFormato(totalHorasAcumuladas)}</span>
+          </div>
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #667eea;">Promedio por Empleado:</strong>
+            <span style="float: right; color: #c8c8c8;">${horasAFormato(totalEmpleados > 0 ? Math.round(totalHorasAcumuladas / totalEmpleados) : 0)}</span>
+          </div>
+          <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(102, 126, 234, 0.2);">
+            <strong style="color: #667eea;">Período:</strong>
+            <span style="float: right; color: #c8c8c8;">${MESES_ES[TableroEmpleadosHandler.state.mesActual as keyof typeof MESES_ES]} ${TableroEmpleadosHandler.state.anioActual}</span>
+          </div>
+        </div>
+      `,
+      confirmButtonText: 'Cerrar',
+      background: '#0f1419',
+      color: '#c8c8c8',
+      confirmButtonColor: '#667eea'
+    });
   });
 
   // Delegar eventos para botones de "Ver Todo el Mes" y exportar (dinámicos)
@@ -480,15 +606,18 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
     if (target.classList.contains('btn-ver-mes-empleado')) {
       const empleadoId = parseInt(target.getAttribute('data-empleado-id') || '0');
       const nombreEmpleado = target.getAttribute('data-empleado-nombre') || '';
-      await tableroEmpleadosHandlers.verMesCompletoEmpleado(empleadoId, nombreEmpleado);
+      await TableroEmpleadosHandler.verMesCompletoEmpleado(empleadoId, nombreEmpleado);
     }
 
-    // Botón Exportar PDF (mantener funcionalidad existente si la hay)
+    // Botón Exportar PDF
     if (target.classList.contains('btn-export-empleado')) {
       const empleadoId = parseInt(target.getAttribute('data-empleado-id') || '0');
       const nombreEmpleado = target.getAttribute('data-empleado-nombre') || '';
-      // Lógica de exportar PDF aquí
-      await AlertUtils.info('Exportar PDF', `Exportando PDF de ${nombreEmpleado}...`);
+      
+      await AlertUtils.info('Exportar PDF', `Generando PDF de ${nombreEmpleado}...`);
+      
+      // TODO: Implementar exportación individual
+      // await TableroEmpleadosHandler.exportarEmpleadoPDF(empleadoId);
     }
   });
 </script>
