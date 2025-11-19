@@ -142,7 +142,16 @@ export const TareaHandler = {
     // Cargar días seleccionados de la tarea actual
     this.diasSeleccionados.clear();
     if (tarea.dias && Array.isArray(tarea.dias)) {
+      // Agrupar por fecha para evitar duplicados (múltiples empleados mismo día)
+      const diasPorFecha = new Map<string, any>();
       tarea.dias.forEach((dia: any) => {
+        if (!diasPorFecha.has(dia.fecha)) {
+          diasPorFecha.set(dia.fecha, dia);
+        }
+      });
+
+      // Agregar días únicos a diasSeleccionados
+      diasPorFecha.forEach((dia) => {
         const fechaFormato = formatearFechaConDia(dia.fecha);
 
         this.diasSeleccionados.set(dia.id, {
@@ -243,13 +252,16 @@ export const TareaHandler = {
       let desgloseEmpleadosHtml = '';
 
       if (tarea.dias && tarea.dias.length > 0) {
-        diasHtml = tarea.dias
-          .map((d: any) => {
-            const fecha = formatearFechaConDiaYAnio(d.fecha);
+        // Agrupar días por fecha para evitar duplicados (múltiples empleados mismo día)
+        const fechasUnicas = Array.from(new Set(tarea.dias.map((d: any) => d.fecha))) as string[];
+        
+        diasHtml = fechasUnicas
+          .map((fecha) => {
+            const fechaFormateada = formatearFechaConDiaYAnio(fecha);
 
             return `
               <div class="dia-badge-item">
-                <span class="dia-badge-label">${fecha}</span>
+                <span class="dia-badge-label">${fechaFormateada}</span>
               </div>
             `;
           })

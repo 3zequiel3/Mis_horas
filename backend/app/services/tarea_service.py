@@ -10,6 +10,8 @@ class TareaService:
     def crear_tarea(proyecto_id: int, titulo: str, detalle: str = "", 
                    que_falta: str = "", dias_ids: list = None, usuario_id: int = None):
         """Crea una nueva tarea"""
+        from app.models.proyecto import Proyecto
+        
         tarea = Tarea(
             titulo=titulo,
             detalle=detalle,
@@ -19,7 +21,22 @@ class TareaService:
         )
         
         if dias_ids:
-            dias = Dia.query.filter(Dia.id.in_(dias_ids)).all()
+            # Para proyectos de empleados, incluir todos los días con esas fechas
+            proyecto = Proyecto.query.get(proyecto_id)
+            if proyecto and proyecto.tipo_proyecto == 'empleados':
+                # Obtener las fechas de los días seleccionados
+                dias_seleccionados = Dia.query.filter(Dia.id.in_(dias_ids)).all()
+                fechas = [dia.fecha for dia in dias_seleccionados]
+                
+                # Buscar TODOS los días con esas fechas (todos los empleados)
+                dias = Dia.query.filter(
+                    Dia.proyecto_id == proyecto_id,
+                    Dia.fecha.in_(fechas)
+                ).all()
+            else:
+                # Para proyectos personales, usar solo los IDs recibidos
+                dias = Dia.query.filter(Dia.id.in_(dias_ids)).all()
+            
             tarea.dias = dias
         
         db.session.add(tarea)
@@ -68,7 +85,24 @@ class TareaService:
         # Actualizar días si se proporciona (incluso si es lista vacía)
         if dias_ids is not None:
             if len(dias_ids) > 0:
-                dias = Dia.query.filter(Dia.id.in_(dias_ids)).all()
+                # Para proyectos de empleados, incluir todos los días con esas fechas
+                from app.models.proyecto import Proyecto
+                proyecto = Proyecto.query.get(tarea.proyecto_id)
+                
+                if proyecto and proyecto.tipo_proyecto == 'empleados':
+                    # Obtener las fechas de los días seleccionados
+                    dias_seleccionados = Dia.query.filter(Dia.id.in_(dias_ids)).all()
+                    fechas = [dia.fecha for dia in dias_seleccionados]
+                    
+                    # Buscar TODOS los días con esas fechas (todos los empleados)
+                    dias = Dia.query.filter(
+                        Dia.proyecto_id == tarea.proyecto_id,
+                        Dia.fecha.in_(fechas)
+                    ).all()
+                else:
+                    # Para proyectos personales, usar solo los IDs recibidos
+                    dias = Dia.query.filter(Dia.id.in_(dias_ids)).all()
+                
                 tarea.dias = dias
             else:
                 # Si lista vacía, eliminar todos los días
@@ -121,11 +155,21 @@ class TareaService:
     @staticmethod
     def obtener_dias_disponibles(proyecto_id: int, anio: int, mes: int, tarea_excluir_id=None):
         """Obtiene días disponibles que tengan horas trabajadas"""
-        todos_dias = Dia.query.filter(
+        # Obtener fechas únicas con horas trabajadas
+        subquery = db.session.query(
+            Dia.fecha,
+            func.min(Dia.id).label('dia_id')
+        ).filter(
             Dia.proyecto_id == proyecto_id,
             func.extract('year', Dia.fecha) == anio,
             func.extract('month', Dia.fecha) == mes,
-            Dia.horas_trabajadas > 0  # Solo días con horas trabajadas
+            Dia.horas_trabajadas > 0
+        ).group_by(Dia.fecha).subquery()
+        
+        # Obtener los días usando los IDs únicos
+        todos_dias = Dia.query.join(
+            subquery,
+            Dia.id == subquery.c.dia_id
         ).order_by(Dia.fecha.asc()).all()
         
         # Días ocupados

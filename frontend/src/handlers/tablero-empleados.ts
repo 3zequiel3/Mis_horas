@@ -381,19 +381,11 @@ export const TableroEmpleadosHandler= {
           const input = target as HTMLInputElement;
           const diaId = parseInt(input.dataset.diaId || '0');
           
-          console.log('🕐 Detectado cambio en input de tiempo:', { diaId, value: input.value });
-          
-          if (!diaId) {
-            console.warn('⚠️ No se encontró diaId en el input');
-            return;
-          }
+          if (!diaId) return;
 
           // Buscar la fila para obtener ambos valores
           const row = input.closest('tr');
-          if (!row) {
-            console.warn('⚠️ No se encontró la fila (tr) del input');
-            return;
-          }
+          if (!row) return;
 
           const horaEntradaInput = row.querySelector('.hora-entrada-input') as HTMLInputElement;
           const horaSalidaInput = row.querySelector('.hora-salida-input') as HTMLInputElement;
@@ -402,13 +394,9 @@ export const TableroEmpleadosHandler= {
           const horaEntrada = horaEntradaInput?.value;
           const horaSalida = horaSalidaInput?.value;
 
-          console.log('📊 Valores de horarios:', { horaEntrada, horaSalida });
-
           // Solo actualizar si ambos valores están presentes
           if (horaEntrada && horaSalida) {
             try {
-              console.log('✅ Ambos valores presentes, calculando...');
-              
               // Animación de cálculo
               if (horasCell) {
                 horasCell.classList.add('calculating');
@@ -417,8 +405,6 @@ export const TableroEmpleadosHandler= {
 
               const diaActualizado = await DiaService.updateHorarios(diaId, horaEntrada, horaSalida);
               
-              console.log('✅ Horarios actualizados correctamente:', diaActualizado);
-              
               // Actualizar solo el valor de las horas en el DOM sin recargar todo
               if (horasCell && diaActualizado.horas_trabajadas !== undefined) {
                 horasCell.classList.remove('calculating', 'horas-pendiente');
@@ -426,19 +412,48 @@ export const TableroEmpleadosHandler= {
               }
               
               // Actualizar totales del empleado sin recargar todo
-              const empleadoId = target.closest('.empleado-accordion-content')?.getAttribute('data-empleado-content');
-              if (empleadoId) {
-                const totalHorasEl = document.querySelector(`[data-empleado-accordion="${empleadoId}"] .empleado-horas-total`);
-                if (totalHorasEl) {
-                  // Recalcular total sumando todas las horas trabajadas del empleado
-                  const filasEmpleado = document.querySelectorAll(`[data-empleado-content="${empleadoId}"] tbody tr`);
-                  let totalHoras = 0;
-                  filasEmpleado.forEach(fila => {
-                    const horasCellText = (fila.querySelector('td:nth-child(5)') as HTMLElement)?.textContent || '00:00';
+              const empleadoSection = target.closest('.empleado-section');
+              if (empleadoSection) {
+                // Recalcular total sumando todas las horas trabajadas del empleado
+                const filasEmpleado = empleadoSection.querySelectorAll('tbody tr');
+                let totalHoras = 0;
+                filasEmpleado.forEach(fila => {
+                  const horasCellText = (fila.querySelector('td:nth-child(5)') as HTMLElement)?.textContent || '00:00';
+                  if (horasCellText && horasCellText !== '--:--') {
                     const [h, m] = horasCellText.split(':').map(Number);
-                    totalHoras += h + (m / 60);
-                  });
-                  totalHorasEl.textContent = horasAFormato(totalHoras);
+                    if (!isNaN(h) && !isNaN(m)) {
+                      totalHoras += h + (m / 60);
+                    }
+                  }
+                });
+                
+                const horasFormateadas = horasAFormato(totalHoras);
+                
+                // Actualizar badge en el header del acordeón
+                const badgeEl = empleadoSection.querySelector('.empleado-hours-badge') as HTMLElement;
+                if (badgeEl) {
+                  badgeEl.textContent = horasFormateadas;
+                  // Forzar re-render
+                  badgeEl.style.display = 'none';
+                  badgeEl.offsetHeight; // Trigger reflow
+                  badgeEl.style.display = '';
+                }
+                
+                // Actualizar total en el footer de la tabla
+                const footerTotalEl = empleadoSection.querySelector('tfoot td:nth-child(5) strong') as HTMLElement;
+                if (footerTotalEl) {
+                  footerTotalEl.textContent = horasFormateadas;
+                }
+              }
+              
+              // Actualizar estilos de la fila según tenga horas o no
+              if (row && diaActualizado.horas_trabajadas !== undefined) {
+                if (diaActualizado.horas_trabajadas > 0) {
+                  row.classList.remove('sin-horas');
+                  row.classList.add('con-horas');
+                } else {
+                  row.classList.remove('con-horas');
+                  row.classList.add('sin-horas');
                 }
               }
               
@@ -453,8 +468,6 @@ export const TableroEmpleadosHandler= {
                 horasCell.innerHTML = '<span style="color: #ef4444;">❌ Error</span>';
               }
             }
-          } else {
-            console.log('⏸️ Faltan valores, esperando...');
           }
         }
       };
@@ -498,10 +511,13 @@ export const TableroEmpleadosHandler= {
       // Indicador visual si las horas están completas
       const tieneHorarios = horaEntrada && horaSalida;
       const horasClass = tieneHorarios ? 'horas-calculadas' : 'horas-calculadas horas-pendiente';
+      
+      // Clase para estilo de fila según tenga horas o no
+      const rowClass = (dia.horas_trabajadas || 0) > 0 ? 'con-horas' : 'sin-horas';
 
       if (editable) {
         return `
-          <tr data-dia-id="${dia.id}">
+          <tr data-dia-id="${dia.id}" class="${rowClass}">
             <td>${formatearFechaSinAnio(dia.fecha)}</td>
             <td>${dia.dia_semana}</td>
             <td>
@@ -533,7 +549,7 @@ export const TableroEmpleadosHandler= {
       } else {
         // Versión solo lectura para modal de visualización
         return `
-          <tr data-dia-id="${dia.id}">
+          <tr data-dia-id="${dia.id}" class="${rowClass}">
             <td>${formatearFechaSinAnio(dia.fecha)}</td>
             <td>${dia.dia_semana}</td>
             <td style="text-align: center;">${horaEntrada || '<span style="opacity: 0.4;">--:--</span>'}</td>
