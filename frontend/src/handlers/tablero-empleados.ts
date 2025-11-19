@@ -17,13 +17,14 @@ interface TableroEmpleadosState {
   usuarioActual: Usuario | null;
 }
 
-export const TableroEmpleadosHandler = {
+export const TableroEmpleadosHandler= {
   state: {
     proyectoActual: null as Proyecto | null,
     empleados: [] as Empleado[],
     mesActual: 1,
     anioActual: new Date().getFullYear(),
     semanaInicio: new Date(),
+    usuarioActual: null as Usuario | null,
   },
   
   // Mantener referencias de los handlers
@@ -756,14 +757,8 @@ export const TableroEmpleadosHandler = {
 
       tareasList.innerHTML = tareas.map((tarea: any) => `
         <div class="tarea-item" data-tarea-id="${tarea.id}">
-          <div class="tarea-header">
-            <h4 class="tarea-titulo">${tarea.titulo}</h4>
-            <span class="tarea-horas">${tarea.horas || '00:00'}</span>
-          </div>
-          ${tarea.detalle ? `<p class="tarea-detalle">${tarea.detalle}</p>` : ''}
-          <div class="tarea-footer">
-            <span class="tarea-dias-count">${tarea.dias?.length || 0} días</span>
-          </div>
+          <h4>${tarea.titulo}</h4>
+          <small>${tarea.horas || '00:00'} horas</small>
         </div>
       `).join('');
 
