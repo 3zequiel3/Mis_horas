@@ -1,5 +1,7 @@
 ---
 import '../styles/global.css';
+import '../styles/modales.css';
+import NuevoProyectoModal from '../components/NuevoProyectoModal.astro';
 
 export interface Props {
   title?: string;
@@ -18,5 +20,6 @@ const { title = 'Mis Horas' } = Astro.props;
   </head>
   <body>
     <slot />
+    <NuevoProyectoModal />
   </body>
 </html>

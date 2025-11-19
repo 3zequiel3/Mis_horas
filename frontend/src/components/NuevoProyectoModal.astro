@@ -1,0 +1,154 @@
+---
+/**
+ * Modal para crear nuevo proyecto
+ * Se abre desde el navbar y redirige al proyecto creado
+ */
+---
+
+<div id="modal-nuevo-proyecto" class="modal" style="display: none;">
+  <div class="modal-content modal-large">
+    <div class="modal-header">
+      <h3>Crear Nuevo Tablero</h3>
+      <button class="modal-close" id="close-modal-proyecto">&times;</button>
+    </div>
+    
+    <form id="modal-proyecto-form" class="proyecto-form">
+      <div class="form-group">
+        <label for="modal-nombre">Nombre del Tablero *</label>
+        <input
+          type="text"
+          id="modal-nombre"
+          name="nombre"
+          placeholder="Ej: App Web Tienda"
+          required
+        />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="modal-anio">Año *</label>
+          <select id="modal-anio" name="anio" required>
+            <option value="">Selecciona un año</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="modal-mes">Mes *</label>
+          <select id="modal-mes" name="mes" required>
+            <option value="">Selecciona un mes</option>
+            <option value="1">Enero</option>
+            <option value="2">Febrero</option>
+            <option value="3">Marzo</option>
+            <option value="4">Abril</option>
+            <option value="5">Mayo</option>
+            <option value="6">Junio</option>
+            <option value="7">Julio</option>
+            <option value="8">Agosto</option>
+            <option value="9">Septiembre</option>
+            <option value="10">Octubre</option>
+            <option value="11">Noviembre</option>
+            <option value="12">Diciembre</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="modal-tipo-proyecto">Tipo de Tablero *</label>
+        <select id="modal-tipo-proyecto" name="tipo_proyecto" required>
+          <option value="personal">Trabajo Personal</option>
+          <option value="empleados">Con Empleados</option>
+        </select>
+      </div>
+
+      <div id="modal-empleados-container" class="form-group" style="display: none;">
+        <label>Empleados</label>
+        <div id="modal-empleados-list" class="empleados-list">
+          <div class="empleado-item">
+            <input type="text" class="empleado-input" placeholder="Nombre del empleado" maxlength="100" />
+            <button type="button" class="btn-remove-empleado">Eliminar</button>
+          </div>
+        </div>
+        <button type="button" id="modal-add-empleado-btn" class="btn btn-secondary-outline">+ Agregar Empleado</button>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="modal-horas-reales" name="horas_reales_activas" />
+          <span>Activar Horas Reales (para proyectos con empleados)</span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label for="modal-descripcion">Descripción (Opcional)</label>
+        <textarea
+          id="modal-descripcion"
+          name="descripcion"
+          placeholder="Describe el propósito del tablero..."
+          rows="4"
+        ></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" id="modal-cancel-btn">
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary">
+          Crear Tablero
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    margin-bottom: 0 !important;
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+    margin: 0;
+  }
+
+  .checkbox-label span {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  @media (max-width: 768px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+      width: 95%;
+      max-width: none;
+    }
+  }
+</style>
+
+<script>
+  import { ProyectoModalHandler } from '../handlers/proyecto-modal';
+
+  // Inicializar el modal
+  // Usar setTimeout para asegurar que el DOM esté listo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      ProyectoModalHandler.init();
+    });
+  } else {
+    // DOM ya está listo, inicializar inmediatamente
+    ProyectoModalHandler.init();
+  }
+</script>

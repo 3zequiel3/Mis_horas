@@ -22,7 +22,7 @@ const { children } = Astro.props;
       <div class="nav-menu">
         <a href="/dashboard" class="nav-link">Dashboard</a>
         <a href="/proyectos" class="nav-link">Proyectos</a>
-        <a href="/nuevo-proyecto" class="nav-link nav-link-primary">+ Nuevo</a>
+        <button id="open-nuevo-proyecto-modal" class="nav-link nav-link-primary">+ Nuevo</button>
         <a href="/perfil" class="nav-link">Perfil</a>
         <button id="logout-btn" class="btn btn-danger btn-sm">Cerrar Sesión</button>
       </div>
@@ -105,6 +105,11 @@ const { children } = Astro.props;
     padding: 0.5rem 1.25rem;
     border-radius: 6px;
     position: relative;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: inherit;
+    font-size: inherit;
   }
 
   .nav-link-primary::after {
@@ -200,6 +205,8 @@ const { children } = Astro.props;
       width: calc(100% - 4rem);
       text-align: center;
       padding: 0.75rem 1rem;
+      border: none;
+      cursor: pointer;
     }
 
     .nav-link-primary:hover {
