@@ -5,8 +5,9 @@ import { ProyectoService } from '../services/proyecto';
 import { EmpleadosService } from '../services/empleados';
 import { DiaService } from '../services/dia';
 import { showErrorModal } from '../utils/modals';
-import { horasAFormato } from '../utils/formatters';
-import { MESES_ES } from '../utils/formatters';
+import { horasAFormato, MESES_ES } from '../utils/formatters';
+import { formatearFechaSinAnio } from '../utils/date';
+import { renderFilasDiasEmpleado } from '../utils/render';
 import Swal from 'sweetalert2';
 
 interface TableroEmpleadosState {
@@ -501,7 +502,7 @@ export const TableroEmpleadosHandler= {
       if (editable) {
         return `
           <tr data-dia-id="${dia.id}">
-            <td>${fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}</td>
+            <td>${formatearFechaSinAnio(dia.fecha)}</td>
             <td>${dia.dia_semana}</td>
             <td>
               <input 
@@ -533,7 +534,7 @@ export const TableroEmpleadosHandler= {
         // Versión solo lectura para modal de visualización
         return `
           <tr data-dia-id="${dia.id}">
-            <td>${fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}</td>
+            <td>${formatearFechaSinAnio(dia.fecha)}</td>
             <td>${dia.dia_semana}</td>
             <td style="text-align: center;">${horaEntrada || '<span style="opacity: 0.4;">--:--</span>'}</td>
             <td style="text-align: center;">${horaSalida || '<span style="opacity: 0.4;">--:--</span>'}</td>

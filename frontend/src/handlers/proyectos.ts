@@ -7,6 +7,8 @@ import { ProyectoService } from '../services/proyecto';
 import { setHTML, setText, setVisible, querySelector, querySelectorAll } from '../utils/dom';
 import Swal from 'sweetalert2';
 import { MESES_ES } from '../utils/formatters';
+import { formatearFechaSegura } from '../utils/date';
+import { renderBadgeEstado, renderBotonesAccion } from '../utils/render';
 
 export interface ProyectosViewState {
   proyectos: Proyecto[];
@@ -17,25 +19,6 @@ const state: ProyectosViewState = {
   proyectos: [],
   currentView: 'table',
 };
-
-/**
- * Formatea una fecha de forma segura
- */
-function formatDate(dateString?: string | null): string {
-  if (!dateString) return '-';
-  
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '-';
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-  } catch {
-    return '-';
-  }
-}
 
 /**
  * Carga los proyectos desde el API
@@ -66,25 +49,22 @@ function renderTableView(): void {
 
   tableBody.innerHTML = state.proyectos
     .map(
-      (p) => `
+      (p) => {
+        const url = p.tipo_proyecto === 'empleados' ? `/tablero-empleados/${p.id}` : `/proyecto/${p.id}`;
+        return `
     <tr>
       <td><strong>${p.nombre}</strong></td>
       <td>${p.descripcion || '-'}</td>
       <td>${MESES_ES[p.mes as keyof typeof MESES_ES]} ${p.anio}</td>
-      <td>
-        <span class="status-badge status-${p.activo ? 'active' : 'inactive'}">
-          ${p.activo ? '✓ Activo' : '✗ Inactivo'}
-        </span>
-      </td>
-      <td>${formatDate(p.fecha_creacion)}</td>
-      <td>
-        <div class="action-btns">
-          <a href="/proyecto/${p.id}" class="btn-sm">👁️ Ver</a>
-          <button class="btn-sm btn-danger" onclick="window.proyectosHandlers.deleteProyecto(${p.id})">🗑️ Eliminar</button>
-        </div>
-      </td>
+      <td>${renderBadgeEstado(p.activo)}</td>
+      <td>${formatearFechaSegura(p.fecha_creacion)}</td>
+      <td>${renderBotonesAccion({
+        verUrl: url,
+        eliminarOnClick: `window.proyectosHandlers.deleteProyecto(${p.id})`
+      })}</td>
     </tr>
-  `
+  `;
+      }
     )
     .join('');
 }
@@ -116,9 +96,7 @@ function renderCardsView(): void {
         </div>
         <div class="proyecto-card-info-item">
           <span class="proyecto-card-info-label">Estado</span>
-          <span class="status-badge status-${p.activo ? 'active' : 'inactive'}">
-            ${p.activo ? '✓ Activo' : '✗ Inactivo'}
-          </span>
+          ${renderBadgeEstado(p.activo)}
         </div>
       </div>
       

@@ -43,11 +43,11 @@ export class AuthService {
         console.log('[AuthService.setToken] Token guardado en localStorage');
       }
       
-      // También establecer cookie para que el servidor lo valide
+      // Establecer cookie para que el servidor (middleware) lo valide
       this.setCookie('auth_token', token, {
         maxAge: REMEMBER_ME_DURATION,
         path: '/',
-        secure: true,
+        secure: false, // Cambiar a true en producción con HTTPS
         sameSite: 'Lax',
       });
     } else {
@@ -62,7 +62,13 @@ export class AuthService {
         console.error('[AuthService.setToken] No se pudo obtener sessionStorage');
       }
       
-      // NO establecer cookie - solo sessionStorage
+      // IMPORTANTE: También establecer cookie de sesión para el middleware
+      // La cookie expira cuando se cierra el navegador (sin maxAge)
+      this.setCookie('auth_token', token, {
+        path: '/',
+        secure: false, // Cambiar a true en producción con HTTPS
+        sameSite: 'Lax',
+      });
     }
   }
 
@@ -150,7 +156,7 @@ export class AuthService {
     // Limpiar usuario
     removeStorageItem(this.USER_STORAGE);
 
-    // Limpiar cookie si existe
+    // IMPORTANTE: Eliminar la cookie para el middleware
     this.removeCookie('auth_token', '/');
   }
 

@@ -3,6 +3,7 @@
 import { TareaService } from '../services/tarea';
 import { AlertUtils } from '../utils/swal';
 import { horasAFormato } from '../utils/formatters';
+import { formatearFechaConDia, formatearFechaConDiaYAnio } from '../utils/date';
 
 export interface DiasInfo {
   id: number;
@@ -72,11 +73,7 @@ export const TareaHandler = {
       this.diasDisponibles.clear();
 
       dias.forEach((dia: any) => {
-        const fechaFormato = new Date(dia.fecha).toLocaleDateString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          weekday: 'short',
-        });
+        const fechaFormato = formatearFechaConDia(dia.fecha);
 
         this.diasDisponibles.set(dia.id, {
           id: dia.id,
@@ -146,11 +143,7 @@ export const TareaHandler = {
     this.diasSeleccionados.clear();
     if (tarea.dias && Array.isArray(tarea.dias)) {
       tarea.dias.forEach((dia: any) => {
-        const fechaFormato = new Date(dia.fecha).toLocaleDateString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          weekday: 'short',
-        });
+        const fechaFormato = formatearFechaConDia(dia.fecha);
 
         this.diasSeleccionados.set(dia.id, {
           id: dia.id,
@@ -252,12 +245,7 @@ export const TareaHandler = {
       if (tarea.dias && tarea.dias.length > 0) {
         diasHtml = tarea.dias
           .map((d: any) => {
-            const fecha = new Date(d.fecha).toLocaleDateString('es-ES', {
-              day: '2-digit',
-              month: '2-digit',
-              year: '2-digit',
-              weekday: 'short',
-            });
+            const fecha = formatearFechaConDiaYAnio(d.fecha);
 
             return `
               <div class="dia-badge-item">

@@ -10,6 +10,13 @@ import { AuthService } from '../services/auth';
 import { querySelector, querySelectorAll } from '../utils/dom';
 import { showErrorModal, showLoadingModal, closeModal } from '../utils/modals';
 import { MESES_ES, horasAFormato } from '../utils/formatters';
+import { formatearFechaCorta, formatearFechaSinAnio } from '../utils/date';
+import { 
+  debeUsarHorasReales, 
+  obtenerHorasAMostrar, 
+  calcularHorasTarea as calcularHorasTareaUtil,
+  calcularTotalHoras 
+} from '../utils/hours';
 import { MultiSelectTable } from '../utils/multiselect';
 import Swal from 'sweetalert2';
 
@@ -36,45 +43,28 @@ const state: ProyectoDetailState = {
 };
 
 // ============================================================
-// Helpers para calcular horas
+// Helpers para calcular horas (usando utilidades)
 // ============================================================
 
 /**
  * Determina si debe mostrar horas reales o estimadas
  */
 function useHorasReales(): boolean {
-  return state.usuarioActual?.usar_horas_reales || false;
+  return debeUsarHorasReales(state.usuarioActual);
 }
 
 /**
  * Obtiene las horas a mostrar según configuración del usuario
  */
 function getHorasAMostrar(dia: Dia): number {
-  if (useHorasReales()) {
-    return dia.horas_reales || 0;
-  }
-  return dia.horas_trabajadas || 0;
+  return obtenerHorasAMostrar(dia, useHorasReales());
 }
 
 /**
  * Calcula las horas de una tarea según los días asignados y configuración
  */
 function calcularHorasTarea(tarea: any): string {
-  if (!tarea.dias || tarea.dias.length === 0) {
-    return '00:00';
-  }
-
-  let totalHoras = 0;
-
-  tarea.dias.forEach((dia: Dia) => {
-    if (useHorasReales()) {
-      totalHoras += dia.horas_reales || 0;
-    } else {
-      totalHoras += dia.horas_trabajadas || 0;
-    }
-  });
-
-  return horasAFormato(totalHoras);
+  return calcularHorasTareaUtil(tarea, useHorasReales());
 }
 
 /**
@@ -322,13 +312,12 @@ function renderDiasEmpleado(dias: Dia[], mostrarHorasReales: boolean): string {
   }
 
   return dias.map(dia => {
-    const fecha = new Date(dia.fecha);
     const horasTrabajadas = horasAFormato(dia.horas_trabajadas || 0);
     const horasReales = horasAFormato(dia.horas_reales || 0);
 
     return `
       <tr data-dia-id="${dia.id}">
-        <td>${fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}</td>
+        <td>${formatearFechaSinAnio(dia.fecha)}</td>
         <td>${dia.dia_semana}</td>
         <td>
           <input 
@@ -556,7 +545,6 @@ function renderTablaDias(
     totalReales += horasAMostrar;
 
     const row = document.createElement('tr');
-    const fecha = new Date(dia.fecha);
     
     // Agregar data-dia-id para multi-select
     row.setAttribute('data-dia-id', dia.id.toString());
@@ -573,7 +561,7 @@ function renderTablaDias(
       : '<td></td>';
 
     row.innerHTML = `
-      <td>${fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
+      <td>${formatearFechaCorta(dia.fecha)}</td>
       <td>${dia.dia_semana}</td>
       <td>
         <input type="text" class="horas-input horas-trabajadas" 
