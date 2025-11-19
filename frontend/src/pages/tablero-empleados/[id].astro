@@ -115,9 +115,6 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
                   <button class="quick-action-btn" id="export-all-btn">
                     📥 Exportar Todo (PDF)
                   </button>
-                  <button class="quick-action-btn" id="view-stats-btn">
-                    📊 Ver Estadísticas
-                  </button>
                 </div>
               </div>
             </div>
@@ -590,16 +587,47 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
     const proyecto = TableroEmpleadosHandler.state.proyectoActual;
     if (!proyecto) return;
 
-    await AlertUtils.info(
-      'Exportar Todo',
-      'Se generarán PDFs individuales para cada empleado del tablero'
-    );
-
-    // TODO: Implementar exportación masiva
-    // Por ahora solo muestra el mensaje
+    try {
+      const { TareaService } = await import('../../services/tarea');
+      const { generatePDFFromTemplate } = await import('../../utils/pdf');
+      
+      const tareas = await TareaService.getTareasProyecto(proyecto.id);
+      const mesNombre = MESES_ES[proyecto.mes as keyof typeof MESES_ES];
+      
+      await generatePDFFromTemplate(
+        proyecto.nombre,
+        mesNombre,
+        proyecto.anio,
+        tareas,
+        []
+      );
+    } catch (error) {
+      console.error('Error exportando PDF:', error);
+      await AlertUtils.error('Error', 'No se pudo generar el PDF');
+    }
   });
 
-  // Ver Estadísticas
+  // Acciones de empleados individuales (exportar PDF y ver mes)
+  document.addEventListener('click', async (e) => {
+    const target = e.target as HTMLElement;
+    
+    // Exportar PDF de empleado individual
+    if (target.classList.contains('btn-export-empleado')) {
+      await AlertUtils.info('Función no implementada', 'La exportación individual por empleado estará disponible próximamente');
+    }
+    
+    // Ver todo el mes de un empleado
+    if (target.classList.contains('btn-ver-mes-empleado')) {
+      const empleadoId = parseInt(target.dataset.empleadoId || '0');
+      const empleadoNombre = target.dataset.empleadoNombre || '';
+      if (empleadoId) {
+        await TableroEmpleadosHandler.verMesCompletoEmpleado(empleadoId, empleadoNombre);
+      }
+    }
+  });
+
+  // ELIMINADO: Botón de estadísticas
+  /*
   document.getElementById('view-stats-btn')?.addEventListener('click', async () => {
     const proyecto = TableroEmpleadosHandler.state.proyectoActual;
     if (!proyecto) return;
@@ -649,6 +677,7 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
       confirmButtonColor: '#667eea'
     });
   });
+  */
 
   // Delegar eventos para botones de "Ver Todo el Mes" y exportar (dinámicos)
   document.addEventListener('click', async (e) => {

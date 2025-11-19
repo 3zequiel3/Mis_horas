@@ -137,11 +137,12 @@ function drawTable(
     
     for (let i = 0; i < row.length; i++) {
       const cellValue = String(row[i] || '-');
-      const cellWidth = columnWidths[i] - 3;
+      const cellWidth = columnWidths[i] - 5; // Más margen interno
       
       // Usar splitTextToSize para calcular altura necesaria
       const lines = pdf.splitTextToSize(cellValue, cellWidth);
-      const cellHeight = lines.length * 4.5 + 2;
+      // Aumentar espacio entre líneas y padding generosamente
+      const cellHeight = lines.length * 6 + 6; // 6mm por línea + 6mm de padding
       
       if (cellHeight > maxRowHeight) {
         maxRowHeight = cellHeight;
@@ -216,16 +217,17 @@ function drawTable(
 
       // Contenido multilinea
       const cellValue = String(row[i] || '-');
-      const cellWidth = columnWidths[i] - 3;
+      const cellWidth = columnWidths[i] - 5; // Más margen interno
       const lines = pdf.splitTextToSize(cellValue, cellWidth);
       
       // Calcular posición vertical para centrar el texto
-      const totalTextHeight = lines.length * 4.5;
-      const startTextY = currentY + (maxRowHeight - totalTextHeight) / 2 + 2;
+      const lineHeight = 6; // 6mm por línea para evitar superposición
+      const totalTextHeight = lines.length * lineHeight;
+      const startTextY = currentY + (maxRowHeight - totalTextHeight) / 2 + 3.5;
       
       // Dibujar cada línea centrada
       lines.forEach((line: string, lineIndex: number) => {
-        pdf.text(line, x + columnWidths[i] / 2, startTextY + lineIndex * 4.5, {
+        pdf.text(line, x + columnWidths[i] / 2, startTextY + lineIndex * lineHeight, {
           align: 'center',
         });
       });
@@ -441,6 +443,278 @@ export async function generateSummaryPDF(
     console.error('Error generando PDF de resumen:', error);
     throw error;
   }
+}
+
+/**
+ * Genera PDF desde una plantilla usando drawTable mejorado
+ * Sin html2canvas - genera directamente con jsPDF para mejor control
+ */
+export async function generatePDFFromTemplate(
+  projectName: string,
+  month: string,
+  year: number,
+  tareas: Tarea[],
+  dias: Dia[]
+): Promise<void> {
+  try {
+    // Preparar datos de tareas con días asociados
+    const tareasConDias = tareas.map((tarea) => {
+      const diasTarea = tarea.dias || [];
+      const diasAsociados = diasTarea.length > 0
+        ? diasTarea.map((d) => new Date(d.fecha).getDate()).join(', ')
+        : '-';
+      
+      return {
+        titulo: tarea.titulo || '-',
+        detalle: tarea.detalle || '-',
+        horas: tarea.horas || '00:00',
+        diasAsociados,
+      };
+    });
+
+    // Calcular total de horas
+    const totalHoras = tareasConDias.reduce((sum, t) => {
+      const [horas, minutos] = t.horas.split(':').map(Number);
+      return sum + (horas || 0) + (minutos || 0) / 60;
+    }, 0);
+    const horasTotal = Math.floor(totalHoras);
+    const minutosTotal = Math.round((totalHoras - horasTotal) * 60);
+    const totalFormateado = `${horasTotal}:${minutosTotal.toString().padStart(2, '0')}`;
+
+    // Crear PDF
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 20;
+    let currentY = margin;
+
+    // Fondo oscuro completo
+    pdf.setFillColor(17, 21, 29); // #11151D
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+
+    // Título
+    pdf.setFontSize(20);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(217, 217, 217); // #D9D9D9
+    pdf.text(projectName, margin, currentY);
+    currentY += 8;
+
+    // Subtítulo (mes y año)
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(156, 163, 175); // #9CA3AF
+    pdf.text(`${month} ${year}`, margin, currentY);
+    currentY += 10;
+
+    // Preparar datos para la tabla
+    const headers = ['Tarea', 'Detalle', 'Horas', 'Días'];
+    const rows = tareasConDias.map((t) => [t.titulo, t.detalle, t.horas, t.diasAsociados]);
+
+    // Configuración de columnas - dar más espacio a Detalle
+    const tableWidth = pageWidth - (2 * margin);
+    const columnWidths = [
+      tableWidth * 0.20,  // Tarea: 20%
+      tableWidth * 0.40,  // Detalle: 40% (más espacio)
+      tableWidth * 0.20,  // Horas: 20%
+      tableWidth * 0.20,  // Días: 20%
+    ];
+
+    // Dibujar tabla con manejo de páginas
+    currentY = drawTableWithPagination(pdf, {
+      headers,
+      rows,
+      columnWidths,
+    }, margin, currentY);
+
+    // Dibujar fila de Total con celdas combinadas y estilo verde "Activo"
+    const totalHeight = 10;
+    
+    // Verificar si cabe en la página actual
+    if (currentY + totalHeight > pageHeight - margin) {
+      pdf.addPage();
+      pdf.setFillColor(17, 21, 29); // #11151D
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+      currentY = margin;
+    }
+
+    // Primera celda combinada: "Total" (Tarea + Detalle)
+    const totalLabelWidth = columnWidths[0] + columnWidths[1];
+    pdf.setFillColor(5, 46, 22); // Verde oscuro estilo "Activo"
+    pdf.rect(margin, currentY, totalLabelWidth, totalHeight, 'F');
+    pdf.setDrawColor(34, 197, 94); // Verde claro para borde
+    pdf.setLineWidth(0.5);
+    pdf.rect(margin, currentY, totalLabelWidth, totalHeight);
+    
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+    pdf.setTextColor(34, 197, 94); // Verde claro #22C55E
+    pdf.text('Total', margin + totalLabelWidth / 2, currentY + totalHeight / 2 + 1.5, {
+      align: 'center',
+    });
+
+    // Segunda celda combinada: Valor del total (Horas + Días)
+    const totalValueWidth = columnWidths[2] + columnWidths[3];
+    const totalValueX = margin + totalLabelWidth;
+    pdf.setFillColor(5, 46, 22); // Verde oscuro estilo "Activo"
+    pdf.rect(totalValueX, currentY, totalValueWidth, totalHeight, 'F');
+    pdf.setDrawColor(34, 197, 94); // Verde claro para borde
+    pdf.rect(totalValueX, currentY, totalValueWidth, totalHeight);
+    
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(34, 197, 94); // Verde claro
+    pdf.text(totalFormateado, totalValueX + totalValueWidth / 2, currentY + totalHeight / 2 + 1.5, {
+      align: 'center',
+    });
+
+    // Guardar el PDF
+    pdf.save(`${projectName}-${month}-${year}.pdf`);
+  } catch (error) {
+    console.error('Error generando PDF desde plantilla:', error);
+    throw error;
+  }
+}
+
+/**
+ * Dibuja tabla con paginación automática y fondo oscuro consistente
+ */
+function drawTableWithPagination(
+  pdf: jsPDF,
+  config: TableConfig,
+  startX: number,
+  startY: number
+): number {
+  const headers = config.headers;
+  const rows = config.rows;
+  const columnWidths = config.columnWidths || [];
+  
+  const fontSize = 8;
+  const headerFontSize = 9;
+  const lineHeight = 3.5;
+  const cellPadding = 4;
+  const minRowHeight = 8;
+  const maxRowHeight = 150; // Límite máximo para una fila
+  
+  let currentY = startY;
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const margin = 20;
+  const pageBottom = pageHeight - margin;
+
+  // Función para dibujar el header
+  const drawHeader = (y: number) => {
+    pdf.setFontSize(headerFontSize);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(217, 217, 217);
+    pdf.setDrawColor(218, 218, 218);
+    pdf.setLineWidth(0.5);
+
+    const headerHeight = 10;
+    for (let i = 0; i < headers.length; i++) {
+      const x = startX + columnWidths.slice(0, i).reduce((a, b) => a + b, 0);
+      
+      pdf.setFillColor(26, 26, 46); // #1A1A2E
+      pdf.rect(x, y, columnWidths[i], headerHeight, 'FD');
+      
+      pdf.text(headers[i], x + columnWidths[i] / 2, y + headerHeight / 2 + 1.5, {
+        align: 'center',
+      });
+    }
+    
+    return y + headerHeight;
+  };
+
+  // Dibujar header inicial
+  currentY = drawHeader(currentY);
+
+  // Dibujar filas
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(fontSize);
+
+  rows.forEach((row, rowIndex) => {
+    // Calcular altura real necesaria
+    let calculatedHeight = minRowHeight;
+    
+    for (let i = 0; i < row.length; i++) {
+      const cellValue = String(row[i] || '-');
+      const cellWidth = columnWidths[i] - (cellPadding * 2);
+      const lines = pdf.splitTextToSize(cellValue, cellWidth);
+      const cellHeight = (lines.length * lineHeight) + (cellPadding * 2);
+      
+      if (cellHeight > calculatedHeight) {
+        calculatedHeight = cellHeight;
+      }
+    }
+
+    // Limitar la altura máxima
+    const finalHeight = Math.min(calculatedHeight, maxRowHeight);
+    
+    // Verificar si cabe en la página actual
+    if (currentY + finalHeight > pageBottom) {
+      // Nueva página
+      pdf.addPage();
+      pdf.setFillColor(17, 21, 29); // #11151D
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+      
+      currentY = margin;
+      currentY = drawHeader(currentY);
+      
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(fontSize);
+    }
+
+    // Dibujar celdas de la fila
+    for (let i = 0; i < row.length; i++) {
+      const x = startX + columnWidths.slice(0, i).reduce((a, b) => a + b, 0);
+      
+      // Fondo de tabla
+      pdf.setFillColor(26, 26, 46); // #1A1A2E
+      pdf.rect(x, currentY, columnWidths[i], finalHeight, 'F');
+      
+      // Borde
+      pdf.setDrawColor(218, 218, 218);
+      pdf.setLineWidth(0.5);
+      pdf.rect(x, currentY, columnWidths[i], finalHeight);
+
+      // Contenido
+      const cellValue = String(row[i] || '-');
+      const cellWidth = columnWidths[i] - (cellPadding * 2);
+      const lines = pdf.splitTextToSize(cellValue, cellWidth);
+      
+      // Limitar número de líneas si es muy largo
+      const maxLines = Math.floor((finalHeight - (cellPadding * 2)) / lineHeight);
+      const visibleLines = lines.slice(0, maxLines);
+      
+      // Estilo de texto
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(217, 217, 217);
+      
+      // Calcular posición Y inicial del texto
+      const totalTextHeight = visibleLines.length * lineHeight;
+      const startTextY = currentY + (finalHeight - totalTextHeight) / 2 + (lineHeight / 2);
+      
+      // Alineación: columna Detalle (índice 1) a la izquierda, el resto centradas
+      const align = i === 1 ? 'left' : 'center';
+      const textX = align === 'center' ? x + columnWidths[i] / 2 : x + cellPadding;
+      
+      // Dibujar líneas de texto
+      visibleLines.forEach((line: string, lineIndex: number) => {
+        const textY = startTextY + (lineIndex * lineHeight);
+        pdf.text(line, textX, textY, {
+          align: align as 'left' | 'center',
+          maxWidth: cellWidth,
+        });
+      });
+    }
+
+    currentY += finalHeight;
+  });
+
+  return currentY;
 }
 
 /**

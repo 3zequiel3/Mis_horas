@@ -356,10 +356,10 @@ async function exportarPDFEmpleado(empleadoId: number, empleadoNombre: string): 
       tarea.dias && tarea.dias.some((dia: Dia) => dia.empleado_id === empleadoId)
     );
 
-    const { generateTasksPDF } = await import('../utils/pdf');
+    const { generatePDFFromTemplate } = await import('../utils/pdf');
     const mes = MESES_ES[state.mesActual as keyof typeof MESES_ES] || `Mes ${state.mesActual}`;
     
-    await generateTasksPDF(
+    await generatePDFFromTemplate(
       `${state.proyectoActual!.nombre} - ${empleadoNombre}`,
       mes,
       state.anioActual,

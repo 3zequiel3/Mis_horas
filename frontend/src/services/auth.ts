@@ -107,15 +107,11 @@ export class AuthService {
   static getToken(): string | null {
     if (!isClient()) return null;
 
-    console.log('[AuthService.getToken] Buscando token...');
-
     // Primero intentar obtener del sessionStorage (sesión actual)
     const sessionStorage = getStorage(true);
     if (sessionStorage) {
       const sessionToken = sessionStorage.getItem(this.TOKEN_SESSION);
-      console.log('[AuthService.getToken] sessionStorage token:', !!sessionToken);
       if (sessionToken && !isJWTExpired(sessionToken)) {
-        console.log('[AuthService.getToken] Token válido en sessionStorage');
         return sessionToken;
       }
     }
@@ -124,15 +120,12 @@ export class AuthService {
     const localStorage = getStorage(false);
     if (localStorage) {
       const persistToken = localStorage.getItem(this.TOKEN_PERSIST);
-      console.log('[AuthService.getToken] localStorage token:', !!persistToken);
       if (persistToken && !isJWTExpired(persistToken)) {
-        console.log('[AuthService.getToken] Token válido en localStorage');
         return persistToken;
       }
     }
 
     // Si hay token expirado, limpiar
-    console.log('[AuthService.getToken] No se encontró token válido, limpiando...');
     this.clearToken();
     return null;
   }

@@ -1,0 +1,122 @@
+---
+interface Props {
+  projectName: string;
+  month: string;
+  year: number;
+  tareas: Array<{
+    titulo: string;
+    detalle: string;
+    horas: string;
+    diasAsociados: string;
+  }>;
+}
+
+const { projectName, month, year, tareas } = Astro.props;
+---
+
+<div id="pdf-content" class="pdf-template">
+  <div class="pdf-header">
+    <h1>{projectName}</h1>
+    <p class="pdf-subtitle">{month} {year}</p>
+  </div>
+
+  <table class="pdf-table">
+    <thead>
+      <tr>
+        <th>Título</th>
+        <th>Detalle</th>
+        <th>Horas</th>
+        <th>Días</th>
+      </tr>
+    </thead>
+    <tbody>
+      {tareas.map((tarea, index) => (
+        <tr class={index % 2 === 0 ? 'even' : 'odd'}>
+          <td>{tarea.titulo || '-'}</td>
+          <td class="detalle-cell">{tarea.detalle || '-'}</td>
+          <td>{tarea.horas || '00:00'}</td>
+          <td>{tarea.diasAsociados || '-'}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .pdf-template {
+    width: 210mm; /* A4 width */
+    min-height: 297mm; /* A4 height */
+    background: #0f1419;
+    padding: 20mm;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .pdf-header {
+    margin-bottom: 20px;
+    border-bottom: 3px solid #667eea;
+    padding-bottom: 15px;
+  }
+
+  .pdf-header h1 {
+    color: #ffffff;
+    font-size: 28px;
+    margin: 0 0 8px 0;
+    font-weight: bold;
+  }
+
+  .pdf-subtitle {
+    color: #9ca3af;
+    font-size: 16px;
+    margin: 0;
+  }
+
+  .pdf-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #1a1a2e;
+  }
+
+  .pdf-table thead {
+    background: #667eea;
+  }
+
+  .pdf-table th {
+    color: #ffffff;
+    padding: 12px 10px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 14px;
+    border: 1px solid #788cf0;
+  }
+
+  .pdf-table td {
+    padding: 10px;
+    text-align: center;
+    color: #c8c8c8;
+    font-size: 12px;
+    border: 1px solid #2d3746;
+    vertical-align: top;
+  }
+
+  .pdf-table tr.even {
+    background: #1a1a2e;
+  }
+
+  .pdf-table tr.odd {
+    background: #1f2937;
+  }
+
+  .detalle-cell {
+    text-align: left;
+    word-wrap: break-word;
+    max-width: 400px;
+    white-space: pre-wrap;
+    line-height: 1.6;
+  }
+
+  /* Asegurar que el contenido largo se divida correctamente */
+  .pdf-table tbody tr {
+    page-break-inside: avoid;
+  }
+</style>
