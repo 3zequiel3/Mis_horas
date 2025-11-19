@@ -34,4 +34,11 @@ export class DiaService extends ApiService {
   static async updateHoras(dia_id: number, horas: string): Promise<Dia> {
     return this.put(`/api/dias/${dia_id}/horas`, { horas });
   }
+
+  /**
+   * Actualiza horarios de entrada y salida de un día (calcula horas_trabajadas automáticamente)
+   */
+  static async updateHorarios(dia_id: number, hora_entrada: string, hora_salida: string): Promise<Dia> {
+    return this.put(`/api/dias/${dia_id}/horarios`, { hora_entrada, hora_salida });
+  }
 }

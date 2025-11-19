@@ -38,3 +38,22 @@ def update_horas(user_id, dia_id):
         return jsonify({'error': 'Día no encontrado'}), 404
     
     return jsonify(dia.to_dict()), 200
+
+@dia_bp.route('/<int:dia_id>/horarios', methods=['PUT'])
+@token_required
+def update_horarios(user_id, dia_id):
+    """Actualiza hora de entrada y salida de un día (calcula horas_trabajadas automáticamente)"""
+    data = request.get_json()
+    
+    hora_entrada = data.get('hora_entrada')
+    hora_salida = data.get('hora_salida')
+    
+    if not hora_entrada or not hora_salida:
+        return jsonify({'error': 'Campos requeridos: hora_entrada y hora_salida'}), 400
+    
+    dia = DiaService.actualizar_horarios_dia(dia_id, hora_entrada, hora_salida, user_id)
+    
+    if not dia:
+        return jsonify({'error': 'Día no encontrado'}), 404
+    
+    return jsonify(dia.to_dict()), 200

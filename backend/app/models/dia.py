@@ -15,6 +15,8 @@ class Dia(db.Model):
     dia_semana = db.Column(db.String(20), nullable=False)
     horas_trabajadas = db.Column(db.Float, default=0)
     horas_reales = db.Column(db.Float, default=0)
+    hora_entrada = db.Column(db.Time, nullable=True)  # Nueva columna para hora de entrada
+    hora_salida = db.Column(db.Time, nullable=True)   # Nueva columna para hora de salida
     proyecto_id = db.Column(db.Integer, db.ForeignKey("proyectos.id"), nullable=False)
     empleado_id = db.Column(db.Integer, db.ForeignKey("empleados.id"), nullable=True)  # Null para proyectos personales
 
@@ -30,6 +32,8 @@ class Dia(db.Model):
             'dia_semana': self.dia_semana,
             'horas_trabajadas': self.horas_trabajadas,
             'horas_reales': self.horas_reales,
+            'hora_entrada': self.hora_entrada.strftime('%H:%M') if self.hora_entrada else None,
+            'hora_salida': self.hora_salida.strftime('%H:%M') if self.hora_salida else None,
             'proyecto_id': self.proyecto_id,
             'empleado_id': self.empleado_id,
         }

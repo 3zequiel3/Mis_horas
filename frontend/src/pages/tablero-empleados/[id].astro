@@ -7,6 +7,7 @@ import '../../styles/tareas.css';
 import '../../styles/sidebar-meses.css';
 import '../../styles/empleados-btn.css';
 import '../../styles/tablero-empleados.css';
+import '../../styles/modales.css';
 
 const pageTitle = 'Tablero Empleados - Mis Horas';
 ---
@@ -173,18 +174,22 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
                     <tr>
                       <th>Fecha</th>
                       <th>Día</th>
+                      <th>Entrada</th>
+                      <th>Salida</th>
                       <th>Horas Trabajadas</th>
                       <th id="empleado-th-horas-reales">Horas Reales</th>
                     </tr>
                   </thead>
                   <tbody id="empleado-mes-dias-tbody">
                     <tr class="loading-row">
-                      <td colspan="4" class="text-center">Cargando días...</td>
+                      <td colspan="6" class="text-center">Cargando días...</td>
                     </tr>
                   </tbody>
                   <tfoot>
                     <tr class="totals-row">
                       <td><strong>Total del Mes:</strong></td>
+                      <td></td>
+                      <td></td>
                       <td></td>
                       <td><strong id="empleado-mes-total-trabajadas">00:00</strong></td>
                       <td id="empleado-td-total-reales"><strong id="empleado-mes-total-reales">00:00</strong></td>
@@ -420,10 +425,57 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
     const proyecto = TableroEmpleadosHandler.state.proyectoActual;
     if (!proyecto) return;
 
+    // Cerrar modal ANTES de guardar para que el SweetAlert aparezca correctamente
+    modal.style.display = 'none';
+
     const success = await TareaHandler.guardarTarea(form, proyecto.id, async () => {
       await TableroEmpleadosHandler.loadTareas();
-      modal.style.display = 'none';
     });
+
+    // Si falló, reabrir el modal
+    if (!success) {
+      modal.style.display = 'flex';
+    }
+  });
+
+  // Visualizar tarea
+  document.addEventListener('view-tarea-empleados', (event: any) => {
+    const tarea = event.detail.tarea;
+    TareaHandler.tareaEnVista = tarea;
+    const mostrarHorasReales = TableroEmpleadosHandler.state.proyectoActual?.horas_reales_activas || false;
+    TareaHandler.renderizarVistaDetalle(tarea, mostrarHorasReales);
+    viewModal.style.display = 'flex';
+  });
+
+  // Editar desde visualización
+  document.getElementById('edit-from-view-btn')?.addEventListener('click', async () => {
+    viewModal.style.display = 'none';
+    if (TareaHandler.tareaEnVista) {
+      const proyecto = TableroEmpleadosHandler.state.proyectoActual;
+      if (proyecto) {
+        await TareaHandler.cargarParaEditar(
+          TareaHandler.tareaEnVista,
+          proyecto.id,
+          TableroEmpleadosHandler.state.anioActual,
+          TableroEmpleadosHandler.state.mesActual
+        );
+        modal.style.display = 'flex';
+      }
+    }
+  });
+
+  // Eliminar desde visualización
+  document.getElementById('delete-from-view-btn')?.addEventListener('click', async () => {
+    if (TareaHandler.tareaEnVista) {
+      viewModal.style.display = 'none';
+      await TareaHandler.eliminarTarea(
+        TareaHandler.tareaEnVista.id,
+        TareaHandler.tareaEnVista.titulo,
+        async () => {
+          await TableroEmpleadosHandler.loadTareas();
+        }
+      );
+    }
   });
 
   // ========== GESTIÓN DE EMPLEADOS ==========

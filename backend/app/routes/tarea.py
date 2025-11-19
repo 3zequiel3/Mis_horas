@@ -9,7 +9,8 @@ tarea_bp = Blueprint('tareas', __name__)
 def get_tareas_proyecto(user_id, proyecto_id):
     """Obtiene tareas de un proyecto"""
     tareas = TareaService.obtener_tareas_proyecto(proyecto_id)
-    return jsonify([t.to_dict() for t in tareas]), 200
+    # Incluir desglose de empleados en la respuesta
+    return jsonify([t.to_dict(incluir_desglose_empleados=True) for t in tareas]), 200
 
 @tarea_bp.route('', methods=['POST'])
 @token_required
@@ -34,7 +35,7 @@ def create_tarea(user_id):
         usuario_id=user_id
     )
     
-    return jsonify(tarea.to_dict()), 201
+    return jsonify(tarea.to_dict(incluir_desglose_empleados=True)), 201
 
 @tarea_bp.route('/<int:tarea_id>', methods=['GET'])
 @token_required
@@ -45,7 +46,7 @@ def get_tarea(user_id, tarea_id):
     if not tarea:
         return jsonify({'error': 'Tarea no encontrada'}), 404
     
-    return jsonify(tarea.to_dict()), 200
+    return jsonify(tarea.to_dict(incluir_desglose_empleados=True)), 200
 
 @tarea_bp.route('/<int:tarea_id>', methods=['PUT'])
 @token_required
@@ -65,7 +66,7 @@ def update_tarea(user_id, tarea_id):
     if not tarea:
         return jsonify({'error': 'Tarea no encontrada'}), 404
     
-    return jsonify(tarea.to_dict()), 200
+    return jsonify(tarea.to_dict(incluir_desglose_empleados=True)), 200
 
 @tarea_bp.route('/<int:tarea_id>', methods=['DELETE'])
 @token_required

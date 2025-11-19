@@ -84,3 +84,49 @@ class DiaService:
             tarea.horas = horas_a_formato(total_horas)
         
         db.session.commit()
+    
+    @staticmethod
+    def actualizar_horarios_dia(dia_id: int, hora_entrada_str: str, hora_salida_str: str, user_id: int):
+        """Actualiza horarios de entrada/salida y calcula horas_trabajadas automáticamente"""
+        from datetime import datetime, timedelta
+        
+        dia = Dia.query.filter(Dia.id == dia_id).first()
+        if not dia:
+            return None
+        
+        try:
+            # Parsear horas (formato HH:MM)
+            hora_entrada = datetime.strptime(hora_entrada_str, '%H:%M').time()
+            hora_salida = datetime.strptime(hora_salida_str, '%H:%M').time()
+            
+            # Crear datetime para calcular diferencia
+            entrada_dt = datetime.combine(datetime.today(), hora_entrada)
+            salida_dt = datetime.combine(datetime.today(), hora_salida)
+            
+            # Si salida es menor que entrada, asumimos que pasó medianoche
+            if salida_dt < entrada_dt:
+                salida_dt += timedelta(days=1)
+            
+            # Calcular diferencia en horas
+            diferencia = salida_dt - entrada_dt
+            horas_trabajadas = diferencia.total_seconds() / 3600
+            
+            # Actualizar el día
+            dia.hora_entrada = hora_entrada
+            dia.hora_salida = hora_salida
+            dia.horas_trabajadas = horas_trabajadas
+            
+            # Las horas_reales no se modifican en tablero de empleados
+            # pero si existían, las mantenemos
+            
+            db.session.commit()
+            db.session.refresh(dia)
+            
+            # Recalcular tareas afectadas
+            DiaService.recalcular_tareas_afectadas(dia, user_id)
+            
+            return dia
+            
+        except ValueError as e:
+            print(f"Error parseando horarios: {e}")
+            return None

@@ -2,6 +2,7 @@
 
 import { TareaService } from '../services/tarea';
 import { AlertUtils } from '../utils/swal';
+import { horasAFormato } from '../utils/formatters';
 
 export interface DiasInfo {
   id: number;
@@ -239,18 +240,16 @@ export const TareaHandler = {
     }
 
     if (viewModalBody) {
-      let horasTotales = 0;
+      // Usar las horas ya calculadas por el backend (respeta tipo de proyecto y configuración)
+      const horasTexto = tarea.horas || '00:00';
+      // Convertir "HH:MM" a número de horas para mostrar
+      const [horas, minutos] = horasTexto.split(':').map(Number);
+      const horasTotales = horas + (minutos / 60);
+      
       let diasHtml = '';
+      let desgloseEmpleadosHtml = '';
 
       if (tarea.dias && tarea.dias.length > 0) {
-        tarea.dias.forEach((d: any) => {
-          const horasAMostrar = usuarioUsaHorasReales
-            ? d.horas_reales || 0
-            : d.horas_trabajadas || 0;
-
-          horasTotales += horasAMostrar;
-        });
-
         diasHtml = tarea.dias
           .map((d: any) => {
             const fecha = new Date(d.fecha).toLocaleDateString('es-ES', {
@@ -269,6 +268,29 @@ export const TareaHandler = {
           .join('');
       } else {
         diasHtml = '<div class="dias-empty"><p>Sin días asignados</p></div>';
+      }
+
+      // Mostrar desglose por empleado si existe
+      if (tarea.desglose_empleados && tarea.desglose_empleados.length > 0) {
+        desgloseEmpleadosHtml = `
+          <div class="detalle-seccion">
+            <div class="seccion-header">
+              <h4 class="seccion-titulo">👥 Horas por Empleado</h4>
+            </div>
+            <div class="desglose-empleados">
+              ${tarea.desglose_empleados.map((emp: any) => {
+                const horas = horasAFormato(emp.horas_totales);
+                return `
+                  <div class="empleado-desglose-item">
+                    <span class="empleado-desglose-nombre">${emp.empleado_nombre}</span>
+                    <span class="empleado-desglose-horas">${horas}</span>
+                    <span class="empleado-desglose-dias">${emp.dias_count} día${emp.dias_count !== 1 ? 's' : ''}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
       }
 
       viewModalBody.innerHTML = `
@@ -296,6 +318,8 @@ export const TareaHandler = {
               <span class="horas-label">Acumuladas</span>
             </div>
           </div>
+
+          ${desgloseEmpleadosHtml}
 
           <div class="detalle-seccion">
             <div class="seccion-header">

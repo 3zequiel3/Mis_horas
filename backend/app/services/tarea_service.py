@@ -25,14 +25,13 @@ class TareaService:
         db.session.add(tarea)
         db.session.commit()
         
-        # Siempre recalcular horas, incluso sin usuario_id
+        # Siempre recalcular horas
         if usuario_id:
             tarea.horas = TareaService.calcular_horas_tarea(tarea, usuario_id)
         else:
-            # Si no hay usuario_id, calcular asumiendo usar_horas_reales=False
+            # Sin usuario_id, calcular sumando horas_trabajadas directamente
             if tarea.dias:
                 total_horas = sum(dia.horas_trabajadas or 0 for dia in tarea.dias)
-                from app.utils.formatters import horas_a_formato
                 tarea.horas = horas_a_formato(total_horas)
         
         db.session.commit()
@@ -95,19 +94,27 @@ class TareaService:
     
     @staticmethod
     def calcular_horas_tarea(tarea: Tarea, usuario_id: int) -> str:
-        """Calcula horas de la tarea según la configuración del usuario"""
+        """Calcula horas de la tarea según la configuración del usuario y tipo de proyecto"""
         if not tarea.dias:
             return "00:00"
         
-        usuario = Usuario.query.filter(Usuario.id == usuario_id).first()
-        usar_horas_reales = usuario.usar_horas_reales if usuario else False
+        from app.models.proyecto import Proyecto
         
-        if usar_horas_reales:
-            # Si usa horas reales, suma horas_reales
-            total_horas = sum(dia.horas_reales or 0 for dia in tarea.dias)
-        else:
-            # Si no usa horas reales, suma horas_trabajadas
+        proyecto = Proyecto.query.filter(Proyecto.id == tarea.proyecto_id).first()
+        usuario = Usuario.query.filter(Usuario.id == usuario_id).first()
+        
+        # Para proyectos de empleados, siempre usar horas_trabajadas
+        if proyecto and proyecto.tipo_proyecto == 'empleados':
+            # Suma horas_trabajadas de todos los días de todos los empleados
             total_horas = sum(dia.horas_trabajadas or 0 for dia in tarea.dias)
+        else:
+            # Para proyectos personales, usar configuración del usuario
+            usar_horas_reales = usuario.usar_horas_reales if usuario else False
+            
+            if usar_horas_reales:
+                total_horas = sum(dia.horas_reales or 0 for dia in tarea.dias)
+            else:
+                total_horas = sum(dia.horas_trabajadas or 0 for dia in tarea.dias)
         
         return horas_a_formato(total_horas)
     

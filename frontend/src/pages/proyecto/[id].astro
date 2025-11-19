@@ -347,13 +347,19 @@ const pageTitle = 'Tablero - Mis Horas';
     e.preventDefault();
     const proyecto = proyectoHandlers.state.proyectoActual;
     if (proyecto) {
+      // Cerrar modal ANTES de guardar para que el SweetAlert aparezca correctamente
+      modal.style.display = 'none';
+
       const success = await TareaHandler.guardarTarea(form, proyecto.id, async () => {
-        modal.style.display = 'none';
         TareaHandler.diasSeleccionados.clear();
         await proyectoHandlers.loadTareas();
       });
+      
       if (success) {
         TareaHandler.renderizarDiasSeleccionados(diasSelectedDiv);
+      } else {
+        // Si falló, reabrir el modal
+        modal.style.display = 'flex';
       }
     }
   });

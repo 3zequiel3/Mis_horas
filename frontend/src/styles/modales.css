@@ -467,3 +467,50 @@ form {
   font-size: 0.85rem;
 }
 
+/* Desglose por empleado */
+.desglose-empleados {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.empleado-desglose-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.empleado-desglose-item:hover {
+  background: rgba(102, 126, 234, 0.08);
+  border-color: rgba(102, 126, 234, 0.2);
+  transform: translateX(2px);
+}
+
+.empleado-desglose-nombre {
+  flex: 1;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.empleado-desglose-horas {
+  color: #667eea;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.3rem 0.7rem;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 6px;
+  margin-right: 0.5rem;
+}
+
+.empleado-desglose-dias {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+

@@ -78,6 +78,8 @@ export interface Dia {
   dia_semana: string;
   horas_trabajadas: number;
   horas_reales: number;
+  hora_entrada?: string | null;  // Formato HH:MM
+  hora_salida?: string | null;   // Formato HH:MM
   proyecto_id: number;
   empleado_id?: number;
   creado_en?: string;
