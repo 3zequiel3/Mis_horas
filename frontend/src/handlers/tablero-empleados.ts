@@ -568,8 +568,106 @@ export const TableroEmpleadosHandler= {
    * Exporta PDF de un empleado específico
    */
   async exportarPDFEmpleado(empleadoId: number, empleadoNombre: string): Promise<void> {
-    console.log('Exportando PDF para empleado:', empleadoId, empleadoNombre);
-    // TODO: Implementar exportación de PDF
+    try {
+      // Preguntar si quiere exportar semana o mes
+      const { value: periodo } = await Swal.fire({
+        title: `Exportar PDF - ${empleadoNombre}`,
+        text: '¿Qué período deseas exportar?',
+        icon: 'question',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: '📅 Semana Actual',
+        denyButtonText: '📆 Mes Completo',
+        cancelButtonText: 'Cancelar',
+        background: '#0f1419',
+        color: '#c8c8c8',
+        confirmButtonColor: '#667eea',
+        denyButtonColor: '#43e97b',
+        cancelButtonColor: '#2d3746',
+        iconColor: '#667eea'
+      });
+
+      if (!periodo && periodo !== false) return; // Cancelado
+      
+      const esSemana = periodo === true; // true = confirmButton (Semana), false = denyButton (Mes)
+
+      // Mostrar loading
+      Swal.fire({
+        title: 'Generando PDF...',
+        text: 'Por favor espera',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        background: '#0f1419',
+        color: '#c8c8c8',
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      if (!this.state.proyectoActual) return;
+
+      // Obtener días según el período seleccionado
+      let dias: Dia[];
+      let periodoTexto: string;
+
+      if (esSemana) {
+        // Semana actual
+        const semanaFechas = this.getSemanActual();
+        const todosDias = await DiaService.getDiasMes(
+          this.state.proyectoActual.id,
+          this.state.anioActual,
+          this.state.mesActual,
+          empleadoId
+        );
+        dias = todosDias.filter((dia) => {
+          const diaFecha = new Date(dia.fecha).toISOString().split('T')[0];
+          return semanaFechas.includes(diaFecha);
+        });
+        periodoTexto = 'Semana Actual';
+      } else {
+        // Mes completo
+        dias = await DiaService.getDiasMes(
+          this.state.proyectoActual.id,
+          this.state.anioActual,
+          this.state.mesActual,
+          empleadoId
+        );
+        const mesNombre = MESES_ES[this.state.mesActual as keyof typeof MESES_ES];
+        periodoTexto = `${mesNombre} ${this.state.anioActual}`;
+      }
+
+      // Generar PDF usando la utilidad
+      const { generateEmpleadoPDF } = await import('../utils/pdf');
+      await generateEmpleadoPDF(
+        empleadoNombre,
+        this.state.proyectoActual.nombre,
+        periodoTexto,
+        dias
+      );
+
+      // Cerrar loading y mostrar éxito
+      Swal.fire({
+        icon: 'success',
+        title: '¡PDF Generado!',
+        text: 'El archivo se ha descargado correctamente',
+        showConfirmButton: false,
+        timer: 2000,
+        background: '#0f1419',
+        color: '#c8c8c8',
+        iconColor: '#43e97b'
+      });
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo generar el PDF',
+        background: '#0f1419',
+        color: '#c8c8c8',
+        iconColor: '#ef4444',
+        confirmButtonColor: '#ef4444'
+      });
+    }
   },
 
   async mostrarModalConfiguracion(): Promise<void> {

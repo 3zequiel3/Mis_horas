@@ -1,15 +1,15 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import Header from '../../components/Header.astro';
-import ProtectedRoute from '../../components/ProtectedRoute.astro';
-import '../../styles/tabla.css';
-import '../../styles/tareas.css';
-import '../../styles/sidebar-meses.css';
-import '../../styles/empleados-btn.css';
-import '../../styles/tablero-empleados.css';
-import '../../styles/modales.css';
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import ProtectedRoute from "../../components/ProtectedRoute.astro";
+import "../../styles/tabla.css";
+import "../../styles/tareas.css";
+import "../../styles/sidebar-meses.css";
+import "../../styles/empleados-btn.css";
+import "../../styles/tablero-empleados.css";
+import "../../styles/modales.css";
 
-const pageTitle = 'Tablero Empleados - Mis Horas';
+const pageTitle = "Tablero Empleados - Mis Horas";
 ---
 
 <BaseLayout title={pageTitle}>
@@ -25,8 +25,12 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
           </div>
           <div class="header-actions">
             <span id="proyecto-status" class="badge"></span>
-            <button id="config-btn" class="btn btn-secondary">⚙️ Configuración</button>
-            <button id="finalizar-btn" class="btn btn-success">✅ Finalizar</button>
+            <button id="config-btn" class="btn btn-secondary"
+              >⚙️ Configuración</button
+            >
+            <button id="finalizar-btn" class="btn btn-success"
+              >✅ Finalizar</button
+            >
           </div>
         </div>
 
@@ -41,22 +45,29 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
                 <p id="proyecto-nombre-sidebar">Cargando...</p>
               </div>
 
-              <button class="add-mes-btn" id="add-mes-btn">+ Agregar mes</button>
+              <button class="add-mes-btn" id="add-mes-btn">+ Agregar mes</button
+              >
 
               <div class="meses-list" id="meses-list">
                 <div class="mes-item loading">Cargando meses...</div>
               </div>
 
               <div class="mes-info" id="mes-info" style="display: none;">
-                <strong>Mes actual:</strong> <span id="mes-info-text"></span>
+                <strong>Mes actual:</strong>
+                <span id="mes-info-text"></span>
               </div>
             </div>
 
             <!-- Card de Tareas (separada) -->
             <div class="sidebar-card tareas-card">
               <div class="tareas-header">
-                <h2>📋 Tareas <span id="tareas-count" class="tareas-badge">0</span></h2>
-                <button id="nueva-tarea-btn" class="btn btn-small">+ Nueva</button>
+                <h2>
+                  📋 Tareas <span id="tareas-count" class="tareas-badge"
+                    >0</span>
+                </h2>
+                <button id="nueva-tarea-btn" class="btn btn-small"
+                  >+ Nueva</button
+                >
               </div>
 
               <!-- Lista de Tareas -->
@@ -88,11 +99,15 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
                 <div class="tablero-stats">
                   <div class="tablero-stat-item">
                     <span class="tablero-stat-label">Empleados</span>
-                    <span class="tablero-stat-value" id="total-empleados">0</span>
+                    <span class="tablero-stat-value" id="total-empleados"
+                      >0</span
+                    >
                   </div>
                   <div class="tablero-stat-item">
                     <span class="tablero-stat-label">Total Horas</span>
-                    <span class="tablero-stat-value" id="total-horas">00:00</span>
+                    <span class="tablero-stat-value" id="total-horas"
+                      >00:00</span
+                    >
                   </div>
                 </div>
               </div>
@@ -100,8 +115,13 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
               <!-- Gestión de Empleados -->
               <div class="empleados-management-panel">
                 <h3>👥 Gestionar Empleados</h3>
-                <div class="empleados-management-list" id="empleados-management-list">
-                  <p style="text-align: center; color: var(--text-secondary);">Cargando...</p>
+                <div
+                  class="empleados-management-list"
+                  id="empleados-management-list"
+                >
+                  <p style="text-align: center; color: var(--text-secondary);">
+                    Cargando...
+                  </p>
                 </div>
                 <button class="quick-action-btn primary" id="add-empleado-btn">
                   ➕ Agregar Empleado
@@ -125,10 +145,16 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
         <div class="add-mes-modal" id="add-mes-modal">
           <form class="add-mes-form" id="add-mes-form">
             <h3>Agregar Nuevo Mes</h3>
-            
+
             <div class="form-group">
               <label for="nuevo-mes-year">Año:</label>
-              <input type="number" id="nuevo-mes-year" min="2020" max="2100" required />
+              <input
+                type="number"
+                id="nuevo-mes-year"
+                min="2020"
+                max="2100"
+                required
+              />
             </div>
 
             <div class="form-group">
@@ -152,7 +178,9 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
 
             <div class="form-actions">
               <button type="submit" class="btn-primary">Agregar</button>
-              <button type="button" class="btn-secondary" id="close-add-mes">Cancelar</button>
+              <button type="button" class="btn-secondary" id="close-add-mes"
+                >Cancelar</button
+              >
             </div>
           </form>
         </div>
@@ -162,7 +190,9 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
           <div class="modal-content modal-large">
             <div class="modal-header">
               <h3 id="empleado-mes-modal-title">Mes Completo - Empleado</h3>
-              <button class="modal-close" id="empleado-mes-modal-close">✕</button>
+              <button class="modal-close" id="empleado-mes-modal-close"
+                >✕</button
+              >
             </div>
             <div class="mes-modal-body">
               <div class="table-container">
@@ -188,15 +218,25 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
                       <td></td>
                       <td></td>
                       <td></td>
-                      <td><strong id="empleado-mes-total-trabajadas">00:00</strong></td>
-                      <td id="empleado-td-total-reales"><strong id="empleado-mes-total-reales">00:00</strong></td>
+                      <td
+                        ><strong id="empleado-mes-total-trabajadas"
+                          >00:00</strong
+                        ></td
+                      >
+                      <td id="empleado-td-total-reales"
+                        ><strong id="empleado-mes-total-reales">00:00</strong
+                        ></td
+                      >
                     </tr>
                   </tfoot>
                 </table>
               </div>
             </div>
             <div class="modal-footer">
-              <button class="btn btn-secondary" id="empleado-mes-modal-close-btn">Cerrar</button>
+              <button
+                class="btn btn-secondary"
+                id="empleado-mes-modal-close-btn">Cerrar</button
+              >
             </div>
           </div>
         </div>
@@ -212,9 +252,15 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
               <!-- Contenido dinámico -->
             </div>
             <div class="modal-footer">
-              <button class="btn btn-primary" id="edit-from-view-btn">✏️ Editar</button>
-              <button class="btn btn-danger" id="delete-from-view-btn">🗑️ Eliminar</button>
-              <button class="btn btn-secondary" id="view-modal-close-btn">Cerrar</button>
+              <button class="btn btn-primary" id="edit-from-view-btn"
+                >✏️ Editar</button
+              >
+              <button class="btn btn-danger" id="delete-from-view-btn"
+                >🗑️ Eliminar</button
+              >
+              <button class="btn btn-secondary" id="view-modal-close-btn"
+                >Cerrar</button
+              >
             </div>
           </div>
         </div>
@@ -249,93 +295,122 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
                 </div>
               </div>
               <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Crear Tarea</button>
-                <button type="button" class="btn btn-secondary" id="modal-cancel">Cancelar</button>
+                <button type="submit" class="btn btn-primary"
+                  >Crear Tarea</button
+                >
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  id="modal-cancel">Cancelar</button
+                >
               </div>
             </form>
           </div>
         </div>
 
-        <div id="error-message" class="alert alert-error" style="display: none;"></div>
+        <div
+          id="error-message"
+          class="alert alert-error"
+          style="display: none;"
+        >
+        </div>
       </div>
     </div>
   </ProtectedRoute>
 </BaseLayout>
 
 <script>
-  import { AuthService } from '../../services/auth';
-  import { ProyectoService } from '../../services/proyecto';
-  import { TareaService } from '../../services/tarea';
-  import { EmpleadosService } from '../../services/empleados';
-  import { DiaService } from '../../services/dia';
-  import { AlertUtils } from '../../utils/swal';
-  import { MESES_ES } from '../../utils/formatters';
-  import { MesesHandler } from '../../handlers/meses';
-  import { TareaHandler } from '../../handlers/tarea';
-  import { TableroEmpleadosHandler } from '../../handlers/tablero-empleados';
-  import Swal from 'sweetalert2';
+  import { AuthService } from "../../services/auth";
+  import { ProyectoService } from "../../services/proyecto";
+  import { TareaService } from "../../services/tarea";
+  import { EmpleadosService } from "../../services/empleados";
+  import { DiaService } from "../../services/dia";
+  import { AlertUtils } from "../../utils/swal";
+  import { MESES_ES } from "../../utils/formatters";
+  import { MesesHandler } from "../../handlers/meses";
+  import { TareaHandler } from "../../handlers/tarea";
+  import { TableroEmpleadosHandler } from "../../handlers/tablero-empleados";
+  import Swal from "sweetalert2";
 
   // Verificar autenticación
   if (!AuthService.isAuthenticated()) {
-    window.location.href = '/login';
+    window.location.href = "/login";
   }
 
   // Exponer handlers globalmente
   (window as any).TableroEmpleadosHandler = TableroEmpleadosHandler;
 
   // Referencias a modales y elementos
-  const modal = document.getElementById('tarea-modal')!;
-  const viewModal = document.getElementById('view-tarea-modal')!;
-  const form = document.getElementById('tarea-form') as HTMLFormElement;
-  const diasSelect = document.getElementById('dias-select') as HTMLSelectElement;
+  const modal = document.getElementById("tarea-modal")!;
+  const viewModal = document.getElementById("view-tarea-modal")!;
+  const form = document.getElementById("tarea-form") as HTMLFormElement;
+  const diasSelect = document.getElementById(
+    "dias-select",
+  ) as HTMLSelectElement;
 
   // ========== GESTIÓN DE MESES ==========
 
   // Agregar mes
-  document.getElementById('add-mes-btn')?.addEventListener('click', () => {
+  document.getElementById("add-mes-btn")?.addEventListener("click", () => {
     MesesHandler.openAddMesModal();
   });
 
-  document.getElementById('close-add-mes')?.addEventListener('click', () => {
+  document.getElementById("close-add-mes")?.addEventListener("click", () => {
     MesesHandler.closeAddMesModal();
   });
 
-  document.getElementById('add-mes-modal')?.addEventListener('click', (e) => {
-    if (e.target === document.getElementById('add-mes-modal')) {
+  document.getElementById("add-mes-modal")?.addEventListener("click", (e) => {
+    if (e.target === document.getElementById("add-mes-modal")) {
       MesesHandler.closeAddMesModal();
     }
   });
 
   // Formulario agregar mes
-  document.getElementById('add-mes-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    try {
-      const anio = parseInt((document.getElementById('nuevo-mes-year') as HTMLInputElement).value);
-      const mes = parseInt((document.getElementById('nuevo-mes-mes') as HTMLSelectElement).value);
+  document
+    .getElementById("add-mes-form")
+    ?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        const anio = parseInt(
+          (document.getElementById("nuevo-mes-year") as HTMLInputElement).value,
+        );
+        const mes = parseInt(
+          (document.getElementById("nuevo-mes-mes") as HTMLSelectElement).value,
+        );
 
-      if (!anio || !mes) {
-        await AlertUtils.error('Error', 'Por favor seleccione un mes y año válidos');
-        return;
+        if (!anio || !mes) {
+          await AlertUtils.error(
+            "Error",
+            "Por favor seleccione un mes y año válidos",
+          );
+          return;
+        }
+
+        const proyecto = TableroEmpleadosHandler.state.proyectoActual;
+        if (proyecto) await MesesHandler.agregarMes(proyecto.id, anio, mes);
+      } catch (error) {
+        console.error("Error:", error);
+        await AlertUtils.error("Error", "No se pudo agregar el mes");
       }
-
-      const proyecto = TableroEmpleadosHandler.state.proyectoActual;
-      if (proyecto) await MesesHandler.agregarMes(proyecto.id, anio, mes);
-    } catch (error) {
-      console.error('Error:', error);
-      await AlertUtils.error('Error', 'No se pudo agregar el mes');
-    }
-  });
+    });
 
   // Evento cuando se selecciona un mes
-  document.addEventListener('mes-selected', async (event: any) => {
+  document.addEventListener("mes-selected", async (event: any) => {
     const { anio, mes } = event.detail;
     const proyecto = TableroEmpleadosHandler.state.proyectoActual;
 
     if (proyecto) {
-      const mesCreado = await MesesHandler.crearMesAutomatico(proyecto.id, anio, mes);
+      const mesCreado = await MesesHandler.crearMesAutomatico(
+        proyecto.id,
+        anio,
+        mes,
+      );
 
       if (!mesCreado) {
-        await AlertUtils.error('Error', 'No se pudo crear el mes automáticamente');
+        await AlertUtils.error(
+          "Error",
+          "No se pudo crear el mes automáticamente",
+        );
         return;
       }
 
@@ -350,7 +425,7 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
       await TableroEmpleadosHandler.loadTareas();
 
       // Actualizar UI
-      const periodoEl = document.getElementById('proyecto-periodo');
+      const periodoEl = document.getElementById("proyecto-periodo");
       if (periodoEl) {
         periodoEl.textContent = `${MESES_ES[mes as keyof typeof MESES_ES]} ${anio}`;
       }
@@ -363,204 +438,237 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
   // ========== GESTIÓN DE TAREAS ==========
 
   // Abrir modal para nueva tarea
-  document.getElementById('nueva-tarea-btn')?.addEventListener('click', async () => {
-    const proyecto = TableroEmpleadosHandler.state.proyectoActual;
-    if (!proyecto) return;
+  document
+    .getElementById("nueva-tarea-btn")
+    ?.addEventListener("click", async () => {
+      const proyecto = TableroEmpleadosHandler.state.proyectoActual;
+      if (!proyecto) return;
 
-    await TareaHandler.loadDiasDisponibles(proyecto.id, proyecto.anio, proyecto.mes);
-    TareaHandler.resetParaCrear(form);
-    modal.style.display = 'flex';
-  });
+      await TareaHandler.loadDiasDisponibles(
+        proyecto.id,
+        proyecto.anio,
+        proyecto.mes,
+      );
+      TareaHandler.resetParaCrear(form);
+      modal.style.display = "flex";
+    });
 
   // Cerrar modales
-  document.getElementById('modal-close')?.addEventListener('click', () => {
-    modal.style.display = 'none';
+  document.getElementById("modal-close")?.addEventListener("click", () => {
+    modal.style.display = "none";
   });
 
-  document.getElementById('modal-cancel')?.addEventListener('click', () => {
-    modal.style.display = 'none';
+  document.getElementById("modal-cancel")?.addEventListener("click", () => {
+    modal.style.display = "none";
   });
 
-  document.getElementById('view-modal-close')?.addEventListener('click', () => {
-    viewModal.style.display = 'none';
+  document.getElementById("view-modal-close")?.addEventListener("click", () => {
+    viewModal.style.display = "none";
   });
 
-  document.getElementById('view-modal-close-btn')?.addEventListener('click', () => {
-    viewModal.style.display = 'none';
-  });
+  document
+    .getElementById("view-modal-close-btn")
+    ?.addEventListener("click", () => {
+      viewModal.style.display = "none";
+    });
 
   // Cerrar al hacer clic fuera del modal
-  modal?.addEventListener('click', (e) => {
-    if (e.target === modal) modal.style.display = 'none';
+  modal?.addEventListener("click", (e) => {
+    if (e.target === modal) modal.style.display = "none";
   });
 
-  viewModal?.addEventListener('click', (e) => {
-    if (e.target === viewModal) viewModal.style.display = 'none';
+  viewModal?.addEventListener("click", (e) => {
+    if (e.target === viewModal) viewModal.style.display = "none";
   });
 
   // Seleccionar días
-  diasSelect?.addEventListener('change', (e) => {
+  diasSelect?.addEventListener("change", (e) => {
     const select = e.target as HTMLSelectElement;
     const selectedOption = select.options[select.selectedIndex];
-    
+
     if (select.value) {
       const diaId = parseInt(select.value);
       const diaInfo = TareaHandler.diasDisponibles.get(diaId);
-      
+
       if (diaInfo) {
         TareaHandler.diasSeleccionados.set(diaId, diaInfo);
         TareaHandler.diasDisponibles.delete(diaId);
         TareaHandler.actualizarSelectDias(select);
-        TareaHandler.renderizarDiasSeleccionados(document.getElementById('dias-selected')!);
+        TareaHandler.renderizarDiasSeleccionados(
+          document.getElementById("dias-selected")!,
+        );
       }
     }
   });
 
   // Enviar formulario de tarea
-  form?.addEventListener('submit', async (e) => {
+  form?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const proyecto = TableroEmpleadosHandler.state.proyectoActual;
     if (!proyecto) return;
 
     // Cerrar modal ANTES de guardar para que el SweetAlert aparezca correctamente
-    modal.style.display = 'none';
+    modal.style.display = "none";
 
-    const success = await TareaHandler.guardarTarea(form, proyecto.id, async () => {
-      await TableroEmpleadosHandler.loadTareas();
-    });
+    const success = await TareaHandler.guardarTarea(
+      form,
+      proyecto.id,
+      async () => {
+        await TableroEmpleadosHandler.loadTareas();
+      },
+    );
 
     // Si falló, reabrir el modal
     if (!success) {
-      modal.style.display = 'flex';
+      modal.style.display = "flex";
     }
   });
 
   // Visualizar tarea
-  document.addEventListener('view-tarea-empleados', (event: any) => {
+  document.addEventListener("view-tarea-empleados", (event: any) => {
     const tarea = event.detail.tarea;
     TareaHandler.tareaEnVista = tarea;
-    const mostrarHorasReales = TableroEmpleadosHandler.state.proyectoActual?.horas_reales_activas || false;
+    const mostrarHorasReales =
+      TableroEmpleadosHandler.state.proyectoActual?.horas_reales_activas ||
+      false;
     TareaHandler.renderizarVistaDetalle(tarea, mostrarHorasReales);
-    viewModal.style.display = 'flex';
+    viewModal.style.display = "flex";
   });
 
   // Editar desde visualización
-  document.getElementById('edit-from-view-btn')?.addEventListener('click', async () => {
-    viewModal.style.display = 'none';
-    if (TareaHandler.tareaEnVista) {
-      const proyecto = TableroEmpleadosHandler.state.proyectoActual;
-      if (proyecto) {
-        await TareaHandler.cargarParaEditar(
-          TareaHandler.tareaEnVista,
-          proyecto.id,
-          TableroEmpleadosHandler.state.anioActual,
-          TableroEmpleadosHandler.state.mesActual
-        );
-        modal.style.display = 'flex';
+  document
+    .getElementById("edit-from-view-btn")
+    ?.addEventListener("click", async () => {
+      viewModal.style.display = "none";
+      if (TareaHandler.tareaEnVista) {
+        const proyecto = TableroEmpleadosHandler.state.proyectoActual;
+        if (proyecto) {
+          await TareaHandler.cargarParaEditar(
+            TareaHandler.tareaEnVista,
+            proyecto.id,
+            TableroEmpleadosHandler.state.anioActual,
+            TableroEmpleadosHandler.state.mesActual,
+          );
+          modal.style.display = "flex";
+        }
       }
-    }
-  });
+    });
 
   // Eliminar desde visualización
-  document.getElementById('delete-from-view-btn')?.addEventListener('click', async () => {
-    if (TareaHandler.tareaEnVista) {
-      viewModal.style.display = 'none';
-      await TareaHandler.eliminarTarea(
-        TareaHandler.tareaEnVista.id,
-        TareaHandler.tareaEnVista.titulo,
-        async () => {
-          await TableroEmpleadosHandler.loadTareas();
-        }
-      );
-    }
-  });
+  document
+    .getElementById("delete-from-view-btn")
+    ?.addEventListener("click", async () => {
+      if (TareaHandler.tareaEnVista) {
+        viewModal.style.display = "none";
+        await TareaHandler.eliminarTarea(
+          TareaHandler.tareaEnVista.id,
+          TareaHandler.tareaEnVista.titulo,
+          async () => {
+            await TableroEmpleadosHandler.loadTareas();
+          },
+        );
+      }
+    });
 
   // ========== GESTIÓN DE EMPLEADOS ==========
 
   // Agregar empleado
-  document.getElementById('add-empleado-btn')?.addEventListener('click', async () => {
-    const proyecto = TableroEmpleadosHandler.state.proyectoActual;
-    if (!proyecto) return;
+  document
+    .getElementById("add-empleado-btn")
+    ?.addEventListener("click", async () => {
+      const proyecto = TableroEmpleadosHandler.state.proyectoActual;
+      if (!proyecto) return;
 
-    const { value: nombreEmpleado } = await Swal.fire({
-      title: 'Agregar Empleado',
-      input: 'text',
-      inputLabel: 'Nombre del empleado',
-      inputPlaceholder: 'Ej: Juan Pérez',
-      showCancelButton: true,
-      confirmButtonText: 'Agregar',
-      cancelButtonText: 'Cancelar',
-      background: '#0f1419',
-      color: '#c8c8c8',
-      confirmButtonColor: '#667eea',
-      cancelButtonColor: '#2d3746',
-      inputValidator: (value: string) => {
-        if (!value || value.trim().length === 0) {
-          return 'El nombre es requerido';
+      const { value: nombreEmpleado } = await Swal.fire({
+        title: "Agregar Empleado",
+        input: "text",
+        inputLabel: "Nombre del empleado",
+        inputPlaceholder: "Ej: Juan Pérez",
+        showCancelButton: true,
+        confirmButtonText: "Agregar",
+        cancelButtonText: "Cancelar",
+        background: "#0f1419",
+        color: "#c8c8c8",
+        confirmButtonColor: "#667eea",
+        cancelButtonColor: "#2d3746",
+        inputValidator: (value: string) => {
+          if (!value || value.trim().length === 0) {
+            return "El nombre es requerido";
+          }
+          if (value.trim().length < 3) {
+            return "El nombre debe tener al menos 3 caracteres";
+          }
+          return null;
+        },
+      });
+
+      if (nombreEmpleado) {
+        try {
+          await EmpleadosService.addEmpleado(
+            proyecto.id,
+            nombreEmpleado.trim(),
+          );
+
+          await Swal.fire({
+            icon: "success",
+            title: "Empleado agregado",
+            text: `${nombreEmpleado} ha sido agregado al tablero`,
+            showConfirmButton: false,
+            timer: 1500,
+            background: "#0f1419",
+            color: "#c8c8c8",
+            iconColor: "#10b981",
+          });
+
+          // Recargar empleados
+          await TableroEmpleadosHandler.loadProyectoConEmpleados();
+        } catch (error) {
+          console.error("Error agregando empleado:", error);
+          await AlertUtils.error("Error", "No se pudo agregar el empleado");
         }
-        if (value.trim().length < 3) {
-          return 'El nombre debe tener al menos 3 caracteres';
-        }
-        return null;
       }
     });
 
-    if (nombreEmpleado) {
-      try {
-        await EmpleadosService.addEmpleado(proyecto.id, nombreEmpleado.trim());
-        
-        await Swal.fire({
-          icon: 'success',
-          title: 'Empleado agregado',
-          text: `${nombreEmpleado} ha sido agregado al tablero`,
-          showConfirmButton: false,
-          timer: 1500,
-          background: '#0f1419',
-          color: '#c8c8c8',
-          iconColor: '#10b981'
-        });
-
-        // Recargar empleados
-        await TableroEmpleadosHandler.loadProyectoConEmpleados();
-      } catch (error) {
-        console.error('Error agregando empleado:', error);
-        await AlertUtils.error('Error', 'No se pudo agregar el empleado');
-      }
-    }
-  });
-
   // Botón de Configuración
-  document.getElementById('config-btn')?.addEventListener('click', () => {
+  document.getElementById("config-btn")?.addEventListener("click", () => {
     TableroEmpleadosHandler.mostrarModalConfiguracion();
   });
 
   // Finalizar o Reactivar proyecto
-  document.getElementById('finalizar-btn')?.addEventListener('click', async () => {
-    const proyecto = TableroEmpleadosHandler.state.proyectoActual;
-    if (!proyecto) return;
+  document
+    .getElementById("finalizar-btn")
+    ?.addEventListener("click", async () => {
+      const proyecto = TableroEmpleadosHandler.state.proyectoActual;
+      if (!proyecto) return;
 
-    const isActive = proyecto.activo;
-    const action = isActive ? 'Finalizar' : 'Reactivar';
+      const isActive = proyecto.activo;
+      const action = isActive ? "Finalizar" : "Reactivar";
 
-    const result = await AlertUtils.confirm(
-      `¿${action} tablero?`,
-      isActive
-        ? 'Esto marcará el tablero como inactivo'
-        : 'Esto reactivará el tablero',
-      `Sí, ${action.toLowerCase()}`,
-      'Cancelar'
-    );
+      const result = await AlertUtils.confirm(
+        `¿${action} tablero?`,
+        isActive
+          ? "Esto marcará el tablero como inactivo"
+          : "Esto reactivará el tablero",
+        `Sí, ${action.toLowerCase()}`,
+        "Cancelar",
+      );
 
-    if (result.isConfirmed) {
-      try {
-        await ProyectoService.cambiarEstado(proyecto.id, !isActive);
-        await TableroEmpleadosHandler.loadProyecto();
-        await AlertUtils.success('Éxito', `Tablero ${action.toLowerCase()}do correctamente`);
-      } catch (error) {
-        await AlertUtils.error('Error', `No se pudo ${action.toLowerCase()} el tablero`);
+      if (result.isConfirmed) {
+        try {
+          await ProyectoService.cambiarEstado(proyecto.id, !isActive);
+          await TableroEmpleadosHandler.loadProyecto();
+          await AlertUtils.success(
+            "Éxito",
+            `Tablero ${action.toLowerCase()}do correctamente`,
+          );
+        } catch (error) {
+          await AlertUtils.error(
+            "Error",
+            `No se pudo ${action.toLowerCase()} el tablero`,
+          );
+        }
       }
-    }
-  });
+    });
 
   // ========== INICIALIZACIÓN ==========
 
@@ -575,7 +683,7 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
       await TableroEmpleadosHandler.loadTareas();
 
       // Actualizar nombre del sidebar
-      const sidebarNombre = document.getElementById('proyecto-nombre-sidebar');
+      const sidebarNombre = document.getElementById("proyecto-nombre-sidebar");
       if (sidebarNombre) sidebarNombre.textContent = proyecto.nombre;
     }
   });
@@ -583,48 +691,31 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
   // ========== ACCIONES RÁPIDAS ==========
 
   // Exportar Todo (PDF)
-  document.getElementById('export-all-btn')?.addEventListener('click', async () => {
-    const proyecto = TableroEmpleadosHandler.state.proyectoActual;
-    if (!proyecto) return;
+  document
+    .getElementById("export-all-btn")
+    ?.addEventListener("click", async () => {
+      const proyecto = TableroEmpleadosHandler.state.proyectoActual;
+      if (!proyecto) return;
 
-    try {
-      const { TareaService } = await import('../../services/tarea');
-      const { generatePDFFromTemplate } = await import('../../utils/pdf');
-      
-      const tareas = await TareaService.getTareasProyecto(proyecto.id);
-      const mesNombre = MESES_ES[proyecto.mes as keyof typeof MESES_ES];
-      
-      await generatePDFFromTemplate(
-        proyecto.nombre,
-        mesNombre,
-        proyecto.anio,
-        tareas,
-        []
-      );
-    } catch (error) {
-      console.error('Error exportando PDF:', error);
-      await AlertUtils.error('Error', 'No se pudo generar el PDF');
-    }
-  });
+      try {
+        const { TareaService } = await import("../../services/tarea");
+        const { generatePDFFromTemplate } = await import("../../utils/pdf");
 
-  // Acciones de empleados individuales (exportar PDF y ver mes)
-  document.addEventListener('click', async (e) => {
-    const target = e.target as HTMLElement;
-    
-    // Exportar PDF de empleado individual
-    if (target.classList.contains('btn-export-empleado')) {
-      await AlertUtils.info('Función no implementada', 'La exportación individual por empleado estará disponible próximamente');
-    }
-    
-    // Ver todo el mes de un empleado
-    if (target.classList.contains('btn-ver-mes-empleado')) {
-      const empleadoId = parseInt(target.dataset.empleadoId || '0');
-      const empleadoNombre = target.dataset.empleadoNombre || '';
-      if (empleadoId) {
-        await TableroEmpleadosHandler.verMesCompletoEmpleado(empleadoId, empleadoNombre);
+        const tareas = await TareaService.getTareasProyecto(proyecto.id);
+        const mesNombre = MESES_ES[proyecto.mes as keyof typeof MESES_ES];
+
+        await generatePDFFromTemplate(
+          proyecto.nombre,
+          mesNombre,
+          proyecto.anio,
+          tareas,
+          [],
+        );
+      } catch (error) {
+        console.error("Error exportando PDF:", error);
+        await AlertUtils.error("Error", "No se pudo generar el PDF");
       }
-    }
-  });
+    });
 
   // ELIMINADO: Botón de estadísticas
   /*
@@ -680,27 +771,34 @@ const pageTitle = 'Tablero Empleados - Mis Horas';
   */
 
   // Delegar eventos para botones de "Ver Todo el Mes" y exportar (dinámicos)
-  document.addEventListener('click', async (e) => {
+  document.addEventListener("click", async (e) => {
     const target = e.target as HTMLElement;
-    
+
     // Botón Ver Todo el Mes
-    if (target.classList.contains('btn-ver-mes-empleado')) {
-      const empleadoId = parseInt(target.getAttribute('data-empleado-id') || '0');
-      const nombreEmpleado = target.getAttribute('data-empleado-nombre') || '';
-      await TableroEmpleadosHandler.verMesCompletoEmpleado(empleadoId, nombreEmpleado);
+    if (target.classList.contains("btn-ver-mes-empleado")) {
+      const empleadoId = parseInt(
+        target.getAttribute("data-empleado-id") || "0",
+      );
+      const nombreEmpleado = target.getAttribute("data-empleado-nombre") || "";
+      await TableroEmpleadosHandler.verMesCompletoEmpleado(
+        empleadoId,
+        nombreEmpleado,
+      );
     }
 
     // Botón Exportar PDF
-    if (target.classList.contains('btn-export-empleado')) {
-      const empleadoId = parseInt(target.getAttribute('data-empleado-id') || '0');
-      const nombreEmpleado = target.getAttribute('data-empleado-nombre') || '';
-      
-      await AlertUtils.info('Exportar PDF', `Generando PDF de ${nombreEmpleado}...`);
-      
-      // TODO: Implementar exportación individual
-      // await TableroEmpleadosHandler.exportarEmpleadoPDF(empleadoId);
+    if (target.classList.contains("btn-export-empleado")) {
+      const empleadoId = parseInt(
+        target.getAttribute("data-empleado-id") || "0",
+      );
+      const nombreEmpleado = target.getAttribute("data-empleado-nombre") || "";
+
+      if (empleadoId && nombreEmpleado) {
+        await TableroEmpleadosHandler.exportarPDFEmpleado(
+          empleadoId,
+          nombreEmpleado,
+        );
+      }
     }
   });
 </script>
-  </ProtectedRoute>
-</BaseLayout>
