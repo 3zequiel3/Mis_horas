@@ -968,15 +968,15 @@ function drawTableEmpleado(
       pdf.setLineWidth(0.2);
     }
 
-    // COLOR DE FONDO SEGÚN HORAS TRABAJADAS
+    // COLOR DE FONDO SEGÚN HORAS TRABAJADAS (colores más tenues)
     const tieneHoras = dia.horas_trabajadas && dia.horas_trabajadas > 0;
 
     if (tieneHoras) {
-      // Verde tenue si tiene horas
-      pdf.setFillColor(5, 46, 22); // Verde oscuro tenue #052e16
+      // Verde muy tenue - similar al bg-primary pero con tinte verde
+      pdf.setFillColor(20, 30, 26); // Verde oscuro muy tenue #141e1a
     } else {
-      // Rojo tenue si no tiene horas
-      pdf.setFillColor(69, 10, 10); // Rojo oscuro tenue #450a0a
+      // Rojo muy tenue - similar al bg-primary pero con tinte rojo
+      pdf.setFillColor(30, 20, 20); // Rojo oscuro muy tenue #1e1414
     }
 
     // Aplicar fondo a toda la fila
