@@ -447,7 +447,7 @@ function drawTableEmpleado(
   // Bordes laterales blancos del header
   const tableWidth = columnWidths.reduce((a, b) => a + b, 0);
   pdf.setDrawColor(255, 255, 255); // Blanco
-  pdf.setLineWidth(1);
+  pdf.setLineWidth(0.3);
   // Borde izquierdo
   pdf.line(startX, currentY, startX, currentY + headerHeight);
   // Borde derecho
@@ -522,7 +522,7 @@ function drawTableEmpleado(
       // Bordes laterales blancos del header en nueva página
       const tableWidth = columnWidths.reduce((a, b) => a + b, 0);
       pdf.setDrawColor(255, 255, 255); // Blanco
-      pdf.setLineWidth(1);
+      pdf.setLineWidth(0.3);
       pdf.line(startX, currentY, startX, currentY + headerHeight);
       pdf.line(startX + tableWidth, currentY, startX + tableWidth, currentY + headerHeight);
 
@@ -554,9 +554,9 @@ function drawTableEmpleado(
     for (let i = 0; i < row.length; i++) {
       const x = startX + columnWidths.slice(0, i).reduce((a, b) => a + b, 0);
 
-      // Bordes sutiles
-      pdf.setDrawColor(45, 55, 70);
-      pdf.setLineWidth(0.2);
+      // Bordes internos blancos delgados
+      pdf.setDrawColor(255, 255, 255); // Blanco
+      pdf.setLineWidth(0.3);
       pdf.rect(x, currentY, columnWidths[i], maxRowHeight);
 
       // Contenido
@@ -578,7 +578,7 @@ function drawTableEmpleado(
     // Bordes laterales blancos de la fila
     const tableWidth = columnWidths.reduce((a, b) => a + b, 0);
     pdf.setDrawColor(255, 255, 255); // Blanco
-    pdf.setLineWidth(1);
+    pdf.setLineWidth(0.3);
     // Borde izquierdo
     pdf.line(startX, currentY, startX, currentY + maxRowHeight);
     // Borde derecho
