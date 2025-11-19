@@ -444,6 +444,15 @@ function drawTableEmpleado(
     });
   }
 
+  // Bordes laterales blancos del header
+  const tableWidth = columnWidths.reduce((a, b) => a + b, 0);
+  pdf.setDrawColor(255, 255, 255); // Blanco
+  pdf.setLineWidth(1);
+  // Borde izquierdo
+  pdf.line(startX, currentY, startX, currentY + headerHeight);
+  // Borde derecho
+  pdf.line(startX + tableWidth, currentY, startX + tableWidth, currentY + headerHeight);
+
   currentY += headerHeight;
 
   // ========== DIBUJAR FILAS CON COLORES ===========
@@ -510,6 +519,13 @@ function drawTableEmpleado(
         });
       }
 
+      // Bordes laterales blancos del header en nueva página
+      const tableWidth = columnWidths.reduce((a, b) => a + b, 0);
+      pdf.setDrawColor(255, 255, 255); // Blanco
+      pdf.setLineWidth(1);
+      pdf.line(startX, currentY, startX, currentY + headerHeight);
+      pdf.line(startX + tableWidth, currentY, startX + tableWidth, currentY + headerHeight);
+
       currentY += headerHeight;
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(fontSize);
@@ -558,6 +574,15 @@ function drawTableEmpleado(
         });
       });
     }
+
+    // Bordes laterales blancos de la fila
+    const tableWidth = columnWidths.reduce((a, b) => a + b, 0);
+    pdf.setDrawColor(255, 255, 255); // Blanco
+    pdf.setLineWidth(1);
+    // Borde izquierdo
+    pdf.line(startX, currentY, startX, currentY + maxRowHeight);
+    // Borde derecho
+    pdf.line(startX + tableWidth, currentY, startX + tableWidth, currentY + maxRowHeight);
 
     currentY += maxRowHeight;
   });
