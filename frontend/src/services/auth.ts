@@ -1,5 +1,6 @@
 import type { AuthResponse, Usuario } from '../types';
 import { getStorageItem, setStorageItem, removeStorageItem } from '../utils/storage';
+import { getCookie } from '../utils/cookies';
 import { ENV } from '../utils/env';
 
 const API_URL = ENV.VITE_API_URL;
@@ -123,6 +124,18 @@ export class AuthService {
       if (persistToken && !isJWTExpired(persistToken)) {
         return persistToken;
       }
+    }
+
+    // Si no está en storage, intentar obtener de la cookie
+    // Esto permite que funcione en nuevas pestañas cuando no se marcó "remember me"
+    const cookieToken = getCookie('auth_token');
+    if (cookieToken && !isJWTExpired(cookieToken)) {
+      // Restaurar el token al sessionStorage para futuras peticiones en esta pestaña
+      const sessionStorage = getStorage(true);
+      if (sessionStorage) {
+        sessionStorage.setItem(this.TOKEN_SESSION, cookieToken);
+      }
+      return cookieToken;
     }
 
     // Si hay token expirado, limpiar

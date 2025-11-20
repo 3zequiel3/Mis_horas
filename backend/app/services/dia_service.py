@@ -130,3 +130,113 @@ class DiaService:
         except ValueError as e:
             print(f"Error parseando horarios: {e}")
             return None
+    
+    @staticmethod
+    def actualizar_turnos_dia(dia_id: int, turno_manana_entrada_str: str = None, 
+                             turno_manana_salida_str: str = None,
+                             turno_tarde_entrada_str: str = None, 
+                             turno_tarde_salida_str: str = None,
+                             user_id: int = None):
+        """
+        Actualiza horarios por turnos y calcula horas_trabajadas y extras automáticamente.
+        
+        Lógica de horas extras:
+        - Entrada anticipada (antes del rango): cuenta como extra si se cumplen las horas del turno
+        - Salida tardía (después del rango): cuenta como extra
+        - Las horas extras se calculan sumando todo el tiempo trabajado fuera del horario laboral estándar
+        """
+        from datetime import datetime, timedelta
+        
+        dia = Dia.query.filter(Dia.id == dia_id).first()
+        if not dia:
+            return None
+        
+        try:
+            total_horas = 0
+            horas_extras_calculadas = 0
+            
+            # Obtener proyecto para rangos de turnos
+            proyecto = Proyecto.query.filter(Proyecto.id == dia.proyecto_id).first()
+            
+            # Parsear y calcular turno mañana
+            if turno_manana_entrada_str and turno_manana_salida_str:
+                entrada_m = datetime.strptime(turno_manana_entrada_str, '%H:%M').time()
+                salida_m = datetime.strptime(turno_manana_salida_str, '%H:%M').time()
+                
+                entrada_dt = datetime.combine(datetime.today(), entrada_m)
+                salida_dt = datetime.combine(datetime.today(), salida_m)
+                
+                if salida_dt < entrada_dt:
+                    salida_dt += timedelta(days=1)
+                
+                horas_manana = (salida_dt - entrada_dt).total_seconds() / 3600
+                total_horas += horas_manana
+                
+                # Calcular extras del turno mañana si hay rango configurado
+                # Solo cuenta como extra si trabajó MÁS horas que las configuradas
+                if proyecto and proyecto.turno_manana_inicio and proyecto.turno_manana_fin:
+                    rango_inicio = datetime.combine(datetime.today(), proyecto.turno_manana_inicio)
+                    rango_fin = datetime.combine(datetime.today(), proyecto.turno_manana_fin)
+                    
+                    horas_configuradas = (rango_fin - rango_inicio).total_seconds() / 3600
+                    
+                    # Solo hay extras si trabajó más horas que las configuradas
+                    if horas_manana > horas_configuradas:
+                        horas_extras_calculadas += (horas_manana - horas_configuradas)
+                
+                dia.turno_manana_entrada = entrada_m
+                dia.turno_manana_salida = salida_m
+            else:
+                dia.turno_manana_entrada = None
+                dia.turno_manana_salida = None
+            
+            # Parsear y calcular turno tarde
+            if turno_tarde_entrada_str and turno_tarde_salida_str:
+                entrada_t = datetime.strptime(turno_tarde_entrada_str, '%H:%M').time()
+                salida_t = datetime.strptime(turno_tarde_salida_str, '%H:%M').time()
+                
+                entrada_dt = datetime.combine(datetime.today(), entrada_t)
+                salida_dt = datetime.combine(datetime.today(), salida_t)
+                
+                if salida_dt < entrada_dt:
+                    salida_dt += timedelta(days=1)
+                
+                horas_tarde = (salida_dt - entrada_dt).total_seconds() / 3600
+                total_horas += horas_tarde
+                
+                # Calcular extras del turno tarde si hay rango configurado
+                # Solo cuenta como extra si trabajó MÁS horas que las configuradas
+                if proyecto and proyecto.turno_tarde_inicio and proyecto.turno_tarde_fin:
+                    rango_inicio = datetime.combine(datetime.today(), proyecto.turno_tarde_inicio)
+                    rango_fin = datetime.combine(datetime.today(), proyecto.turno_tarde_fin)
+                    
+                    horas_configuradas = (rango_fin - rango_inicio).total_seconds() / 3600
+                    
+                    # Solo hay extras si trabajó más horas que las configuradas
+                    if horas_tarde > horas_configuradas:
+                        horas_extras_calculadas += (horas_tarde - horas_configuradas)
+                
+                dia.turno_tarde_entrada = entrada_t
+                dia.turno_tarde_salida = salida_t
+            else:
+                dia.turno_tarde_entrada = None
+                dia.turno_tarde_salida = None
+            
+            # Actualizar horas trabajadas
+            dia.horas_trabajadas = total_horas
+            
+            # Guardar horas extras calculadas
+            dia.horas_extras = round(horas_extras_calculadas, 2) if horas_extras_calculadas > 0 else 0
+            
+            db.session.commit()
+            db.session.refresh(dia)
+            
+            # Recalcular tareas si es necesario
+            if user_id:
+                DiaService.recalcular_tareas_afectadas(dia, user_id)
+            
+            return dia
+            
+        except ValueError as e:
+            print(f"Error parseando turnos: {e}")
+            return None

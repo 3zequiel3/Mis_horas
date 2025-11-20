@@ -57,3 +57,29 @@ def update_horarios(user_id, dia_id):
         return jsonify({'error': 'Día no encontrado'}), 404
     
     return jsonify(dia.to_dict()), 200
+
+@dia_bp.route('/<int:dia_id>/turnos', methods=['PUT'])
+@token_required
+def update_turnos(user_id, dia_id):
+    """Actualiza horarios por turnos de un día (calcula horas_trabajadas y extras automáticamente)"""
+    data = request.get_json()
+    
+    # Obtener datos de turnos
+    turno_manana_entrada = data.get('turno_manana_entrada')
+    turno_manana_salida = data.get('turno_manana_salida')
+    turno_tarde_entrada = data.get('turno_tarde_entrada')
+    turno_tarde_salida = data.get('turno_tarde_salida')
+    
+    dia = DiaService.actualizar_turnos_dia(
+        dia_id, 
+        turno_manana_entrada, 
+        turno_manana_salida,
+        turno_tarde_entrada,
+        turno_tarde_salida,
+        user_id
+    )
+    
+    if not dia:
+        return jsonify({'error': 'Día no encontrado'}), 404
+    
+    return jsonify(dia.to_dict()), 200

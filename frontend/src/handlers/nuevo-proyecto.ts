@@ -48,11 +48,28 @@ export const ProyectoFormHandler = {
       const mes = parseInt((document.getElementById('mes') as HTMLSelectElement).value);
       const descripcion = (document.getElementById('descripcion') as HTMLTextAreaElement).value;
       const tipoProyecto = (document.getElementById('tipo_proyecto') as HTMLSelectElement)?.value || 'personal';
-      const horasRealesActivas = (document.getElementById('horas_reales_activas') as HTMLInputElement)?.checked || false;
+      const horasRealesActivas = false; // Por defecto false, se activa desde configuración
+
+      // Obtener configuración de turnos
+      const modoHorarios = (document.getElementById('modo_horarios') as HTMLSelectElement)?.value || 'corrido';
+      const horarioInicio = (document.getElementById('horario_inicio') as HTMLInputElement)?.value || undefined;
+      const horarioFin = (document.getElementById('horario_fin') as HTMLInputElement)?.value || undefined;
+      const turnoMananaInicio = (document.getElementById('turno_manana_inicio') as HTMLInputElement)?.value || undefined;
+      const turnoMananaFin = (document.getElementById('turno_manana_fin') as HTMLInputElement)?.value || undefined;
+      const turnoTardeInicio = (document.getElementById('turno_tarde_inicio') as HTMLInputElement)?.value || undefined;
+      const turnoTardeFin = (document.getElementById('turno_tarde_fin') as HTMLInputElement)?.value || undefined;
 
       // Validar
       if (!this.validarFormulario(nombre, anio, mes)) {
         return false;
+      }
+
+      // Validar configuración de turnos si está en modo turnos
+      if (modoHorarios === 'turnos') {
+        if (!turnoMananaInicio || !turnoMananaFin || !turnoTardeInicio || !turnoTardeFin) {
+          await AlertUtils.error('Error', 'Debes configurar los horarios de ambos turnos');
+          return false;
+        }
       }
 
       // Obtener empleados si es proyecto con empleados
@@ -82,6 +99,13 @@ export const ProyectoFormHandler = {
         tipo_proyecto: tipoProyecto as 'personal' | 'empleados',
         empleados: empleados.length > 0 ? empleados : undefined,
         horas_reales_activas: horasRealesActivas,
+        modo_horarios: modoHorarios as 'corrido' | 'turnos',
+        horario_inicio: horarioInicio,
+        horario_fin: horarioFin,
+        turno_manana_inicio: turnoMananaInicio,
+        turno_manana_fin: turnoMananaFin,
+        turno_tarde_inicio: turnoTardeInicio,
+        turno_tarde_fin: turnoTardeFin,
       });
 
       // Mostrar éxito

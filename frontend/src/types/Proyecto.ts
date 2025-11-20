@@ -17,6 +17,15 @@ export interface Proyecto {
   empleados?: Empleado[];
   fecha_creacion?: string;
   fecha_actualizacion?: string;
+  
+  // Sistema de turnos
+  modo_horarios?: 'corrido' | 'turnos';
+  horario_inicio?: string | null;  // Formato HH:MM
+  horario_fin?: string | null;     // Formato HH:MM
+  turno_manana_inicio?: string | null;  // Formato HH:MM
+  turno_manana_fin?: string | null;     // Formato HH:MM
+  turno_tarde_inicio?: string | null;   // Formato HH:MM
+  turno_tarde_fin?: string | null;      // Formato HH:MM
 }
 
 export interface CreateProyectoRequest {
@@ -27,6 +36,15 @@ export interface CreateProyectoRequest {
   tipo_proyecto: 'personal' | 'empleados';
   empleados?: string[];
   horas_reales_activas?: boolean;
+  
+  // Sistema de turnos
+  modo_horarios?: 'corrido' | 'turnos';
+  horario_inicio?: string;
+  horario_fin?: string;
+  turno_manana_inicio?: string;
+  turno_manana_fin?: string;
+  turno_tarde_inicio?: string;
+  turno_tarde_fin?: string;
 }
 
 export interface ProyectoView {

@@ -2,6 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import ProtectedRoute from "../../components/ProtectedRoute.astro";
+import TurnosModal from "../../components/TurnosModal.astro";
 import "../../styles/tabla.css";
 import "../../styles/tareas.css";
 import "../../styles/sidebar-meses.css";
@@ -314,6 +315,9 @@ const pageTitle = "Tablero de Empleados";
           style="display: none;"
         >
         </div>
+
+        <!-- Modal de Turnos -->
+        <TurnosModal />
       </div>
     </div>
   </ProtectedRoute>
@@ -330,6 +334,7 @@ const pageTitle = "Tablero de Empleados";
   import { MesesHandler } from "../../handlers/meses";
   import { TareaHandler } from "../../handlers/tarea";
   import { TableroEmpleadosHandler } from "../../handlers/tablero-empleados";
+  import { TurnosModalHandler } from "../../handlers/turnos-modal";
   import Swal from "sweetalert2";
 
   // Verificar autenticación

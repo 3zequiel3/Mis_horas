@@ -39,6 +39,11 @@ def create_proyecto(user_id):
     if tipo_proyecto == 'empleados' and not empleados:
         return jsonify({'error': 'Se requiere al menos un empleado para proyectos con empleados'}), 400
     
+    # Validar modo de horarios
+    modo_horarios = data.get('modo_horarios', 'corrido')
+    if modo_horarios not in ['corrido', 'turnos']:
+        return jsonify({'error': 'modo_horarios debe ser "corrido" o "turnos"'}), 400
+    
     proyecto = ProyectoService.crear_proyecto(
         nombre=data['nombre'],
         descripcion=data.get('descripcion', ''),
@@ -47,7 +52,14 @@ def create_proyecto(user_id):
         usuario_id=user_id,
         tipo_proyecto=tipo_proyecto,
         empleados=empleados,
-        horas_reales_activas=data.get('horas_reales_activas', False)
+        horas_reales_activas=data.get('horas_reales_activas', False),
+        modo_horarios=modo_horarios,
+        horario_inicio=data.get('horario_inicio'),
+        horario_fin=data.get('horario_fin'),
+        turno_manana_inicio=data.get('turno_manana_inicio'),
+        turno_manana_fin=data.get('turno_manana_fin'),
+        turno_tarde_inicio=data.get('turno_tarde_inicio'),
+        turno_tarde_fin=data.get('turno_tarde_fin')
     )
     
     return jsonify(proyecto.to_dict()), 201
@@ -128,10 +140,55 @@ def update_configuracion(user_id, proyecto_id):
         return jsonify({'error': 'Proyecto no encontrado'}), 404
     
     from app import db
+    from datetime import datetime
     
-    # Actualizar configuración
+    # Actualizar configuración básica
     if 'horas_reales_activas' in data:
         proyecto.horas_reales_activas = data['horas_reales_activas']
+    
+    # Actualizar configuración de turnos
+    if 'modo_horarios' in data:
+        if data['modo_horarios'] not in ['corrido', 'turnos']:
+            return jsonify({'error': 'modo_horarios debe ser "corrido" o "turnos"'}), 400
+        proyecto.modo_horarios = data['modo_horarios']
+    
+    # Actualizar horario laboral (para horas extras)
+    if 'horario_inicio' in data:
+        if data['horario_inicio']:
+            proyecto.horario_inicio = datetime.strptime(data['horario_inicio'], '%H:%M').time()
+        else:
+            proyecto.horario_inicio = None
+    
+    if 'horario_fin' in data:
+        if data['horario_fin']:
+            proyecto.horario_fin = datetime.strptime(data['horario_fin'], '%H:%M').time()
+        else:
+            proyecto.horario_fin = None
+    
+    # Actualizar configuración de turnos
+    if 'turno_manana_inicio' in data:
+        if data['turno_manana_inicio']:
+            proyecto.turno_manana_inicio = datetime.strptime(data['turno_manana_inicio'], '%H:%M').time()
+        else:
+            proyecto.turno_manana_inicio = None
+    
+    if 'turno_manana_fin' in data:
+        if data['turno_manana_fin']:
+            proyecto.turno_manana_fin = datetime.strptime(data['turno_manana_fin'], '%H:%M').time()
+        else:
+            proyecto.turno_manana_fin = None
+    
+    if 'turno_tarde_inicio' in data:
+        if data['turno_tarde_inicio']:
+            proyecto.turno_tarde_inicio = datetime.strptime(data['turno_tarde_inicio'], '%H:%M').time()
+        else:
+            proyecto.turno_tarde_inicio = None
+    
+    if 'turno_tarde_fin' in data:
+        if data['turno_tarde_fin']:
+            proyecto.turno_tarde_fin = datetime.strptime(data['turno_tarde_fin'], '%H:%M').time()
+        else:
+            proyecto.turno_tarde_fin = None
     
     db.session.commit()
     

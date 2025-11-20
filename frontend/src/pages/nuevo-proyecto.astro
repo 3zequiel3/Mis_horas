@@ -77,11 +77,61 @@ const pageTitle = 'Nuevo Tablero';
             <button type="button" id="add-empleado-btn" class="btn btn-secondary-outline">+ Agregar Empleado</button>
           </div>
 
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="horas_reales_activas" name="horas_reales_activas" />
-              Activar Horas Reales (para proyectos con empleados)
-            </label>
+          <!-- Sistema de Turnos -->
+          <div class="form-section">
+            <h3>⏰ Sistema de Horarios</h3>
+            
+            <div class="form-group">
+              <label for="modo_horarios">Modo de Horarios *</label>
+              <select id="modo_horarios" name="modo_horarios">
+                <option value="corrido">De corrido (Entrada/Salida única)</option>
+                <option value="turnos">Por turnos (Mañana/Tarde)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Horario Laboral (opcional - para cálculo de horas extras)</label>
+              <div class="time-row">
+                <div class="time-input-group">
+                  <label for="horario_inicio">Desde</label>
+                  <input type="time" id="horario_inicio" name="horario_inicio" />
+                </div>
+                <div class="time-input-group">
+                  <label for="horario_fin">Hasta</label>
+                  <input type="time" id="horario_fin" name="horario_fin" />
+                </div>
+              </div>
+            </div>
+
+            <div id="turnos-config" class="turnos-config" style="display: none;">
+              <div class="turno-group">
+                <h4>🌅 Turno Mañana</h4>
+                <div class="time-row">
+                  <div class="time-input-group">
+                    <label for="turno_manana_inicio">Desde</label>
+                    <input type="time" id="turno_manana_inicio" name="turno_manana_inicio" />
+                  </div>
+                  <div class="time-input-group">
+                    <label for="turno_manana_fin">Hasta</label>
+                    <input type="time" id="turno_manana_fin" name="turno_manana_fin" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="turno-group">
+                <h4>🌆 Turno Tarde</h4>
+                <div class="time-row">
+                  <div class="time-input-group">
+                    <label for="turno_tarde_inicio">Desde</label>
+                    <input type="time" id="turno_tarde_inicio" name="turno_tarde_inicio" />
+                  </div>
+                  <div class="time-input-group">
+                    <label for="turno_tarde_fin">Hasta</label>
+                    <input type="time" id="turno_tarde_fin" name="turno_tarde_fin" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="form-group">
@@ -138,13 +188,47 @@ const pageTitle = 'Nuevo Tablero';
   const addEmpleadoBtn = document.getElementById('add-empleado-btn') as HTMLButtonElement;
   const empleadosList = document.getElementById('empleados-list') as HTMLElement;
 
+  // Gestión de sistema de turnos
+  const modoHorariosSelect = document.getElementById('modo_horarios') as HTMLSelectElement;
+  const turnosConfig = document.getElementById('turnos-config') as HTMLElement;
+  const sistemaHorariosSection = document.querySelector('.form-section') as HTMLElement;
+
+  // Función para verificar si mostrar sistema de turnos
+  const actualizarVisibilidadTurnos = () => {
+    const esEmpleados = tipoProyectoSelect.value === 'empleados';
+    const esTurnos = modoHorariosSelect.value === 'turnos';
+    
+    // Mostrar sección de sistema de horarios solo si es con empleados
+    if (esEmpleados) {
+      sistemaHorariosSection.style.display = 'block';
+      // Mostrar configuración de turnos solo si es modo turnos
+      if (esTurnos) {
+        turnosConfig.style.display = 'block';
+      } else {
+        turnosConfig.style.display = 'none';
+      }
+    } else {
+      sistemaHorariosSection.style.display = 'none';
+      turnosConfig.style.display = 'none';
+    }
+  };
+
   tipoProyectoSelect?.addEventListener('change', () => {
     if (tipoProyectoSelect.value === 'empleados') {
       empleadosContainer.style.display = 'block';
     } else {
       empleadosContainer.style.display = 'none';
     }
+    actualizarVisibilidadTurnos();
   });
+
+  // Mostrar/ocultar configuración de turnos
+  modoHorariosSelect?.addEventListener('change', () => {
+    actualizarVisibilidadTurnos();
+  });
+
+  // Inicializar visibilidad al cargar
+  actualizarVisibilidadTurnos();
 
   // Agregar empleado
   addEmpleadoBtn?.addEventListener('click', () => {

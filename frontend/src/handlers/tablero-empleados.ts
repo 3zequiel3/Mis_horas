@@ -299,8 +299,9 @@ export const TableroEmpleadosHandler = {
                       <tr>
                         <th>Fecha</th>
                         <th>Día</th>
-                        <th>Entrada</th>
-                        <th>Salida</th>
+                        ${this.state.proyectoActual.modo_horarios === 'turnos' 
+                          ? '<th>Turnos</th>' 
+                          : '<th>Entrada</th><th>Salida</th>'}
                         <th>Horas Trabajadas</th>
                         ${this.state.proyectoActual.horas_reales_activas ? '<th>Horas Reales</th>' : ''}
                       </tr>
@@ -312,8 +313,7 @@ export const TableroEmpleadosHandler = {
                       <tr class="totals-row">
                         <td><strong>Total:</strong></td>
                         <td></td>
-                        <td></td>
-                        <td></td>
+                        ${this.state.proyectoActual.modo_horarios === 'turnos' ? '<td></td>' : '<td></td><td></td>'}
                         <td><strong>${horasAFormato(totalTrabajadas)}</strong></td>
                         ${this.state.proyectoActual.horas_reales_activas ? `<td><strong>${horasAFormato(totalReales)}</strong></td>` : ''}
                       </tr>
@@ -492,6 +492,36 @@ export const TableroEmpleadosHandler = {
       diasColumn.addEventListener('change', this.blurHandler, true);
       diasColumn.addEventListener('keypress', this.keypressHandler);
 
+      // Event listener para botones de turnos
+      if (this.state.proyectoActual?.modo_horarios === 'turnos') {
+        diasColumn.addEventListener('click', (e: Event) => {
+          const target = e.target as HTMLElement;
+          if (target.classList.contains('btn-ver-turnos')) {
+            const diaId = parseInt(target.dataset.diaId || '0');
+            const empleadoNombre = target.dataset.empleadoNombre || '';
+            const fecha = target.dataset.fecha || '';
+            const turnoMananaEntrada = target.dataset.turnoMananaEntrada;
+            const turnoMananaSalida = target.dataset.turnoMananaSalida;
+            const turnoTardeEntrada = target.dataset.turnoTardeEntrada;
+            const turnoTardeSalida = target.dataset.turnoTardeSalida;
+
+            // Importar y usar el handler del modal
+            import('./turnos-modal').then(({ TurnosModalHandler }) => {
+              TurnosModalHandler.init(this.state.proyectoActual!);
+              TurnosModalHandler.abrirModal({
+                diaId,
+                empleadoNombre,
+                fecha,
+                turnoMananaEntrada,
+                turnoMananaSalida,
+                turnoTardeEntrada,
+                turnoTardeSalida,
+              });
+            });
+          }
+        });
+      }
+
     } catch (error) {
       console.error('Error cargando proyecto con empleados:', error);
     }
@@ -501,6 +531,8 @@ export const TableroEmpleadosHandler = {
    * Renderiza los días de un empleado
    */
   renderDiasEmpleado(dias: Dia[], mostrarHorasReales: boolean, editable: boolean = true): string {
+    const modoTurnos = this.state.proyectoActual?.modo_horarios === 'turnos';
+    
     if (!dias.length) {
       return `<tr><td colspan="${mostrarHorasReales ? 6 : 5}" class="text-center">No hay días para mostrar</td></tr>`;
     }
@@ -512,12 +544,46 @@ export const TableroEmpleadosHandler = {
       const horaEntrada = dia.hora_entrada || '';
       const horaSalida = dia.hora_salida || '';
 
-      // Indicador visual si las horas están completas
-      const tieneHorarios = horaEntrada && horaSalida;
-      const horasClass = tieneHorarios ? 'horas-calculadas' : 'horas-calculadas horas-pendiente';
-
       // Clase para estilo de fila según tenga horas o no
       const rowClass = (dia.horas_trabajadas || 0) > 0 ? 'con-horas' : 'sin-horas';
+
+      // Modo Turnos
+      if (modoTurnos) {
+        const tieneTurnos = dia.turno_manana_entrada || dia.turno_tarde_entrada;
+        const horasExtras = dia.horas_extras || 0;
+        const mostrarExtras = horasExtras > 0;
+
+        return `
+          <tr data-dia-id="${dia.id}" class="${rowClass}">
+            <td>${formatearFechaSinAnio(dia.fecha)}</td>
+            <td>${dia.dia_semana}</td>
+            <td class="td-turnos">
+              <button 
+                class="btn-ver-turnos" 
+                data-dia-id="${dia.id}"
+                data-empleado-nombre="${this.state.empleados.find(e => e.id === dia.empleado_id)?.nombre || ''}"
+                data-fecha="${dia.fecha}"
+                data-turno-manana-entrada="${dia.turno_manana_entrada || ''}"
+                data-turno-manana-salida="${dia.turno_manana_salida || ''}"
+                data-turno-tarde-entrada="${dia.turno_tarde_entrada || ''}"
+                data-turno-tarde-salida="${dia.turno_tarde_salida || ''}"
+                title="Ver/Editar turnos"
+              >
+                ${tieneTurnos ? '⏰ Ver Turnos' : '➕ Agregar Turnos'}
+              </button>
+            </td>
+            <td>
+              ${tieneTurnos ? horasTrabajadas : `<span style="opacity: 0.5; font-size: 0.85rem;">--:--</span>`}
+              ${mostrarExtras ? `<br><small style="color: #4caf50;">+${horasAFormato(horasExtras)} extras</small>` : ''}
+            </td>
+            ${mostrarHorasReales ? `<td>${horasReales || '--:--'}</td>` : ''}
+          </tr>
+        `;
+      }
+
+      // Modo Corrido (normal)
+      const tieneHorarios = horaEntrada && horaSalida;
+      const horasClass = tieneHorarios ? 'horas-calculadas' : 'horas-calculadas horas-pendiente';
 
       if (editable) {
         return `
@@ -675,22 +741,75 @@ export const TableroEmpleadosHandler = {
   },
 
   async mostrarModalConfiguracion(): Promise<void> {
+    const proyecto = this.state.proyectoActual;
+    if (!proyecto) return;
+
     const { value: formValues } = await Swal.fire({
       title: 'Configuración del Proyecto',
+      width: '800px',
       html: `
         <div style="text-align: left; padding: 10px;">
-          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-            <input 
-              type="checkbox" 
-              id="horas-reales-checkbox" 
-              ${this.state.proyectoActual?.horas_reales_activas ? 'checked' : ''}
-              style="width: 18px; height: 18px; cursor: pointer;"
-            >
-            <span style="font-size: 15px; color: #c8c8c8;">Activar columna de Horas Reales</span>
-          </label>
-          <p style="color: #9ca3af; font-size: 13px; margin-top: 10px; margin-left: 28px;">
-            Cuando está activada, se mostrará una columna adicional para registrar las horas reales trabajadas.
-          </p>
+          <!-- Horas Reales -->
+          <div style="margin-bottom: 20px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input 
+                type="checkbox" 
+                id="horas-reales-checkbox" 
+                ${proyecto.horas_reales_activas ? 'checked' : ''}
+                style="width: 18px; height: 18px; cursor: pointer;"
+              >
+              <span style="font-size: 15px; color: #c8c8c8;">Activar columna de Horas Reales</span>
+            </label>
+            <p style="color: #9ca3af; font-size: 13px; margin-top: 5px; margin-left: 28px;">
+              Muestra una columna adicional para registrar las horas reales trabajadas.
+            </p>
+          </div>
+
+          <!-- Sistema de Horarios -->
+          <div style="margin-bottom: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <label style="display: block; margin-bottom: 10px; color: #c8c8c8; font-size: 15px; font-weight: 600;">
+              ⏰ Sistema de Horarios
+            </label>
+            <select id="modo-horarios-select" style="width: 100%; padding: 10px; background: #1a1f2e; color: #c8c8c8; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; margin-bottom: 15px; font-size: 14px;">
+              <option value="corrido" ${proyecto.modo_horarios === 'corrido' ? 'selected' : ''}>De corrido (Entrada/Salida única)</option>
+              <option value="turnos" ${proyecto.modo_horarios === 'turnos' ? 'selected' : ''}>Por turnos (Mañana/Tarde)</option>
+            </select>
+
+            <!-- Configuración de Turnos -->
+            <div id="config-turnos" style="display: ${proyecto.modo_horarios === 'turnos' ? 'block' : 'none'};">
+              <p style="color: #9ca3af; font-size: 13px; margin-bottom: 15px;">
+                Define los rangos horarios permitidos para cada turno. Las horas extras se calcularán automáticamente.
+              </p>
+              
+              <div style="margin-bottom: 15px; padding: 15px; background: rgba(102, 126, 234, 0.08); border: 1px solid rgba(102, 126, 234, 0.2); border-radius: 8px;">
+                <label style="display: block; margin-bottom: 10px; color: #c8c8c8; font-size: 14px; font-weight: 600;">🌅 Turno Mañana</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #9ca3af; margin-bottom: 4px;">Hora Inicio</label>
+                    <input type="time" id="turno-manana-inicio" value="${proyecto.turno_manana_inicio || ''}" style="width: 100%; padding: 8px; background: #1a1f2e; color: #c8c8c8; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 14px;">
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #9ca3af; margin-bottom: 4px;">Hora Fin</label>
+                    <input type="time" id="turno-manana-fin" value="${proyecto.turno_manana_fin || ''}" style="width: 100%; padding: 8px; background: #1a1f2e; color: #c8c8c8; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 14px;">
+                  </div>
+                </div>
+              </div>
+
+              <div style="padding: 15px; background: rgba(118, 75, 162, 0.08); border: 1px solid rgba(118, 75, 162, 0.2); border-radius: 8px;">
+                <label style="display: block; margin-bottom: 10px; color: #c8c8c8; font-size: 14px; font-weight: 600;">🌆 Turno Tarde</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #9ca3af; margin-bottom: 4px;">Hora Inicio</label>
+                    <input type="time" id="turno-tarde-inicio" value="${proyecto.turno_tarde_inicio || ''}" style="width: 100%; padding: 8px; background: #1a1f2e; color: #c8c8c8; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 14px;">
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #9ca3af; margin-bottom: 4px;">Hora Fin</label>
+                    <input type="time" id="turno-tarde-fin" value="${proyecto.turno_tarde_fin || ''}" style="width: 100%; padding: 8px; background: #1a1f2e; color: #c8c8c8; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 14px;">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       `,
       showCancelButton: true,
@@ -700,10 +819,45 @@ export const TableroEmpleadosHandler = {
       color: '#c8c8c8',
       confirmButtonColor: '#667eea',
       cancelButtonColor: '#2d3746',
+      didOpen: () => {
+        // Manejar cambio de modo de horarios
+        const modoSelect = document.getElementById('modo-horarios-select') as HTMLSelectElement;
+        const configTurnos = document.getElementById('config-turnos') as HTMLElement;
+        
+        modoSelect?.addEventListener('change', () => {
+          if (modoSelect.value === 'turnos') {
+            configTurnos.style.display = 'block';
+          } else {
+            configTurnos.style.display = 'none';
+          }
+        });
+      },
       preConfirm: () => {
-        const checkbox = document.getElementById('horas-reales-checkbox') as HTMLInputElement;
+        const horasReales = (document.getElementById('horas-reales-checkbox') as HTMLInputElement).checked;
+        const modoHorarios = (document.getElementById('modo-horarios-select') as HTMLSelectElement).value;
+        const turnoMananaInicio = (document.getElementById('turno-manana-inicio') as HTMLInputElement)?.value;
+        const turnoMananaFin = (document.getElementById('turno-manana-fin') as HTMLInputElement)?.value;
+        const turnoTardeInicio = (document.getElementById('turno-tarde-inicio') as HTMLInputElement)?.value;
+        const turnoTardeFin = (document.getElementById('turno-tarde-fin') as HTMLInputElement)?.value;
+
+        // Calcular horario_inicio y horario_fin automáticamente desde los turnos
+        let horarioInicio = null;
+        let horarioFin = null;
+        
+        if (modoHorarios === 'turnos' && turnoMananaInicio && turnoTardeFin) {
+          horarioInicio = turnoMananaInicio;
+          horarioFin = turnoTardeFin;
+        }
+
         return {
-          horas_reales_activas: checkbox.checked
+          horas_reales_activas: horasReales,
+          modo_horarios: modoHorarios,
+          horario_inicio: horarioInicio,
+          horario_fin: horarioFin,
+          turno_manana_inicio: turnoMananaInicio || null,
+          turno_manana_fin: turnoMananaFin || null,
+          turno_tarde_inicio: turnoTardeInicio || null,
+          turno_tarde_fin: turnoTardeFin || null,
         };
       }
     });
@@ -712,7 +866,7 @@ export const TableroEmpleadosHandler = {
       try {
         await ProyectoService.updateConfiguracion(
           this.state.proyectoActual.id,
-          { horas_reales_activas: formValues.horas_reales_activas }
+          formValues
         );
 
         await Swal.fire({

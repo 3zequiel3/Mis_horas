@@ -14,8 +14,22 @@ class ProyectoService:
     @staticmethod
     def crear_proyecto(nombre: str, descripcion: str, anio: int, mes: int, usuario_id: int, 
                       tipo_proyecto: str = 'personal', empleados: list = None, 
-                      horas_reales_activas: bool = False):
+                      horas_reales_activas: bool = False, modo_horarios: str = 'corrido',
+                      horario_inicio: str = None, horario_fin: str = None,
+                      turno_manana_inicio: str = None, turno_manana_fin: str = None,
+                      turno_tarde_inicio: str = None, turno_tarde_fin: str = None):
         """Crea un nuevo proyecto"""
+        from datetime import datetime
+        
+        # Convertir strings de tiempo a objetos time
+        def parse_time(time_str):
+            if time_str:
+                try:
+                    return datetime.strptime(time_str, '%H:%M').time()
+                except:
+                    return None
+            return None
+        
         proyecto = Proyecto(
             nombre=nombre,
             descripcion=descripcion,
@@ -24,7 +38,14 @@ class ProyectoService:
             usuario_id=usuario_id,
             activo=True,
             tipo_proyecto=tipo_proyecto,
-            horas_reales_activas=horas_reales_activas
+            horas_reales_activas=horas_reales_activas,
+            modo_horarios=modo_horarios,
+            horario_inicio=parse_time(horario_inicio),
+            horario_fin=parse_time(horario_fin),
+            turno_manana_inicio=parse_time(turno_manana_inicio),
+            turno_manana_fin=parse_time(turno_manana_fin),
+            turno_tarde_inicio=parse_time(turno_tarde_inicio),
+            turno_tarde_fin=parse_time(turno_tarde_fin)
         )
         
         db.session.add(proyecto)

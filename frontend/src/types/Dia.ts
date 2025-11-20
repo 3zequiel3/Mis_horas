@@ -8,8 +8,16 @@ export interface Dia {
   dia_semana: string;
   horas_trabajadas: number;
   horas_reales: number;
-  hora_entrada?: string | null;  // Formato HH:MM
-  hora_salida?: string | null;   // Formato HH:MM
+  hora_entrada?: string | null;  // Formato HH:MM (modo corrido)
+  hora_salida?: string | null;   // Formato HH:MM (modo corrido)
+  
+  // Sistema de turnos
+  turno_manana_entrada?: string | null;  // Formato HH:MM
+  turno_manana_salida?: string | null;   // Formato HH:MM
+  turno_tarde_entrada?: string | null;   // Formato HH:MM
+  turno_tarde_salida?: string | null;    // Formato HH:MM
+  horas_extras?: number;
+  
   proyecto_id: number;
   empleado_id?: number;
   creado_en?: string;

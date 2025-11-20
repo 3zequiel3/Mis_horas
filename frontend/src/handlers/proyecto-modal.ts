@@ -211,7 +211,7 @@ export const ProyectoModalHandler = {
       const mes = parseInt((document.getElementById('modal-mes') as HTMLSelectElement).value);
       const descripcion = (document.getElementById('modal-descripcion') as HTMLTextAreaElement).value;
       const tipoProyecto = (document.getElementById('modal-tipo-proyecto') as HTMLSelectElement)?.value || 'personal';
-      const horasRealesActivas = (document.getElementById('modal-horas-reales') as HTMLInputElement)?.checked || false;
+      const horasRealesActivas = false; // Por defecto false, se activa desde configuración
 
       // Validar
       if (!this.validarFormulario(nombre, anio, mes)) {

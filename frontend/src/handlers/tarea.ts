@@ -314,7 +314,7 @@ export const TareaHandler = {
               <h4 class="seccion-titulo">⏱️ Horas totales</h4>
             </div>
             <div class="horas-totales-badge">
-              <span class="horas-numero">${horasTotales}h</span>
+              <span class="horas-numero">${horasAFormato(horasTotales)}</span>
               <span class="horas-label">Acumuladas</span>
             </div>
           </div>
