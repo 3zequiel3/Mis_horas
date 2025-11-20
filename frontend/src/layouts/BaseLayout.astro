@@ -7,7 +7,7 @@ export interface Props {
   title?: string;
 }
 
-const { title = 'Mis Horas' } = Astro.props;
+const { title = 'TimeFlow' } = Astro.props;
 ---
 
 <!DOCTYPE html>
@@ -16,7 +16,7 @@ const { title = 'Mis Horas' } = Astro.props;
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title} - Mis Horas</title>
+    <title>{title} | TimeFlow</title>
   </head>
   <body>
     <slot />

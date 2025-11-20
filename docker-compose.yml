@@ -5,7 +5,7 @@ services:
   # ============================================================
   db:
     image: mysql:8.0
-    container_name: mis_horas_db
+    container_name: timeflow_db
     restart: always
     ports:
       - "${DB_PUBLIC_PORT}:3306"
@@ -23,18 +23,17 @@ services:
       interval: 10s
       start_period: 20s
     networks:
-      - mishoras-network
+      - timeflow-network
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
   # ============================================================
-  # BACKEND FLASK (PYTHON)
-  # Puerto público: 22000 (rango 21000-33000)
+  # BACKEND FLASK (PYTHON) - Modo desarrollo con hot reload
   # ============================================================
   backend:
     build:
       context: .
       dockerfile: ./backend/Dockerfile
-    container_name: mis_horas_backend
+    container_name: timeflow_backend
     restart: always
     ports:
       - "${BACKEND_PUBLIC_PORT}:5000"
@@ -59,18 +58,17 @@ services:
       db:
         condition: service_healthy
     networks:
-      - mishoras-network
+      - timeflow-network
     command: python main.py
 
   # ============================================================
-  # FRONTEND ASTRO (NODE.JS)
-  # Puerto público: 21000 (rango 21000-33000)
+  # FRONTEND ASTRO (NODE.JS) - Modo desarrollo con hot reload
   # ============================================================
   frontend:
     build:
       context: .
       dockerfile: ./frontend/Dockerfile
-    container_name: mis_horas_frontend
+    container_name: timeflow_frontend
     restart: always
     ports:
       - "${FRONTEND_PUBLIC_PORT}:3000"
@@ -88,7 +86,7 @@ services:
     depends_on:
       - backend
     networks:
-      - mishoras-network
+      - timeflow-network
     command: npm run dev
 
 # ============================================================
@@ -102,5 +100,5 @@ volumes:
 # REDES
 # ============================================================
 networks:
-  mishoras-network:
+  timeflow-network:
     driver: bridge
