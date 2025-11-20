@@ -114,10 +114,32 @@ class ProyectoService:
     
     @staticmethod
     def obtener_proyectos_usuario(usuario_id: int):
-        """Obtiene proyectos del usuario"""
-        return Proyecto.query.filter(
+        """Obtiene proyectos del usuario (como admin o como empleado)"""
+        from app.models.empleado import Empleado
+        
+        # Proyectos donde el usuario es el admin
+        proyectos_admin = Proyecto.query.filter(
             Proyecto.usuario_id == usuario_id
-        ).order_by(Proyecto.activo.desc(), Proyecto.id.desc()).all()
+        ).all()
+        
+        # Proyectos donde el usuario es empleado
+        proyectos_empleado = Proyecto.query.join(
+            Empleado, Empleado.proyecto_id == Proyecto.id
+        ).filter(
+            Empleado.usuario_id == usuario_id
+        ).all()
+        
+        # Combinar y eliminar duplicados
+        proyectos_ids = set()
+        proyectos_unicos = []
+        
+        for proyecto in proyectos_admin + proyectos_empleado:
+            if proyecto.id not in proyectos_ids:
+                proyectos_ids.add(proyecto.id)
+                proyectos_unicos.append(proyecto)
+        
+        # Ordenar: activos primero, luego por ID descendente
+        return sorted(proyectos_unicos, key=lambda p: (not p.activo, -p.id))
     
     @staticmethod
     def obtener_proyecto_por_id(proyecto_id: int):

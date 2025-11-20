@@ -3,7 +3,7 @@
  */
 
 import type { Proyecto } from '../types';
-import { ProyectoService } from '../services/proyecto';
+import { ProyectosService } from '../services/proyectos';
 import { setHTML, setText, setVisible, querySelector, querySelectorAll } from '../utils/dom';
 import Swal from 'sweetalert2';
 import { MESES_ES } from '../utils/formatters';
@@ -25,7 +25,7 @@ const state: ProyectosViewState = {
  */
 export async function loadProyectos(): Promise<void> {
   try {
-    state.proyectos = await ProyectoService.getProyectos();
+    state.proyectos = await ProyectosService.getProyectos();
 
     if (state.proyectos.length === 0) {
       showEmptyState();
@@ -173,7 +173,7 @@ export async function deleteProyecto(id: number, activo: boolean): Promise<void>
     try {
       if (isDelete) {
         // Eliminar de la base de datos
-        await ProyectoService.deleteProyecto(id);
+        await ProyectosService.deleteProyecto(id);
         Swal.fire({
           title: 'Eliminado',
           text: 'Proyecto eliminado permanentemente',
@@ -185,7 +185,7 @@ export async function deleteProyecto(id: number, activo: boolean): Promise<void>
         });
       } else {
         // Solo desactivar
-        await ProyectoService.cambiarEstado(id, false);
+        await ProyectosService.cambiarEstado(id, false);
         Swal.fire({
           title: 'Desactivado',
           text: 'Proyecto desactivado exitosamente',

@@ -6,12 +6,19 @@ import jwt
 import os
 from datetime import datetime, timedelta
 
-# Importar blueprints
+# Importar blueprints existentes
 from app.routes.proyecto import proyecto_bp
 from app.routes.tarea import tarea_bp
 from app.routes.dia import dia_bp
 from app.routes.usuario import usuario_bp
 from app.routes.empleado import empleado_bp
+
+# Importar nuevos blueprints del sistema de asistencia
+from app.routes.invitacion import invitacion_bp
+from app.routes.notificacion import notificacion_bp
+from app.routes.asistencia import asistencia_bp
+from app.routes.deuda import deuda_bp
+from app.routes.configuracion_asistencia import configuracion_bp
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -38,6 +45,7 @@ def generate_token(user_id: int, remember_me: bool = False) -> str:
 @auth_bp.route('/register', methods=['POST'])
 def register():
     """Registra un nuevo usuario y devuelve token JWT para auto-login"""
+    from app.services.invitacion_service import InvitacionService
     data = request.get_json()
     
     if not data or not all(k in data for k in ['username', 'email', 'password']):
@@ -53,14 +61,32 @@ def register():
     if not usuario:
         return jsonify({'error': mensaje}), 400
     
+    # Si hay token de invitación, aceptar la invitación automáticamente
+    proyecto_id = None
+    if 'token_invitacion' in data and data['token_invitacion']:
+        try:
+            invitacion, error = InvitacionService.aceptar_invitacion_con_token(
+                token=data['token_invitacion'],
+                usuario_id=usuario.id
+            )
+            if invitacion:
+                proyecto_id = invitacion.proyecto_id
+        except Exception as e:
+            print(f"Error al aceptar invitación: {e}")
+    
     # Generar token JWT para auto-login (sin remember_me)
     access_token = generate_token(usuario.id, remember_me=False)
     
-    return jsonify({
+    response_data = {
         'message': mensaje, 
         'usuario': usuario.to_dict(),
         'access_token': access_token
-    }), 201
+    }
+    
+    if proyecto_id:
+        response_data['proyecto_id'] = proyecto_id
+    
+    return jsonify(response_data), 201
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -86,9 +112,9 @@ def login():
 
 @auth_bp.route('/me', methods=['GET'])
 @token_required
-def get_current_user(user_id):
+def get_current_user(usuario_actual):
     """Obtiene el usuario actual verificando el token"""
-    usuario = AuthService.obtener_usuario_por_id(user_id)
+    usuario = AuthService.obtener_usuario_por_id(usuario_actual['id'])
     
     if not usuario:
         return jsonify({'error': 'Usuario no encontrado'}), 404
@@ -97,12 +123,12 @@ def get_current_user(user_id):
 
 @auth_bp.route('/me', methods=['PUT'])
 @token_required
-def update_profile(user_id):
+def update_profile(usuario_actual):
     """Actualiza perfil del usuario"""
     data = request.get_json()
     
     usuario, mensaje = AuthService.actualizar_perfil(
-        user_id,
+        usuario_actual['id'],
         nombre_completo=data.get('nombre_completo'),
         email=data.get('email'),
         foto_perfil=data.get('foto_perfil'),
@@ -116,7 +142,7 @@ def update_profile(user_id):
 
 @auth_bp.route('/change-password', methods=['POST'])
 @token_required
-def change_password(user_id):
+def change_password(usuario_actual):
     """Cambia contraseña del usuario"""
     data = request.get_json()
     
@@ -124,7 +150,7 @@ def change_password(user_id):
         return jsonify({'error': 'Contraseñas requeridas'}), 400
     
     success, mensaje = AuthService.cambiar_password(
-        user_id,
+        usuario_actual['id'],
         data['password_actual'],
         data['password_nueva']
     )
@@ -136,12 +162,12 @@ def change_password(user_id):
 
 @auth_bp.route('/horas-reales', methods=['POST'])
 @token_required
-def toggle_horas_reales(user_id):
+def toggle_horas_reales(usuario_actual):
     """Activa/desactiva horas reales"""
     data = request.get_json()
     
     success, mensaje = AuthService.activar_horas_reales(
-        user_id,
+        usuario_actual['id'],
         data.get('activar', False)
     )
     
@@ -152,7 +178,7 @@ def toggle_horas_reales(user_id):
 
 @auth_bp.route('/logout', methods=['POST'])
 @token_required
-def logout(user_id):
+def logout(usuario_actual):
     """Cierra la sesión del usuario"""
     # El logout simplemente valida que el token es correcto
     # El cliente debe borrar el token del localStorage/cookies

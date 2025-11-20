@@ -158,6 +158,27 @@ export const AlertUtils = {
       color: '#c8c8c8',
     });
   },
+
+  /**
+   * Prompt con input
+   */
+  prompt: (
+    title: string,
+    text?: string,
+    inputType: 'text' | 'email' | 'textarea' = 'text',
+    inputPlaceholder?: string
+  ) => {
+    return Swal.fire({
+      title,
+      text,
+      input: inputType,
+      inputPlaceholder,
+      showCancelButton: true,
+      confirmButtonText: 'Aceptar',
+      cancelButtonText: 'Cancelar',
+      ...DARK_THEME_CONFIG,
+    });
+  },
 };
 
 export default AlertUtils;

@@ -22,6 +22,16 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 JWT_EXPIRATION_HOURS = os.getenv('JWT_EXPIRATION_HOURS')
 CORS_ORIGINS = os.getenv('CORS_ORIGINS')
 
+# SMTP Configuration
+SMTP_HOST = os.getenv('SMTP_HOST')
+SMTP_PORT = os.getenv('SMTP_PORT')
+SMTP_USE_TLS = os.getenv('SMTP_USE_TLS', 'True').lower() == 'true'
+SMTP_USER = os.getenv('SMTP_USER')
+SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
+SMTP_FROM_EMAIL = os.getenv('SMTP_FROM_EMAIL')
+SMTP_FROM_NAME = os.getenv('SMTP_FROM_NAME', 'MisHoras')
+APP_URL = os.getenv('APP_URL', 'http://localhost:21000')
+
 # Validar que las variables requeridas estén disponibles
 REQUIRED_VARS = {
     'DB_HOST': DB_HOST,

@@ -22,6 +22,7 @@ const pageTitle = 'Crear Cuenta';
         <div class="form-group">
           <label for="email">Email</label>
           <input type="email" id="email" name="email" placeholder="tu@email.com" required />
+          <input type="hidden" id="token_invitacion" name="token_invitacion" value="" />
         </div>
 
         <div class="form-group">
@@ -58,10 +59,40 @@ const pageTitle = 'Crear Cuenta';
 <script>
   import { AuthService } from '../services/auth';
   import { RegisterHandler } from '../handlers/register';
+  import { InvitacionService } from '../services/invitaciones';
+  import { AlertUtils } from '../utils/swal';
 
   // Si está logueado, redirigir al dashboard
   if (AuthService.isAuthenticated()) {
     window.location.href = '/dashboard';
+  }
+
+  // Detectar token de invitación en URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+
+  if (token) {
+    // Validar token y obtener datos de invitación
+    InvitacionService.validarToken(token)
+      .then(invitacion => {
+        // Prellenar email y bloquearlo
+        const emailInput = document.getElementById('email') as HTMLInputElement;
+        const tokenInput = document.getElementById('token_invitacion') as HTMLInputElement;
+        
+        if (emailInput && tokenInput) {
+          emailInput.value = invitacion.email_destinatario;
+          emailInput.readOnly = true;
+          emailInput.style.backgroundColor = '#f0f0f0';
+          tokenInput.value = token;
+        }
+
+        // Mostrar mensaje de invitación
+        AlertUtils.toast(`Invitación al proyecto: ${invitacion.proyecto_nombre}`, 'info');
+      })
+      .catch(error => {
+        console.error('Token inválido:', error);
+        AlertUtils.error('Token Inválido', 'El enlace de invitación no es válido o ha expirado.');
+      });
   }
 
   // Manejar envío del formulario

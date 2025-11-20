@@ -40,6 +40,7 @@ export const RegisterHandler = {
       const nombre_completo = (document.getElementById('nombre_completo') as HTMLInputElement).value;
       const password = (document.getElementById('password') as HTMLInputElement).value;
       const passwordConfirm = (document.getElementById('password-confirm') as HTMLInputElement).value;
+      const tokenInvitacion = (document.getElementById('token_invitacion') as HTMLInputElement)?.value || '';
 
       // Validaciones
       if (!this.validarCampos(username, email, password)) {
@@ -51,10 +52,10 @@ export const RegisterHandler = {
       }
 
       // Registrar (ahora devuelve token y auto-inicia sesión)
-      await AuthService.register(username, email, password, nombre_completo);
+      const response = await AuthService.register(username, email, password, nombre_completo, tokenInvitacion);
 
-      // Mostrar éxito y redirigir al dashboard
-      this.mostrarMensajeExito();
+      // Mostrar éxito y redirigir
+      this.mostrarMensajeExito(response.proyecto_id);
       return true;
     } catch (error) {
       console.error('Error:', error);
@@ -64,17 +65,22 @@ export const RegisterHandler = {
     }
   },
 
-  // Muestra mensaje de éxito y redirige al dashboard (sesión iniciada)
-  mostrarMensajeExito() {
+  // Muestra mensaje de éxito y redirige al dashboard o proyecto (sesión iniciada)
+  mostrarMensajeExito(proyectoId?: number) {
     const successDiv = document.getElementById('success-message');
+    const mensaje = proyectoId 
+      ? '✅ Cuenta creada e invitación aceptada. Redirigiendo al proyecto...'
+      : '✅ Cuenta creada exitosamente. Redirigiendo...';
+    
     if (successDiv) {
-      successDiv.textContent = '✅ Cuenta creada exitosamente. Redirigiendo...';
+      successDiv.textContent = mensaje;
       successDiv.style.display = 'block';
     }
 
-    // Redirigir al dashboard después de 1.5s
+    // Redirigir después de 1.5s
+    const destino = proyectoId ? `/proyecto/${proyectoId}` : '/dashboard';
     setTimeout(() => {
-      window.location.href = '/dashboard';
+      window.location.href = destino;
     }, 1500);
   },
 

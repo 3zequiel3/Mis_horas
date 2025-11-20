@@ -171,13 +171,20 @@ export class AuthService {
     username: string,
     email: string,
     password: string,
-    nombre_completo?: string
-  ): Promise<AuthResponse> {
+    nombre_completo?: string,
+    token_invitacion?: string
+  ): Promise<AuthResponse & { proyecto_id?: number }> {
+    const body: any = { username, email, password, nombre_completo };
+    
+    if (token_invitacion) {
+      body.token_invitacion = token_invitacion;
+    }
+    
     const response = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ username, email, password, nombre_completo }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -185,7 +192,7 @@ export class AuthService {
       throw new Error(error.error || 'Error en el registro');
     }
 
-    const data: AuthResponse = await response.json();
+    const data: AuthResponse & { proyecto_id?: number } = await response.json();
     
     // Auto-login: guardar token sin remember_me (sesión temporal)
     this.setToken(data.access_token, false);

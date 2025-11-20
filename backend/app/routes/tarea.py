@@ -6,7 +6,7 @@ tarea_bp = Blueprint('tareas', __name__)
 
 @tarea_bp.route('/proyecto/<int:proyecto_id>', methods=['GET'])
 @token_required
-def get_tareas_proyecto(user_id, proyecto_id):
+def get_tareas_proyecto(usuario_actual, proyecto_id):
     """Obtiene tareas de un proyecto"""
     tareas = TareaService.obtener_tareas_proyecto(proyecto_id)
     # Incluir desglose de empleados en la respuesta
@@ -14,7 +14,7 @@ def get_tareas_proyecto(user_id, proyecto_id):
 
 @tarea_bp.route('', methods=['POST'])
 @token_required
-def create_tarea(user_id):
+def create_tarea(usuario_actual):
     """Crea una nueva tarea"""
     data = request.get_json()
     
@@ -32,14 +32,14 @@ def create_tarea(user_id):
         detalle=data.get('detalle', ''),
         que_falta=data.get('que_falta', ''),
         dias_ids=dias_ids,
-        usuario_id=user_id
+        usuario_id=usuario_actual['id']
     )
     
     return jsonify(tarea.to_dict(incluir_desglose_empleados=True)), 201
 
 @tarea_bp.route('/<int:tarea_id>', methods=['GET'])
 @token_required
-def get_tarea(user_id, tarea_id):
+def get_tarea(usuario_actual, tarea_id):
     """Obtiene una tarea específica"""
     tarea = TareaService.obtener_tarea_por_id(tarea_id)
     
@@ -50,7 +50,7 @@ def get_tarea(user_id, tarea_id):
 
 @tarea_bp.route('/<int:tarea_id>', methods=['PUT'])
 @token_required
-def update_tarea(user_id, tarea_id):
+def update_tarea(usuario_actual, tarea_id):
     """Actualiza una tarea"""
     data = request.get_json()
     
@@ -60,7 +60,7 @@ def update_tarea(user_id, tarea_id):
         detalle=data.get('detalle'),
         que_falta=data.get('que_falta'),
         dias_ids=data.get('dias_ids'),
-        usuario_id=user_id  # Pasar user_id para recalcular horas
+        usuario_id=usuario_actual['id']  # Pasar user_id para recalcular horas
     )
     
     if not tarea:
@@ -70,7 +70,7 @@ def update_tarea(user_id, tarea_id):
 
 @tarea_bp.route('/<int:tarea_id>', methods=['DELETE'])
 @token_required
-def delete_tarea(user_id, tarea_id):
+def delete_tarea(usuario_actual, tarea_id):
     """Elimina una tarea"""
     success = TareaService.eliminar_tarea(tarea_id)
     
@@ -81,7 +81,7 @@ def delete_tarea(user_id, tarea_id):
 
 @tarea_bp.route('/<int:tarea_id>/dia/<int:dia_id>/horas', methods=['PATCH'])
 @token_required
-def update_tarea_dia_horas(user_id, tarea_id, dia_id):
+def update_tarea_dia_horas(usuario_actual, tarea_id, dia_id):
     """Actualiza las horas de un día específico en una tarea"""
     data = request.get_json()
     
@@ -94,7 +94,7 @@ def update_tarea_dia_horas(user_id, tarea_id, dia_id):
         tarea_id=tarea_id,
         dia_id=dia_id,
         horas_str=horas_str,
-        usuario_id=user_id
+        usuario_id=usuario_actual['id']
     )
     
     if not tarea:
@@ -104,7 +104,7 @@ def update_tarea_dia_horas(user_id, tarea_id, dia_id):
 
 @tarea_bp.route('/proyecto/<int:proyecto_id>/disponibles/<int:anio>/<int:mes>', methods=['GET'])
 @token_required
-def get_dias_disponibles(user_id, proyecto_id, anio, mes):
+def get_dias_disponibles(usuario_actual, proyecto_id, anio, mes):
     """Obtiene días disponibles para asignar"""
     tarea_excluir_id = request.args.get('excluir_tarea_id', type=int)
     dias = TareaService.obtener_dias_disponibles(proyecto_id, anio, mes, tarea_excluir_id)

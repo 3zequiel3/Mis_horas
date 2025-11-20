@@ -1,7 +1,7 @@
 // Handler específico para tableros con empleados
 
 import type { Proyecto, Empleado, Dia, Usuario } from '../types';
-import { ProyectoService } from '../services/proyecto';
+import { ProyectosService } from '../services/proyectos';
 import { EmpleadosService } from '../services/empleados';
 import { DiaService } from '../services/dia';
 import { showErrorModal } from '../utils/modals';
@@ -61,7 +61,7 @@ export const TableroEmpleadosHandler = {
         return;
       }
 
-      this.state.proyectoActual = await ProyectoService.getProyecto(proyectoId);
+      this.state.proyectoActual = await ProyectosService.getProyecto(proyectoId);
 
       if (!this.state.proyectoActual) {
         window.location.href = '/proyectos';
@@ -751,377 +751,142 @@ export const TableroEmpleadosHandler = {
     const proyecto = this.state.proyectoActual;
     if (!proyecto) return;
 
-    const { value: formValues } = await Swal.fire({
-      title: 'Configuración del Proyecto',
-      width: '800px',
+    const { value: action } = await Swal.fire({
+      title: 'Configuración del Tablero',
+      width: '500px',
       html: `
-        <div style="text-align: left; padding: 10px;">
-          <!-- Horas Reales -->
-          <div style="margin-bottom: 20px;">
-            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-              <input 
-                type="checkbox" 
-                id="horas-reales-checkbox" 
-                ${proyecto.horas_reales_activas ? 'checked' : ''}
-                style="width: 18px; height: 18px; cursor: pointer;"
-              >
-              <span style="font-size: 15px; color: #c8c8c8;">Activar columna de Horas Reales</span>
-            </label>
-            <p style="color: #9ca3af; font-size: 13px; margin-top: 5px; margin-left: 28px;">
-              Muestra una columna adicional para registrar las horas reales trabajadas.
-            </p>
-          </div>
-
-          <!-- Sistema de Horarios -->
-          <div style="margin-bottom: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <label style="display: block; margin-bottom: 10px; color: #c8c8c8; font-size: 15px; font-weight: 600;">
-              ⏰ Sistema de Horarios
-            </label>
-            <select id="modo-horarios-select" style="width: 100%; padding: 10px; background: #1a1f2e; color: #c8c8c8; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; margin-bottom: 15px; font-size: 14px;">
-              <option value="corrido" ${proyecto.modo_horarios === 'corrido' ? 'selected' : ''}>De corrido (Entrada/Salida única)</option>
-              <option value="turnos" ${proyecto.modo_horarios === 'turnos' ? 'selected' : ''}>Por turnos (Mañana/Tarde)</option>
-            </select>
-
-            <!-- Configuración de Turnos -->
-            <div id="config-turnos" style="display: ${proyecto.modo_horarios === 'turnos' ? 'block' : 'none'};">
-              <p style="color: #9ca3af; font-size: 13px; margin-bottom: 15px;">
-                Define los rangos horarios permitidos para cada turno. Las horas extras se calcularán automáticamente.
-              </p>
-              
-              <div style="margin-bottom: 15px; padding: 15px; background: rgba(102, 126, 234, 0.08); border: 1px solid rgba(102, 126, 234, 0.2); border-radius: 8px;">
-                <label style="display: block; margin-bottom: 10px; color: #c8c8c8; font-size: 14px; font-weight: 600;">🌅 Turno Mañana</label>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #9ca3af; margin-bottom: 4px;">Hora Inicio</label>
-                    <input type="time" id="turno-manana-inicio" value="${proyecto.turno_manana_inicio || ''}" style="width: 100%; padding: 8px; background: #1a1f2e; color: #c8c8c8; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 14px;">
-                  </div>
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #9ca3af; margin-bottom: 4px;">Hora Fin</label>
-                    <input type="time" id="turno-manana-fin" value="${proyecto.turno_manana_fin || ''}" style="width: 100%; padding: 8px; background: #1a1f2e; color: #c8c8c8; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 14px;">
-                  </div>
-                </div>
-              </div>
-
-              <div style="padding: 15px; background: rgba(118, 75, 162, 0.08); border: 1px solid rgba(118, 75, 162, 0.2); border-radius: 8px;">
-                <label style="display: block; margin-bottom: 10px; color: #c8c8c8; font-size: 14px; font-weight: 600;">🌆 Turno Tarde</label>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #9ca3af; margin-bottom: 4px;">Hora Inicio</label>
-                    <input type="time" id="turno-tarde-inicio" value="${proyecto.turno_tarde_inicio || ''}" style="width: 100%; padding: 8px; background: #1a1f2e; color: #c8c8c8; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 14px;">
-                  </div>
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #9ca3af; margin-bottom: 4px;">Hora Fin</label>
-                    <input type="time" id="turno-tarde-fin" value="${proyecto.turno_tarde_fin || ''}" style="width: 100%; padding: 8px; background: #1a1f2e; color: #c8c8c8; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 14px;">
-                  </div>
-                </div>
-              </div>
+        <div style="display: flex; flex-direction: column; gap: 12px; padding: 10px;">
+          <button id="btn-config-horarios" class="config-option-btn">
+            <span class="config-icon">⏰</span>
+            <div class="config-text">
+              <strong>Sistema de Horarios y Turnos</strong>
+              <small>Configurar horas reales, horarios laborales y turnos</small>
             </div>
-          </div>
+          </button>
+          
+          <button id="btn-invitar-empleados" class="config-option-btn">
+            <span class="config-icon">📧</span>
+            <div class="config-text">
+              <strong>Invitar Empleados</strong>
+              <small>Enviar invitaciones para vincular usuarios</small>
+            </div>
+          </button>
+          
+          <button id="btn-gestionar-empleados" class="config-option-btn">
+            <span class="config-icon">👥</span>
+            <div class="config-text">
+              <strong>Gestionar Empleados</strong>
+              <small>Agregar, editar o eliminar empleados del tablero</small>
+            </div>
+          </button>
         </div>
+        
+        <style>
+          .config-option-btn {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-align: left;
+          }
+          
+          .config-option-btn:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: #667eea;
+            transform: translateX(5px);
+          }
+          
+          .config-icon {
+            font-size: 32px;
+            min-width: 40px;
+            text-align: center;
+          }
+          
+          .config-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+          }
+          
+          .config-text strong {
+            color: #c8c8c8;
+            font-size: 15px;
+          }
+          
+          .config-text small {
+            color: #9ca3af;
+            font-size: 13px;
+          }
+        </style>
       `,
+      showConfirmButton: false,
       showCancelButton: true,
-      confirmButtonText: 'Guardar',
-      cancelButtonText: 'Cancelar',
+      cancelButtonText: 'Cerrar',
       background: '#0f1419',
       color: '#c8c8c8',
-      confirmButtonColor: '#667eea',
       cancelButtonColor: '#2d3746',
-      didOpen: () => {
-        // Manejar cambio de modo de horarios
-        const modoSelect = document.getElementById('modo-horarios-select') as HTMLSelectElement;
-        const configTurnos = document.getElementById('config-turnos') as HTMLElement;
+      didOpen: async () => {
+        document.getElementById('btn-config-horarios')?.addEventListener('click', async () => {
+          Swal.close();
+          const { ConfigHorariosHandler } = await import('./config-horarios');
+          setTimeout(() => ConfigHorariosHandler.mostrar(proyecto), 100);
+        });
         
-        modoSelect?.addEventListener('change', () => {
-          if (modoSelect.value === 'turnos') {
-            configTurnos.style.display = 'block';
-          } else {
-            configTurnos.style.display = 'none';
+        document.getElementById('btn-invitar-empleados')?.addEventListener('click', () => {
+          Swal.close();
+          const proyectoId = this.getProyectoId();
+          const empleados = this.getAllEmpleados();
+          if (typeof (window as any).abrirModalInvitaciones === 'function') {
+            (window as any).abrirModalInvitaciones(proyectoId, empleados);
           }
         });
-      },
-      preConfirm: () => {
-        const horasReales = (document.getElementById('horas-reales-checkbox') as HTMLInputElement).checked;
-        const modoHorarios = (document.getElementById('modo-horarios-select') as HTMLSelectElement).value;
-        const turnoMananaInicio = (document.getElementById('turno-manana-inicio') as HTMLInputElement)?.value;
-        const turnoMananaFin = (document.getElementById('turno-manana-fin') as HTMLInputElement)?.value;
-        const turnoTardeInicio = (document.getElementById('turno-tarde-inicio') as HTMLInputElement)?.value;
-        const turnoTardeFin = (document.getElementById('turno-tarde-fin') as HTMLInputElement)?.value;
-
-        // Calcular horario_inicio y horario_fin automáticamente desde los turnos
-        let horarioInicio = null;
-        let horarioFin = null;
         
-        if (modoHorarios === 'turnos' && turnoMananaInicio && turnoTardeFin) {
-          horarioInicio = turnoMananaInicio;
-          horarioFin = turnoTardeFin;
-        }
-
-        return {
-          horas_reales_activas: horasReales,
-          modo_horarios: modoHorarios,
-          horario_inicio: horarioInicio,
-          horario_fin: horarioFin,
-          turno_manana_inicio: turnoMananaInicio || null,
-          turno_manana_fin: turnoMananaFin || null,
-          turno_tarde_inicio: turnoTardeInicio || null,
-          turno_tarde_fin: turnoTardeFin || null,
-        };
+        document.getElementById('btn-gestionar-empleados')?.addEventListener('click', async () => {
+          Swal.close();
+          const { GestionEmpleadosHandler } = await import('./gestion-empleados');
+          setTimeout(() => GestionEmpleadosHandler.mostrar(proyecto.id, this.state.empleados), 100);
+        });
       }
     });
-
-    if (formValues && this.state.proyectoActual) {
-      try {
-        await ProyectoService.updateConfiguracion(
-          this.state.proyectoActual.id,
-          formValues
-        );
-
-        await Swal.fire({
-          icon: 'success',
-          title: 'Configuración actualizada',
-          text: 'La página se recargará para aplicar los cambios',
-          showConfirmButton: false,
-          timer: 1500,
-          background: '#0f1419',
-          color: '#c8c8c8',
-          iconColor: '#10b981'
-        });
-
-        // Recargar página completa para aplicar cambios
-        window.location.reload();
-      } catch (error) {
-        console.error('Error actualizando configuración:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudo actualizar la configuración',
-          background: '#0f1419',
-          color: '#c8c8c8',
-          iconColor: '#ef4444',
-          confirmButtonColor: '#ef4444'
-        });
-      }
-    }
-  },
-
-  async mostrarModalEditarEmpleado(empleadoId: number, nombreActual: string): Promise<void> {
-    const { value: nuevoNombre } = await Swal.fire({
-      title: 'Editar Empleado',
-      input: 'text',
-      inputLabel: 'Nombre del empleado',
-      inputValue: nombreActual,
-      showCancelButton: true,
-      confirmButtonText: 'Guardar',
-      cancelButtonText: 'Cancelar',
-      background: '#0f1419',
-      color: '#c8c8c8',
-      confirmButtonColor: '#667eea',
-      cancelButtonColor: '#2d3746',
-      inputValidator: (value) => {
-        if (!value || value.trim() === '') {
-          return 'El nombre es requerido';
-        }
-        return null;
-      }
-    });
-
-    if (nuevoNombre && nuevoNombre.trim() !== nombreActual) {
-      try {
-        await EmpleadosService.updateEmpleado(empleadoId, { nombre: nuevoNombre.trim() });
-
-        Swal.fire({
-          icon: 'success',
-          title: 'Empleado actualizado',
-          showConfirmButton: false,
-          timer: 1500,
-          background: '#0f1419',
-          color: '#c8c8c8',
-          iconColor: '#10b981'
-        });
-
-        // Recargar para mostrar cambios
-        await this.loadProyectoConEmpleados();
-      } catch (error) {
-        console.error('Error actualizando empleado:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudo actualizar el empleado',
-          background: '#0f1419',
-          color: '#c8c8c8',
-          iconColor: '#ef4444',
-          confirmButtonColor: '#ef4444'
-        });
-      }
-    }
-  },
-
-  async eliminarEmpleado(empleadoId: number, nombreEmpleado: string): Promise<void> {
-    const result = await Swal.fire({
-      title: '¿Eliminar empleado?',
-      html: `
-        <p style="color: #c8c8c8;">¿Estás seguro de que deseas eliminar a <strong>${nombreEmpleado}</strong>?</p>
-        <p style="color: #ef4444; font-size: 14px; margin-top: 10px;">
-          ⚠️ Se eliminarán todos los registros de horas asociados a este empleado.
-        </p>
-      `,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      background: '#0f1419',
-      color: '#c8c8c8',
-      confirmButtonColor: '#dc3545',
-      cancelButtonColor: '#2d3746',
-      iconColor: '#f59e0b'
-    });
-
-    if (result.isConfirmed) {
-      try {
-        await EmpleadosService.deleteEmpleado(empleadoId);
-
-        Swal.fire({
-          icon: 'success',
-          title: 'Empleado eliminado',
-          showConfirmButton: false,
-          timer: 1500,
-          background: '#0f1419',
-          color: '#c8c8c8',
-          iconColor: '#10b981'
-        });
-
-        // Recargar para mostrar cambios
-        await this.loadProyectoConEmpleados();
-      } catch (error) {
-        console.error('Error eliminando empleado:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudo eliminar el empleado',
-          background: '#0f1419',
-          color: '#c8c8c8',
-          iconColor: '#ef4444',
-          confirmButtonColor: '#ef4444'
-        });
-      }
-    }
   },
 
   /**
-   * Carga las tareas del proyecto y las muestra en el panel lateral
+   * Obtiene el ID del proyecto actual
+   */
+  getProyectoId(): number {
+    return this.state.proyectoActual?.id || 0;
+  },
+
+  /**
+   * Obtiene todos los empleados actuales
+   */
+  getAllEmpleados(): Empleado[] {
+    return this.state.empleados || [];
+  },
+
+  /**
+   * Cargar tareas del proyecto
    */
   async loadTareas(): Promise<void> {
-    try {
-      if (!this.state.proyectoActual) return;
-
-      const { TareaService } = await import('../services/tarea');
-      const tareas = await TareaService.getTareasProyecto(this.state.proyectoActual.id);
-
-      const tareasList = document.getElementById('tareas-list');
-      const tareasCount = document.getElementById('tareas-count');
-
-      if (!tareasList) return;
-
-      if (tareasCount) {
-        tareasCount.textContent = tareas.length.toString();
-      }
-
-      if (tareas.length === 0) {
-        tareasList.innerHTML = `
-          <div class="empty-tareas">
-            <p>📭 Sin tareas aún</p>
-          </div>
-        `;
-        return;
-      }
-
-      tareasList.innerHTML = tareas.map((tarea: any) => `
-        <div class="tarea-item" data-tarea-id="${tarea.id}">
-          <h4>${tarea.titulo}</h4>
-          <small>${tarea.horas || '00:00'} horas</small>
-        </div>
-      `).join('');
-
-      // Agregar listeners a cada elemento individual
-      tareasList.querySelectorAll('.tarea-item').forEach((element) => {
-        // Click simple: mostrar detalles
-        element.addEventListener('click', (e: Event) => {
-          if ((e as PointerEvent).detail === 1) {
-            const tareaId = parseInt(element.getAttribute('data-tarea-id') || '0');
-            const tarea = tareas.find((t: any) => t.id === tareaId);
-
-            if (tarea) {
-              // Disparar evento personalizado para que sea manejado en el .astro
-              const event = new CustomEvent('view-tarea-empleados', { detail: { tarea } });
-              document.dispatchEvent(event);
-            }
-          }
-        });
-      });
-    } catch (error) {
-      console.error('Error cargando tareas:', error);
-    }
+    // TODO: Implementar carga de tareas si es necesario
+    // Este método se llama desde el .astro pero puede estar vacío
+    // o delegar a TareaHandler
+    console.log('loadTareas llamado - delegar a TareaHandler si es necesario');
   },
 
   /**
-   * Muestra modal con el mes completo de un empleado
+   * Ver mes completo de un empleado
    */
-  async verMesCompletoEmpleado(empleadoId: number, nombreEmpleado: string): Promise<void> {
+  async verMesCompletoEmpleado(empleadoId: number, empleadoNombre: string): Promise<void> {
+    if (!this.state.proyectoActual) return;
+
     try {
-      if (!this.state.proyectoActual) return;
-
-      const modal = document.getElementById('empleado-mes-modal');
-      const modalTitle = document.getElementById('empleado-mes-modal-title');
-      const tbody = document.getElementById('empleado-mes-dias-tbody');
-      const totalTrabajadas = document.getElementById('empleado-mes-total-trabajadas');
-      const totalReales = document.getElementById('empleado-mes-total-reales');
-      const thHorasReales = document.getElementById('empleado-th-horas-reales');
-      const tdTotalReales = document.getElementById('empleado-td-total-reales');
-
-      if (!modal || !tbody) return;
-
-      // Actualizar título
-      if (modalTitle) {
-        const mesNombre = MESES_ES[this.state.mesActual as keyof typeof MESES_ES];
-        modalTitle.textContent = `${mesNombre} ${this.state.anioActual} - ${nombreEmpleado}`;
-      }
-
-      // Mostrar/ocultar columna de horas reales
-      const mostrarHorasReales = this.state.proyectoActual.horas_reales_activas || false;
-      const modoTurnos = this.state.proyectoActual.modo_horarios === 'turnos';
-      
-      if (thHorasReales) {
-        thHorasReales.style.display = mostrarHorasReales ? '' : 'none';
-      }
-      if (tdTotalReales) {
-        tdTotalReales.style.display = mostrarHorasReales ? '' : 'none';
-      }
-      
-      // Actualizar headers según modo
-      const thTurnos = document.getElementById('empleado-th-turnos');
-      const thEntrada = document.getElementById('empleado-th-entrada');
-      const thSalida = document.getElementById('empleado-th-salida');
-      
-      const tdTurnosFooter = document.querySelectorAll('.td-turnos-footer');
-      const tdEntradaFooter = document.querySelectorAll('.td-entrada-footer');
-      const tdSalidaFooter = document.querySelectorAll('.td-salida-footer');
-      
-      if (modoTurnos) {
-        if (thTurnos) thTurnos.style.display = '';
-        if (thEntrada) thEntrada.style.display = 'none';
-        if (thSalida) thSalida.style.display = 'none';
-        tdTurnosFooter.forEach(td => (td as HTMLElement).style.display = '');
-        tdEntradaFooter.forEach(td => (td as HTMLElement).style.display = 'none');
-        tdSalidaFooter.forEach(td => (td as HTMLElement).style.display = 'none');
-      } else {
-        if (thTurnos) thTurnos.style.display = 'none';
-        if (thEntrada) thEntrada.style.display = '';
-        if (thSalida) thSalida.style.display = '';
-        tdTurnosFooter.forEach(td => (td as HTMLElement).style.display = 'none');
-        tdEntradaFooter.forEach(td => (td as HTMLElement).style.display = '');
-        tdSalidaFooter.forEach(td => (td as HTMLElement).style.display = '');
-      }
-
       // Cargar días del mes completo
       const dias = await DiaService.getDiasMes(
         this.state.proyectoActual.id,
@@ -1130,180 +895,94 @@ export const TableroEmpleadosHandler = {
         empleadoId
       );
 
-      // Calcular totales
-      const sumaHorasExtras = dias.reduce((sum, dia) => sum + (dia.horas_extras || 0), 0);
-      const sumaHorasTrabajadas = dias.reduce((sum, dia) => sum + (dia.horas_trabajadas || 0), 0);
-      const sumaHorasRegulares = modoTurnos ? (sumaHorasTrabajadas - sumaHorasExtras) : sumaHorasTrabajadas;
-      const sumaHorasReales = dias.reduce((sum, dia) => sum + (dia.horas_reales || 0), 0);
+      const totalHoras = dias.reduce((sum: number, dia: Dia) => sum + (dia.horas_trabajadas || 0), 0);
+      const diasTrabajados = dias.filter((dia: Dia) => dia.horas_trabajadas && dia.horas_trabajadas > 0).length;
 
-      // Renderizar días (ahora editable en el modal también)
-      tbody.innerHTML = this.renderDiasEmpleado(dias, mostrarHorasReales, true);
+      // Crear tabla HTML
+      const filasHTML = dias.map((dia: Dia) => {
+        const fecha = new Date(dia.fecha);
+        const diaSemana = fecha.toLocaleDateString('es-ES', { weekday: 'short' });
+        const fechaFormato = formatearFechaSinAnio(dia.fecha);
 
-      // Aplicar visibilidad a las celdas del tbody según el modo
-      const tdTurnosBody = tbody.querySelectorAll('.td-turnos');
-      const tdEntradaBody = tbody.querySelectorAll('.td-entrada');
-      const tdSalidaBody = tbody.querySelectorAll('.td-salida');
-      
-      if (modoTurnos) {
-        tdTurnosBody.forEach(td => (td as HTMLElement).style.display = '');
-        tdEntradaBody.forEach(td => (td as HTMLElement).style.display = 'none');
-        tdSalidaBody.forEach(td => (td as HTMLElement).style.display = 'none');
-      } else {
-        tdTurnosBody.forEach(td => (td as HTMLElement).style.display = 'none');
-        tdEntradaBody.forEach(td => (td as HTMLElement).style.display = '');
-        tdSalidaBody.forEach(td => (td as HTMLElement).style.display = '');
-      }
+        return `
+          <tr class="${dia.horas_trabajadas ? '' : 'dia-sin-horas'}">
+            <td>${fechaFormato}</td>
+            <td>${diaSemana}</td>
+            <td>${dia.hora_entrada || '-'}</td>
+            <td>${dia.hora_salida || '-'}</td>
+            <td class="horas-cell">${dia.horas_trabajadas ? horasAFormato(dia.horas_trabajadas) : '-'}</td>
+            ${this.state.proyectoActual?.horas_reales_activas ? `
+              <td class="horas-cell">${dia.horas_reales ? horasAFormato(dia.horas_reales) : '-'}</td>
+            ` : ''}
+          </tr>
+        `;
+      }).join('');
 
-      // Actualizar totales (mostrar horas regulares, sin extras)
-      if (totalTrabajadas) {
-        totalTrabajadas.textContent = horasAFormato(sumaHorasRegulares);
-      }
-      if (totalReales) {
-        totalReales.textContent = horasAFormato(sumaHorasReales);
-      }
+      await Swal.fire({
+        title: `📅 Mes completo - ${empleadoNombre}`,
+        html: `
+          <div style="text-align: left;">
+            <div style="display: flex; gap: 20px; margin-bottom: 20px; justify-content: center;">
+              <div style="text-align: center;">
+                <div style="font-size: 2em; color: #667eea; font-weight: bold;">${diasTrabajados}</div>
+                <div style="color: #9ca3af; font-size: 0.9em;">Días trabajados</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-size: 2em; color: #10b981; font-weight: bold;">${horasAFormato(totalHoras)}</div>
+                <div style="color: #9ca3af; font-size: 0.9em;">Total de horas</div>
+              </div>
+            </div>
 
-      // Mostrar modal
-      modal.style.display = 'flex';
-
-      // Event listener para botones de turnos en el modal
-      if (modoTurnos) {
-        tbody.addEventListener('click', (e: Event) => {
-          const target = e.target as HTMLElement;
-          if (target.classList.contains('btn-ver-turnos')) {
-            const diaId = parseInt(target.dataset.diaId || '0');
-            const empleadoNombreBtn = target.dataset.empleadoNombre || '';
-            const fecha = target.dataset.fecha || '';
-            const turnoMananaEntrada = target.dataset.turnoMananaEntrada;
-            const turnoMananaSalida = target.dataset.turnoMananaSalida;
-            const turnoTardeEntrada = target.dataset.turnoTardeEntrada;
-            const turnoTardeSalida = target.dataset.turnoTardeSalida;
-
-            // Importar y usar el handler del modal de turnos
-            import('./turnos-modal').then(({ TurnosModalHandler }) => {
-              TurnosModalHandler.init(this.state.proyectoActual!);
-              TurnosModalHandler.abrirModal({
-                diaId,
-                empleadoNombre: empleadoNombreBtn,
-                fecha,
-                turnoMananaEntrada,
-                turnoMananaSalida,
-                turnoTardeEntrada,
-                turnoTardeSalida,
-              });
-            });
-          }
-        });
-      }
-
-      // Agregar event listeners para los inputs del modal (usar 'change' en lugar de 'blur')
-      const modalChangeHandler = async (e: Event) => {
-        const target = e.target as HTMLElement;
-
-        if (target.classList.contains('hora-entrada-input') || target.classList.contains('hora-salida-input')) {
-          const input = target as HTMLInputElement;
-          const diaId = parseInt(input.dataset.diaId || '0');
-
-          if (!diaId) return;
-
-          const row = input.closest('tr');
-          if (!row) return;
-
-          const horaEntradaInput = row.querySelector('.hora-entrada-input') as HTMLInputElement;
-          const horaSalidaInput = row.querySelector('.hora-salida-input') as HTMLInputElement;
-          const horasCell = row.querySelector('.horas-calculadas') as HTMLElement;
-
-          const horaEntrada = horaEntradaInput?.value;
-          const horaSalida = horaSalidaInput?.value;
-
-          if (horaEntrada && horaSalida) {
-            try {
-              if (horasCell) {
-                horasCell.classList.add('calculating');
-                horasCell.innerHTML = '<span style="opacity: 0.6;">⏳ Calculando...</span>';
-              }
-
-              const diaActualizado = await DiaService.updateHorarios(diaId, horaEntrada, horaSalida);
-
-              // Actualizar solo el valor de las horas en el DOM sin recargar todo
-              if (horasCell && diaActualizado.horas_trabajadas !== undefined) {
-                horasCell.classList.remove('calculating', 'horas-pendiente');
-                horasCell.textContent = horasAFormato(diaActualizado.horas_trabajadas);
-              }
-
-              // Recalcular totales sumando las celdas actuales sin recargar
-              const filas = tbody.querySelectorAll('tr');
-              let sumaTrabajadasActualizada = 0;
-              let sumaRealesActualizada = 0;
-
-              filas.forEach(fila => {
-                const horasTrabajadas = (fila.querySelector('.horas-calculadas') as HTMLElement)?.textContent || '00:00';
-                const horasReales = (fila.querySelector('td:nth-child(6)') as HTMLElement)?.textContent || '00:00';
-
-                const [ht, mt] = horasTrabajadas.split(':').map(Number);
-                const [hr, mr] = horasReales.split(':').map(Number);
-
-                sumaTrabajadasActualizada += ht + (mt / 60);
-                sumaRealesActualizada += hr + (mr / 60);
-              });
-
-              if (totalTrabajadas) totalTrabajadas.textContent = horasAFormato(sumaTrabajadasActualizada);
-              if (totalReales) totalReales.textContent = horasAFormato(sumaRealesActualizada);
-
-              // Actualizar el acordeón principal sin recargar todo
-              const acordeonHeader = document.querySelector(`[data-empleado-accordion="${empleadoId}"]`);
-              if (acordeonHeader) {
-                const totalHorasEl = acordeonHeader.querySelector('.empleado-horas-total');
-                if (totalHorasEl) {
-                  totalHorasEl.textContent = horasAFormato(sumaTrabajadasActualizada);
-                }
-              }
-
-              // Actualizar estadísticas globales
-              await this.updateTableroStats();
-            } catch (error) {
-              console.error('❌ [Modal] Error actualizando horarios:', error);
-              if (horasCell) {
-                horasCell.classList.remove('calculating');
-                horasCell.innerHTML = '<span style="color: #ef4444;">❌ Error</span>';
-              }
-            }
-          }
-        }
-      };
-
-      tbody.addEventListener('change', modalChangeHandler, true);
-
-      // Cerrar modal
-      const closeBtn = document.getElementById('empleado-mes-modal-close');
-      const closeBtnFooter = document.getElementById('empleado-mes-modal-close-btn');
-
-      const closeHandler = () => {
-        modal.style.display = 'none';
-      };
-
-      if (closeBtn) {
-        closeBtn.onclick = closeHandler;
-      }
-      if (closeBtnFooter) {
-        closeBtnFooter.onclick = closeHandler;
-      }
-
-      modal.onclick = (e) => {
-        if (e.target === modal) {
-          modal.style.display = 'none';
-        }
-      };
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead style="position: sticky; top: 0; background: #1a1f2e; z-index: 10;">
+                  <tr>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.1);">Fecha</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.1);">Día</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.1);">Entrada</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.1);">Salida</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.1);">Horas</th>
+                    ${this.state.proyectoActual?.horas_reales_activas ? '<th style="padding: 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.1);">Reales</th>' : ''}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${filasHTML}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `,
+        width: '800px',
+        confirmButtonText: 'Cerrar',
+        background: '#0f1419',
+        color: '#c8c8c8',
+        confirmButtonColor: '#667eea',
+      });
     } catch (error) {
       console.error('Error mostrando mes completo:', error);
-      Swal.fire({
+      await Swal.fire({
         icon: 'error',
         title: 'Error',
         text: 'No se pudo cargar el mes completo',
         background: '#0f1419',
         color: '#c8c8c8',
-        iconColor: '#ef4444',
-        confirmButtonColor: '#ef4444'
       });
     }
+  },
+
+  /**
+   * Mostrar modal para editar empleado (delegado a GestionEmpleadosHandler)
+   */
+  async mostrarModalEditarEmpleado(empleadoId: number, empleadoNombre: string): Promise<void> {
+    const { GestionEmpleadosHandler } = await import('./gestion-empleados');
+    await GestionEmpleadosHandler.editarEmpleado(empleadoId, empleadoNombre);
+  },
+
+  /**
+   * Eliminar empleado (delegado a GestionEmpleadosHandler)
+   */
+  async eliminarEmpleado(empleadoId: number, empleadoNombre: string): Promise<void> {
+    const { GestionEmpleadosHandler } = await import('./gestion-empleados');
+    await GestionEmpleadosHandler.eliminarEmpleado(empleadoId, empleadoNombre);
   },
 };

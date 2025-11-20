@@ -1,4 +1,6 @@
 ---
+import Notificaciones from './Notificaciones.astro';
+
 interface Props {
   children?: string;
 }
@@ -23,6 +25,7 @@ const { children } = Astro.props;
         <a href="/dashboard" class="nav-link">Dashboard</a>
         <a href="/proyectos" class="nav-link">Proyectos</a>
         <button id="open-nuevo-proyecto-modal" class="nav-link nav-link-primary">+ Nuevo</button>
+        <Notificaciones />
         <a href="/perfil" class="nav-link">Perfil</a>
         <button id="logout-btn" class="btn btn-danger btn-sm">Cerrar Sesión</button>
       </div>

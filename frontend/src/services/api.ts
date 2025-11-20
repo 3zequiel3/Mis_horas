@@ -75,6 +75,27 @@ export class ApiService {
   }
 
   /**
+   * Realiza una petición PATCH
+   */
+  protected static async patch<T>(endpoint: string, data?: any): Promise<T> {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method: 'PATCH',
+      headers: {
+        ...this.getHeaders(),
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+
+    if (!response.ok) {
+      throw this.handleError(response);
+    }
+
+    return response.json();
+  }
+
+  /**
    * Realiza una petición DELETE
    */
   protected static async delete<T>(endpoint: string): Promise<T> {

@@ -8,21 +8,21 @@ proyecto_bp = Blueprint('proyectos', __name__)
 
 @proyecto_bp.route('/estadisticas', methods=['GET'])
 @token_required
-def get_estadisticas(user_id):
+def get_estadisticas(usuario_actual):
     """Obtiene estadísticas del usuario"""
-    stats = ProyectoService.obtener_estadisticas_usuario(user_id)
+    stats = ProyectoService.obtener_estadisticas_usuario(usuario_actual['id'])
     return jsonify(stats), 200
 
 @proyecto_bp.route('', methods=['GET'])
 @token_required
-def get_proyectos(user_id):
+def get_proyectos(usuario_actual):
     """Obtiene proyectos del usuario"""
-    proyectos = ProyectoService.obtener_proyectos_usuario(user_id)
+    proyectos = ProyectoService.obtener_proyectos_usuario(usuario_actual['id'])
     return jsonify([p.to_dict() for p in proyectos]), 200
 
 @proyecto_bp.route('', methods=['POST'])
 @token_required
-def create_proyecto(user_id):
+def create_proyecto(usuario_actual):
     """Crea un nuevo proyecto"""
     data = request.get_json()
     
@@ -49,7 +49,7 @@ def create_proyecto(user_id):
         descripcion=data.get('descripcion', ''),
         anio=data['anio'],
         mes=data['mes'],
-        usuario_id=user_id,
+        usuario_id=usuario_actual['id'],
         tipo_proyecto=tipo_proyecto,
         empleados=empleados,
         horas_reales_activas=data.get('horas_reales_activas', False),
@@ -66,25 +66,37 @@ def create_proyecto(user_id):
 
 @proyecto_bp.route('/<int:proyecto_id>', methods=['GET'])
 @token_required
-def get_proyecto(user_id, proyecto_id):
+def get_proyecto(usuario_actual, proyecto_id):
     """Obtiene un proyecto específico"""
+    from app.models.empleado import Empleado
+    
     proyecto = ProyectoService.obtener_proyecto_por_id(proyecto_id)
     
     if not proyecto:
         return jsonify({'error': 'Proyecto no encontrado'}), 404
     
+    # Verificar que el usuario tenga acceso (admin o empleado)
+    es_admin = proyecto.usuario_id == usuario_actual['id']
+    es_empleado = Empleado.query.filter_by(
+        proyecto_id=proyecto_id,
+        usuario_id=usuario_actual['id']
+    ).first() is not None
+    
+    if not (es_admin or es_empleado):
+        return jsonify({'error': 'No tienes acceso a este proyecto'}), 403
+    
     return jsonify(proyecto.to_dict()), 200
 
 @proyecto_bp.route('/<int:proyecto_id>/meses', methods=['GET'])
 @token_required
-def get_meses(user_id, proyecto_id):
+def get_meses(usuario_actual, proyecto_id):
     """Obtiene meses del proyecto"""
     meses = ProyectoService.obtener_meses_proyecto(proyecto_id)
     return jsonify(meses), 200
 
 @proyecto_bp.route('/<int:proyecto_id>/meses', methods=['POST'])
 @token_required
-def add_mes(user_id, proyecto_id):
+def add_mes(usuario_actual, proyecto_id):
     """Agrega un mes al proyecto"""
     data = request.get_json()
     
@@ -104,7 +116,7 @@ def add_mes(user_id, proyecto_id):
 
 @proyecto_bp.route('/<int:proyecto_id>/estado', methods=['PUT'])
 @token_required
-def cambiar_estado(user_id, proyecto_id):
+def cambiar_estado(usuario_actual, proyecto_id):
     """Cambia estado del proyecto"""
     data = request.get_json()
     
@@ -120,7 +132,7 @@ def cambiar_estado(user_id, proyecto_id):
 
 @proyecto_bp.route('/<int:proyecto_id>', methods=['DELETE'])
 @token_required
-def delete_proyecto(user_id, proyecto_id):
+def delete_proyecto(usuario_actual, proyecto_id):
     """Elimina un proyecto"""
     success = ProyectoService.eliminar_proyecto(proyecto_id)
     
@@ -131,7 +143,7 @@ def delete_proyecto(user_id, proyecto_id):
 
 @proyecto_bp.route('/<int:proyecto_id>/configuracion', methods=['PUT'])
 @token_required
-def update_configuracion(user_id, proyecto_id):
+def update_configuracion(usuario_actual, proyecto_id):
     """Actualiza configuración del proyecto"""
     data = request.get_json()
     

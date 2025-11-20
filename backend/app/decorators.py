@@ -39,5 +39,9 @@ def token_required(f):
         user_id = validate_token()
         if not user_id:
             return jsonify({'error': 'Token requerido o inválido'}), 401
-        return f(user_id, *args, **kwargs)
+        
+        # Crear objeto usuario_actual con la estructura esperada
+        usuario_actual = {'id': user_id}
+        
+        return f(usuario_actual, *args, **kwargs)
     return decorated_function

@@ -61,4 +61,19 @@ export class ProyectosService extends ApiService {
   static async deleteProyecto(proyectoId: number): Promise<void> {
     return this.delete(`/api/proyectos/${proyectoId}`);
   }
+
+  /**
+   * Actualiza la configuración de horarios de un proyecto
+   */
+  static async updateConfiguracion(proyectoId: number, data: {
+    modo_horarios?: 'corrido' | 'turnos';
+    horario_inicio?: string;
+    horario_fin?: string;
+    turno_manana_inicio?: string;
+    turno_manana_fin?: string;
+    turno_tarde_inicio?: string;
+    turno_tarde_fin?: string;
+  }): Promise<Proyecto> {
+    return this.put(`/api/proyectos/${proyectoId}/configuracion`, data);
+  }
 }

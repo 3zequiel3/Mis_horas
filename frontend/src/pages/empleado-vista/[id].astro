@@ -1,0 +1,1028 @@
+---
+/**
+ * Vista de Empleado - Solo para empleados del proyecto
+ * Funcionalidades limitadas:
+ * - Ver mes actual
+ * - Marcar entrada/salida con contador
+ * - Ver sus propias tareas (solo lectura)
+ * - Ver sus propias horas del mes
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import ProtectedRoute from "../../components/ProtectedRoute.astro";
+import "../../styles/proyecto.css";
+import "../../styles/tabla.css";
+import "../../styles/tareas.css";
+
+const pageTitle = "Mi Tablero";
+---
+
+<BaseLayout title={pageTitle}>
+  <ProtectedRoute>
+    <Header />
+    <div class="container">
+      <div class="proyecto-view empleado-view">
+        <!-- Header simplificado -->
+        <div class="proyecto-header">
+          <div>
+            <h1 id="proyecto-nombre">Cargando...</h1>
+            <p id="proyecto-periodo" class="proyecto-periodo"></p>
+          </div>
+          <div class="header-actions">
+            <span id="empleado-nombre" class="badge badge-info"></span>
+          </div>
+        </div>
+
+        <!-- Contenido Principal -->
+        <div class="empleado-content">
+          <!-- Panel de Marcado de Asistencia -->
+          <div class="asistencia-panel">
+            <h2>⏰ Registro de Asistencia</h2>
+            
+            <div class="asistencia-card">
+              <div class="asistencia-info">
+                <p><strong>Fecha:</strong> <span id="fecha-actual"></span></p>
+                <p><strong>Turno:</strong> <span id="turno-actual">Detectando...</span></p>
+                <p><strong>Estado:</strong> <span id="estado-actual" class="badge">Sin marcar</span></p>
+              </div>
+
+              <div class="asistencia-timer" id="asistencia-timer" style="display: none;">
+                <div class="timer-display">
+                  <span id="timer-horas">00</span>:<span id="timer-minutos">00</span>:<span id="timer-segundos">00</span>
+                </div>
+                <p class="timer-label">Tiempo trabajado hoy</p>
+              </div>
+
+              <div class="asistencia-actions">
+                <button id="btn-entrada" class="btn btn-success btn-large">
+                  ▶️ ENTRADA
+                </button>
+                <button id="btn-salida" class="btn btn-danger btn-large" style="display: none;">
+                  ⏹️ SALIDA
+                </button>
+              </div>
+
+              <div class="ultimo-marcado" id="ultimo-marcado" style="display: none;">
+                <p><strong>Última entrada:</strong> <span id="hora-entrada"></span></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grid de 2 columnas: Días y Tareas -->
+          <div class="empleado-grid">
+            <!-- Columna Izquierda: Mis Horas del Mes -->
+            <div class="dias-section">
+              <div class="dias-header">
+                <h2>📅 Esta Semana</h2>
+                <button id="ver-mes-completo-btn" class="btn btn-small btn-outline">📅 Ver Mes Completo</button>
+              </div>
+              
+              <div class="table-container">
+                <table class="dias-table" id="dias-table">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Día</th>
+                      <th>Entrada</th>
+                      <th>Salida</th>
+                      <th>Horas</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dias-tbody">
+                    <tr class="loading-row">
+                      <td colspan="5" class="text-center">Cargando...</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="totals-row">
+                      <td colspan="4"><strong>Total del mes:</strong></td>
+                      <td><strong id="total-horas">00:00</strong></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            <!-- Columna Derecha: Mis Tareas -->
+            <div class="tareas-section">
+              <h2>📋 Mis Tareas</h2>
+              
+              <div id="tareas-list" class="tareas-list-empleado">
+                <div class="empty-tareas">
+                  <p>📭 Sin tareas asignadas</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para ver mes completo -->
+    <div id="mes-modal" class="modal" style="display: none;">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h3 id="mes-modal-title">Mes Completo</h3>
+          <button class="modal-close" id="mes-modal-close">✕</button>
+        </div>
+        <div class="mes-modal-body">
+          <div class="table-container">
+            <table class="dias-table" id="mes-dias-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Día</th>
+                  <th>Entrada</th>
+                  <th>Salida</th>
+                  <th>Horas</th>
+                </tr>
+              </thead>
+              <tbody id="mes-dias-tbody">
+                <tr class="loading-row">
+                  <td colspan="5" class="text-center">Cargando...</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="totals-row">
+                  <td colspan="4"><strong>Total del mes:</strong></td>
+                  <td><strong id="mes-total-horas">00:00</strong></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="mes-modal-close-btn">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </ProtectedRoute>
+</BaseLayout>
+
+<style>
+  .empleado-view {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .empleado-content {
+    margin-top: 2rem;
+  }
+
+  .asistencia-panel {
+    margin-bottom: 2rem;
+  }
+
+  .asistencia-panel h2 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+
+  .asistencia-card {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+  }
+
+  .asistencia-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .asistencia-info p {
+    margin: 0;
+    font-size: 0.95rem;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-color);
+  }
+
+  .asistencia-info p strong {
+    display: block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+  }
+
+  .asistencia-info span {
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .asistencia-timer {
+    text-align: center;
+    margin: 1.25rem 0;
+    padding: 1.25rem;
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    border: 2px solid var(--primary-color);
+  }
+
+  .timer-display {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.1em;
+  }
+
+  .timer-label {
+    margin-top: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .asistencia-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+  }
+
+  .btn-large {
+    padding: 0.875rem 2rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    min-width: 160px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+    letter-spacing: 0.03em;
+  }
+
+  .btn-large:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  .btn-large:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .ultimo-marcado {
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    background: rgba(var(--primary-rgb), 0.08);
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid rgba(var(--primary-rgb), 0.2);
+  }
+
+  .ultimo-marcado p {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  .ultimo-marcado strong {
+    color: var(--primary-color);
+    font-weight: 600;
+  }
+
+  .empleado-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .dias-section, .tareas-section {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .dias-section:hover, .tareas-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .dias-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(var(--primary-rgb), 0.2);
+  }
+
+  .dias-header h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 600;
+  }
+
+  .tareas-section h2 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.35rem;
+    font-weight: 600;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(var(--primary-rgb), 0.2);
+  }
+
+  .tareas-list-empleado {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .tarea-item-empleado {
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(var(--primary-rgb), 0.05) 100%);
+    border-radius: 10px;
+    padding: 1.25rem;
+    border-left: 4px solid var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .tarea-item-empleado:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .tarea-item-empleado h4 {
+    margin: 0 0 0.75rem 0;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .tarea-item-empleado p {
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .tarea-item-empleado p strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .dias-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+  }
+
+  .dias-table th {
+    padding: 0.6rem 0.75rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .dias-table th:first-child,
+  .dias-table th:nth-child(2) {
+    text-align: left;
+  }
+
+  .dias-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+    font-size: 0.85rem;
+  }
+
+  .dias-table td:first-child,
+  .dias-table td:nth-child(2) {
+    text-align: left;
+  }
+
+  .dias-table tbody tr {
+    transition: background 0.2s ease;
+    position: relative;
+  }
+
+  /* Estilos para días sin horas */
+  .dias-table tbody tr.dia-sin-horas {
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  /* Estilos para días con horas */
+  .dias-table tbody tr.dia-con-horas {
+    background: rgba(34, 197, 94, 0.08);
+  }
+
+  .totals-row td {
+    padding: 0.6rem 0.75rem;
+    text-align: center;
+    border-top: 2px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.85rem;
+    vertical-align: middle;
+  }
+
+  .totals-row td:first-child,
+  .totals-row td:nth-child(2) {
+    text-align: left;
+    width: auto;
+  }
+
+  .empty-tareas {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    opacity: 0.8;
+  }
+
+  .badge-info {
+    background: var(--info-color);
+    color: white;
+  }
+
+  .badge-warning {
+    background: var(--warning-color);
+    color: var(--text-primary);
+  }
+
+  /* Estilos del modal */
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .modal-content {
+    background: var(--bg-primary);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 1100px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+  }
+
+  .modal-large {
+    max-width: 1100px;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.5rem;
+  }
+
+  .modal-close:hover {
+    color: var(--text-primary);
+  }
+
+  .mes-modal-body {
+    padding: 1rem;
+    max-height: 65vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Scrollbar personalizado */
+  .mes-modal-body::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .mes-modal-body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+  }
+
+  .mes-modal-body::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.3);
+    border-radius: 10px;
+    transition: background 0.2s ease;
+  }
+
+  .mes-modal-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.5);
+  }
+
+  /* Firefox */
+  .mes-modal-body {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(102, 126, 234, 0.3) rgba(0, 0, 0, 0.1);
+  }
+
+  .table-container {
+    overflow-x: auto;
+  }
+
+  @media (max-width: 1024px) {
+    .empleado-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .modal-large {
+      width: 95%;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .asistencia-info {
+      grid-template-columns: 1fr;
+    }
+
+    .asistencia-actions {
+      flex-direction: column;
+    }
+
+    .btn-large {
+      width: 100%;
+    }
+
+    .dias-header {
+      flex-direction: column;
+      gap: 0.75rem;
+      align-items: stretch;
+    }
+
+    .dias-header button {
+      width: 100%;
+    }
+
+    .modal-content {
+      max-width: 95%;
+      max-height: 95%;
+    }
+  }
+</style>
+
+<script>
+  import { AuthService } from '../../services/auth';
+  import { ProyectosService } from '../../services/proyectos';
+  import { EmpleadosService } from '../../services/empleados';
+  import { DiaService } from '../../services/dia';
+  import { TareaService } from '../../services/tarea';
+  import { AlertUtils } from '../../utils/swal';
+  import { obtenerNombreDia } from '../../utils/date';
+
+  let proyectoId: number;
+  let empleadoId: number;
+  let empleado: any;
+  let proyecto: any;
+  let timerInterval: any;
+  let marcadoActual: any = null;
+
+  // Inicializar
+  async function init() {
+    try {
+      // Obtener ID del proyecto de la URL
+      const urlParts = window.location.pathname.split('/');
+      proyectoId = parseInt(urlParts[urlParts.length - 1]);
+
+      // Verificar que el usuario sea empleado de este proyecto
+      const usuario = await AuthService.getCurrentUser();
+      if (!usuario) {
+        window.location.href = '/login';
+        return;
+      }
+
+      // Cargar proyecto
+      proyecto = await ProyectosService.getProyecto(proyectoId);
+      document.getElementById('proyecto-nombre')!.textContent = proyecto.nombre;
+      document.getElementById('proyecto-periodo')!.textContent = `${proyecto.mes}/${proyecto.anio}`;
+
+      // Obtener empleado vinculado
+      const empleados = await EmpleadosService.getEmpleados(proyectoId);
+      empleado = empleados.find((emp: any) => emp.usuario_id === usuario.id);
+
+      if (!empleado) {
+        await AlertUtils.error('Sin Acceso', 'No eres empleado de este proyecto');
+        window.location.href = '/dashboard';
+        return;
+      }
+
+      empleadoId = empleado.id;
+      document.getElementById('empleado-nombre')!.textContent = `👤 ${empleado.nombre}`;
+
+      // Cargar datos
+      await cargarDatosIniciales();
+      configurarEventos();
+
+    } catch (error) {
+      console.error('Error inicializando vista de empleado:', error);
+      await AlertUtils.error('Error', 'No se pudo cargar la información');
+    }
+  }
+
+  function detectarTurno(): string {
+    const hora = new Date().getHours();
+    if (hora >= 6 && hora < 14) return 'Mañana 🌅';
+    if (hora >= 14 && hora < 22) return 'Tarde 🌤️';
+    return 'Noche 🌙';
+  }
+
+  function getSemanActual(): string[] {
+    const hoy = new Date();
+    const diaActual = hoy.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+    const diaInicioSemana = 1; // 1 = Lunes (cambiar de 0 a 1 para semana laboral)
+    
+    // Calcular días hacia atrás desde hoy hasta el inicio de la semana
+    let diasAtras = diaActual - diaInicioSemana;
+    if (diasAtras < 0) diasAtras += 7;
+    
+    const semana: string[] = [];
+    
+    // Generar fechas de la semana (Lunes a Domingo)
+    for (let i = 0; i < 7; i++) {
+      const fecha = new Date(hoy);
+      fecha.setDate(hoy.getDate() - diasAtras + i);
+      
+      const year = fecha.getFullYear();
+      const month = String(fecha.getMonth() + 1).padStart(2, '0');
+      const day = String(fecha.getDate()).padStart(2, '0');
+      semana.push(`${year}-${month}-${day}`);
+    }
+    
+    return semana;
+  }
+
+  async function cargarDatosIniciales() {
+    // Fecha actual y turno
+    const hoy = new Date();
+    document.getElementById('fecha-actual')!.textContent = hoy.toLocaleDateString('es-AR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    document.getElementById('turno-actual')!.textContent = detectarTurno();
+
+    // Cargar días del mes
+    await cargarDiasMes();
+
+    // Cargar tareas
+    await cargarTareas();
+
+    // Verificar estado actual (si ya marcó entrada hoy)
+    await verificarEstadoActual();
+  }
+
+  async function cargarDiasMes(soloSemana = true) {
+    try {
+      const tbody = document.getElementById('dias-tbody')!;
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Cargando...</td></tr>';
+
+      let dias = await DiaService.getDiasMes(proyectoId, proyecto.anio, proyecto.mes, empleadoId);
+      
+      // Filtrar solo la semana actual si se solicita
+      if (soloSemana) {
+        const semanaFechas = getSemanActual();
+        console.log('📅 Fechas de la semana esperadas:', semanaFechas);
+        
+        dias = dias.filter((dia: any) => {
+          // Normalizar fecha del día (manejar tanto formato ISO como string simple)
+          let diaFecha: string;
+          if (dia.fecha.includes('T')) {
+            // Formato ISO con hora
+            diaFecha = dia.fecha.split('T')[0];
+          } else if (dia.fecha.includes(' ')) {
+            // Formato "YYYY-MM-DD HH:MM:SS"
+            diaFecha = dia.fecha.split(' ')[0];
+          } else {
+            // Formato "YYYY-MM-DD"
+            diaFecha = dia.fecha;
+          }
+          
+          const incluido = semanaFechas.includes(diaFecha);
+          console.log(`Día ${diaFecha}: ${incluido ? '✅ incluido' : '❌ excluido'}`);
+          return incluido;
+        });
+        
+        console.log(`📊 Días filtrados: ${dias.length} de la semana actual`);
+      }
+      
+      if (dias.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">Sin registros</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      let totalMinutos = 0;
+
+      dias.forEach((dia: any) => {
+        const fecha = new Date(dia.fecha);
+        const row = document.createElement('tr');
+        
+        // Manejar horas_trabajadas que puede venir como string "HH:MM" o como número decimal
+        let horas = 0;
+        let minutos = 0;
+        let horasTrabajadasStr = '00:00';
+        
+        if (dia.horas_trabajadas) {
+          if (typeof dia.horas_trabajadas === 'string' && dia.horas_trabajadas.includes(':')) {
+            // Formato "HH:MM"
+            [horas, minutos] = dia.horas_trabajadas.split(':').map(Number);
+            horasTrabajadasStr = dia.horas_trabajadas;
+          } else {
+            // Formato decimal (ej: 8.5 horas)
+            const horasDecimal = parseFloat(dia.horas_trabajadas) || 0;
+            horas = Math.floor(horasDecimal);
+            minutos = Math.round((horasDecimal - horas) * 60);
+            horasTrabajadasStr = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
+          }
+        }
+        
+        totalMinutos += (horas * 60) + minutos;
+
+        // Agregar clase según si tiene horas o no
+        const tieneHoras = horas > 0 || minutos > 0;
+        row.className = tieneHoras ? 'dia-con-horas' : 'dia-sin-horas';
+
+        // Capitalizar primera letra del día
+        const nombreDia = obtenerNombreDia(dia.fecha);
+        const nombreDiaCapitalizado = nombreDia.charAt(0).toUpperCase() + nombreDia.slice(1);
+        
+        row.innerHTML = `
+          <td>${fecha.toLocaleDateString('es-AR')}</td>
+          <td>${nombreDiaCapitalizado}</td>
+          <td>${dia.hora_entrada || '-'}</td>
+          <td>${dia.hora_salida || '-'}</td>
+          <td><strong>${horasTrabajadasStr}</strong></td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      // Actualizar total
+      const totalHoras = Math.floor(totalMinutos / 60);
+      const totalMins = totalMinutos % 60;
+      document.getElementById('total-horas')!.textContent = 
+        `${String(totalHoras).padStart(2, '0')}:${String(totalMins).padStart(2, '0')}`;
+
+    } catch (error) {
+      console.error('Error cargando días:', error);
+    }
+  }
+
+  async function cargarTareas() {
+    try {
+      const tareasList = document.getElementById('tareas-list')!;
+      const tareas = await TareaService.getTareasProyecto(proyectoId);
+
+      if (tareas.length === 0) {
+        tareasList.innerHTML = '<div class="empty-tareas"><p>📭 Sin tareas asignadas</p></div>';
+        return;
+      }
+
+      tareasList.innerHTML = '';
+      tareas.forEach((tarea: any) => {
+        const tareaEl = document.createElement('div');
+        tareaEl.className = 'tarea-item-empleado';
+        tareaEl.innerHTML = `
+          <h4>${tarea.titulo}</h4>
+          <p><strong>Descripción:</strong> ${tarea.descripcion || 'Sin descripción'}</p>
+          <p><strong>Días asignados:</strong> ${tarea.dias_asignados || 'No especificado'}</p>
+        `;
+        tareasList.appendChild(tareaEl);
+      });
+
+    } catch (error) {
+      console.error('Error cargando tareas:', error);
+    }
+  }
+
+  async function verificarEstadoActual() {
+    try {
+      // Aquí debes llamar a un endpoint que verifique si hay marcado de entrada activo
+      // Por ahora, simulamos que no hay marcado activo
+      marcadoActual = null;
+      actualizarUIEstado();
+
+    } catch (error) {
+      console.error('Error verificando estado:', error);
+    }
+  }
+
+  function actualizarUIEstado() {
+    const btnEntrada = document.getElementById('btn-entrada')!;
+    const btnSalida = document.getElementById('btn-salida')!;
+    const timerEl = document.getElementById('asistencia-timer')!;
+    const estadoEl = document.getElementById('estado-actual')!;
+
+    if (marcadoActual) {
+      // Ya marcó entrada, mostrar timer y botón de salida
+      btnEntrada.style.display = 'none';
+      btnSalida.style.display = 'block';
+      timerEl.style.display = 'block';
+      estadoEl.textContent = '✅ Trabajando';
+      estadoEl.className = 'badge badge-success';
+
+      // Iniciar timer
+      iniciarTimer();
+    } else {
+      // No ha marcado entrada
+      btnEntrada.style.display = 'block';
+      btnSalida.style.display = 'none';
+      timerEl.style.display = 'none';
+      estadoEl.textContent = '⏸️ Sin marcar';
+      estadoEl.className = 'badge badge-warning';
+    }
+  }
+
+  function iniciarTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+
+    const horaEntrada = new Date(marcadoActual.hora_entrada);
+    
+    timerInterval = setInterval(() => {
+      const ahora = new Date();
+      const diff = ahora.getTime() - horaEntrada.getTime();
+      
+      const horas = Math.floor(diff / (1000 * 60 * 60));
+      const minutos = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const segundos = Math.floor((diff % (1000 * 60)) / 1000);
+
+      document.getElementById('timer-horas')!.textContent = String(horas).padStart(2, '0');
+      document.getElementById('timer-minutos')!.textContent = String(minutos).padStart(2, '0');
+      document.getElementById('timer-segundos')!.textContent = String(segundos).padStart(2, '0');
+    }, 1000);
+  }
+
+  async function cargarMesCompleto() {
+    try {
+      const tbody = document.getElementById('mes-dias-tbody')!;
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Cargando...</td></tr>';
+
+      const dias = await DiaService.getDiasMes(proyectoId, proyecto.anio, proyecto.mes, empleadoId);
+      
+      if (dias.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">Sin registros este mes</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      let totalMinutos = 0;
+
+      dias.forEach((dia: any) => {
+        const fecha = new Date(dia.fecha);
+        const row = document.createElement('tr');
+        
+        const horasTrabajadas = dia.horas_trabajadas || '00:00';
+        const [horas, minutos] = horasTrabajadas.split(':').map(Number);
+        totalMinutos += (horas * 60) + minutos;
+
+        // Agregar clase según si tiene horas o no
+        const tieneHoras = horas > 0 || minutos > 0;
+        row.className = tieneHoras ? 'dia-con-horas' : 'dia-sin-horas';
+
+        row.innerHTML = `
+          <td>${fecha.toLocaleDateString('es-AR')}</td>
+          <td>${fecha.toLocaleDateString('es-AR', { weekday: 'short' })}</td>
+          <td>${dia.hora_entrada || '-'}</td>
+          <td>${dia.hora_salida || '-'}</td>
+          <td><strong>${horasTrabajadas}</strong></td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      // Actualizar total
+      const totalHoras = Math.floor(totalMinutos / 60);
+      const totalMins = totalMinutos % 60;
+      document.getElementById('mes-total-horas')!.textContent = 
+        `${String(totalHoras).padStart(2, '0')}:${String(totalMins).padStart(2, '0')}`;
+
+    } catch (error) {
+      console.error('Error cargando mes completo:', error);
+    }
+  }
+
+  function configurarEventos() {
+    // Botón Ver Mes Completo
+    document.getElementById('ver-mes-completo-btn')!.addEventListener('click', async () => {
+      const mesNombre = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][proyecto.mes - 1];
+      document.getElementById('mes-modal-title')!.textContent = `${mesNombre} ${proyecto.anio}`;
+      document.getElementById('mes-modal')!.style.display = 'flex';
+      await cargarMesCompleto();
+    });
+
+    // Cerrar modal
+    document.getElementById('mes-modal-close')!.addEventListener('click', () => {
+      document.getElementById('mes-modal')!.style.display = 'none';
+    });
+    document.getElementById('mes-modal-close-btn')!.addEventListener('click', () => {
+      document.getElementById('mes-modal')!.style.display = 'none';
+    });
+    document.getElementById('mes-modal')!.addEventListener('click', (e) => {
+      if (e.target === document.getElementById('mes-modal')) {
+        document.getElementById('mes-modal')!.style.display = 'none';
+      }
+    });
+
+    // Botón ENTRADA
+    document.getElementById('btn-entrada')!.addEventListener('click', async () => {
+      try {
+        const result = await AlertUtils.confirm(
+          'Marcar Entrada',
+          '¿Confirmas tu entrada al trabajo?',
+          'Sí, marcar',
+          'Cancelar'
+        );
+
+        if (result.isConfirmed) {
+          // TODO: Llamar endpoint para marcar entrada
+          // marcadoActual = await MarcadoService.marcarEntrada(proyectoId, empleadoId);
+          
+          // Por ahora simulamos:
+          marcadoActual = {
+            hora_entrada: new Date().toISOString()
+          };
+          
+          actualizarUIEstado();
+          await AlertUtils.toast('✅ Entrada marcada', 'success');
+        }
+      } catch (error) {
+        console.error('Error marcando entrada:', error);
+        await AlertUtils.error('Error', 'No se pudo marcar la entrada');
+      }
+    });
+
+    // Botón SALIDA
+    document.getElementById('btn-salida')!.addEventListener('click', async () => {
+      try {
+        const result = await AlertUtils.confirm(
+          'Marcar Salida',
+          '¿Confirmas tu salida del trabajo?',
+          'Sí, marcar',
+          'Cancelar'
+        );
+
+        if (result.isConfirmed) {
+          // TODO: Llamar endpoint para marcar salida
+          // await MarcadoService.marcarSalida(proyectoId, empleadoId, marcadoActual.id);
+          
+          if (timerInterval) clearInterval(timerInterval);
+          marcadoActual = null;
+          
+          actualizarUIEstado();
+          await AlertUtils.toast('✅ Salida marcada', 'success');
+          await cargarDiasMes(); // Recargar para ver las horas actualizadas
+        }
+      } catch (error) {
+        console.error('Error marcando salida:', error);
+        await AlertUtils.error('Error', 'No se pudo marcar la salida');
+      }
+    });
+  }
+
+  // Inicializar cuando cargue la página
+  init();
+</script>

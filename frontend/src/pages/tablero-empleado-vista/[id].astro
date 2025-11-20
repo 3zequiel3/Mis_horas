@@ -1,0 +1,624 @@
+---
+/**
+ * Vista de Empleado para Tablero
+ * Página que ve un usuario cuando accede a un tablero donde es empleado (no admin)
+ * Funcionalidades:
+ * - Ver solo sus propias horas
+ * - Marcar entrada/salida automática
+ * - Solicitar justificativos cuando falte o llegue tarde
+ * - Ver sus tareas asignadas
+ * - Ver resumen de horas trabajadas vs esperadas
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import ProtectedRoute from "../../components/ProtectedRoute.astro";
+import "../../styles/tabla.css";
+import "../../styles/tareas.css";
+import "../../styles/tablero-empleados.css";
+
+const pageTitle = "Mi Tablero";
+---
+
+<BaseLayout title={pageTitle}>
+  <ProtectedRoute>
+    <Header />
+    <div class="container">
+      <div class="empleado-vista-container">
+        <!-- Header Personal del Empleado -->
+        <div class="empleado-personal-header">
+          <div class="empleado-info-banner">
+            <div class="empleado-avatar" id="empleado-avatar">
+              <span id="empleado-inicial">E</span>
+            </div>
+            <div class="empleado-detalles">
+              <h1 id="empleado-nombre">Cargando...</h1>
+              <p id="proyecto-nombre-empleado" class="proyecto-nombre-empleado">Proyecto</p>
+            </div>
+          </div>
+
+          <div class="empleado-stats-cards">
+            <div class="stat-card">
+              <div class="stat-icon">📅</div>
+              <div class="stat-content">
+                <span class="stat-value" id="dias-trabajados">0</span>
+                <span class="stat-label">Días trabajados</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">⏱️</div>
+              <div class="stat-content">
+                <span class="stat-value" id="horas-trabajadas">0h</span>
+                <span class="stat-label">Horas trabajadas</span>
+              </div>
+            </div>
+            <div class="stat-card" id="horas-reales-card" style="display: none;">
+              <div class="stat-icon">✅</div>
+              <div class="stat-content">
+                <span class="stat-value" id="horas-reales">0h</span>
+                <span class="stat-label">Horas reales</span>
+              </div>
+            </div>
+            <div class="stat-card" id="horas-esperadas-card" style="display: none;">
+              <div class="stat-icon">🎯</div>
+              <div class="stat-content">
+                <span class="stat-value" id="horas-esperadas">0h</span>
+                <span class="stat-label">Horas esperadas</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones Rápidas: Entrada/Salida -->
+        <div class="acciones-rapidas">
+          <button id="btn-marcar-entrada" class="btn-accion-rapida btn-entrada">
+            <span class="icono">🟢</span>
+            <span class="texto">Marcar Entrada</span>
+            <span class="hora" id="hora-actual-entrada">--:--</span>
+          </button>
+          
+          <button id="btn-marcar-salida" class="btn-accion-rapida btn-salida" disabled>
+            <span class="icono">🔴</span>
+            <span class="texto">Marcar Salida</span>
+            <span class="hora" id="hora-actual-salida">--:--</span>
+          </button>
+
+          <div class="estado-jornada" id="estado-jornada">
+            <span class="icono-estado">⏸️</span>
+            <span class="texto-estado">Fuera de jornada</span>
+          </div>
+        </div>
+
+        <!-- Tabs de Navegación -->
+        <div class="empleado-tabs">
+          <button class="tab-btn active" data-tab="mis-horas">
+            <span class="tab-icon">📋</span>
+            <span class="tab-text">Mis Horas</span>
+          </button>
+          <button class="tab-btn" data-tab="mis-tareas">
+            <span class="tab-icon">✓</span>
+            <span class="tab-text">Mis Tareas</span>
+          </button>
+          <button class="tab-btn" data-tab="justificativos">
+            <span class="tab-icon">📝</span>
+            <span class="tab-text">Justificativos</span>
+            <span class="tab-badge" id="justificativos-badge" style="display: none;">0</span>
+          </button>
+          <button class="tab-btn" data-tab="resumen">
+            <span class="tab-icon">📊</span>
+            <span class="tab-text">Resumen</span>
+          </button>
+        </div>
+
+        <!-- Contenedor de Tabs -->
+        <div class="tabs-content-wrapper">
+          <!-- Tab: Mis Horas -->
+          <div class="tab-content active" id="tab-mis-horas">
+            <div class="tab-header">
+              <h2>📋 Registro de Horas</h2>
+              <div class="mes-selector">
+                <button id="mes-anterior" class="btn-mes">◀</button>
+                <span id="mes-actual-texto">Mes Actual</span>
+                <button id="mes-siguiente" class="btn-mes">▶</button>
+              </div>
+            </div>
+
+            <div id="tabla-horas-container">
+              <div class="loading-state">Cargando registro...</div>
+            </div>
+          </div>
+
+          <!-- Tab: Mis Tareas -->
+          <div class="tab-content" id="tab-mis-tareas">
+            <div class="tab-header">
+              <h2>✓ Mis Tareas Asignadas</h2>
+            </div>
+
+            <div id="mis-tareas-container">
+              <div class="loading-state">Cargando tareas...</div>
+            </div>
+          </div>
+
+          <!-- Tab: Justificativos -->
+          <div class="tab-content" id="tab-justificativos">
+            <div class="tab-header">
+              <h2>📝 Justificativos</h2>
+              <button id="btn-solicitar-justificativo" class="btn btn-primary">
+                + Solicitar Justificativo
+              </button>
+            </div>
+
+            <div id="justificativos-container">
+              <div class="loading-state">Cargando justificativos...</div>
+            </div>
+          </div>
+
+          <!-- Tab: Resumen -->
+          <div class="tab-content" id="tab-resumen">
+            <div class="tab-header">
+              <h2>📊 Resumen Mensual</h2>
+            </div>
+
+            <div id="resumen-container">
+              <div class="loading-state">Cargando resumen...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ProtectedRoute>
+</BaseLayout>
+
+<style>
+  .empleado-vista-container {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Header Personal */
+  .empleado-personal-header {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .empleado-info-banner {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .empleado-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .empleado-detalles h1 {
+    margin: 0;
+    font-size: 2rem;
+    color: var(--text-primary);
+  }
+
+  .proyecto-nombre-empleado {
+    color: var(--text-secondary);
+    margin: 0.5rem 0 0 0;
+    font-size: 1.1rem;
+  }
+
+  .empleado-stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .stat-card {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1.5rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .stat-icon {
+    font-size: 2rem;
+  }
+
+  .stat-content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--text-primary);
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+
+  /* Acciones Rápidas */
+  .acciones-rapidas {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .btn-accion-rapida {
+    background: var(--bg-card);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+  }
+
+  .btn-accion-rapida:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  }
+
+  .btn-entrada {
+    border-color: #10b981;
+  }
+
+  .btn-entrada:not(:disabled):hover {
+    background: rgba(16, 185, 129, 0.1);
+  }
+
+  .btn-salida {
+    border-color: #ef4444;
+  }
+
+  .btn-salida:not(:disabled):hover {
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .btn-accion-rapida:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-accion-rapida .icono {
+    font-size: 1.5rem;
+  }
+
+  .btn-accion-rapida .texto {
+    flex: 1;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .btn-accion-rapida .hora {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #667eea;
+  }
+
+  .estado-jornada {
+    background: var(--bg-card);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .estado-jornada.activa {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+  }
+
+  .icono-estado {
+    font-size: 1.5rem;
+  }
+
+  .texto-estado {
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .estado-jornada.activa .texto-estado {
+    color: #10b981;
+  }
+
+  /* Tabs */
+  .empleado-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+    overflow-x: auto;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    position: relative;
+  }
+
+  .tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(102, 126, 234, 0.05);
+  }
+
+  .tab-btn.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+  }
+
+  .tab-icon {
+    font-size: 1.2rem;
+  }
+
+  .tab-text {
+    font-weight: 500;
+  }
+
+  .tab-badge {
+    background: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    font-weight: bold;
+  }
+
+  /* Contenido de Tabs */
+  .tabs-content-wrapper {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 2rem;
+    min-height: 500px;
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .tab-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+  }
+
+  .mes-selector {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .btn-mes {
+    background: rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    color: #667eea;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-mes:hover {
+    background: rgba(102, 126, 234, 0.2);
+  }
+
+  #mes-actual-texto {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 150px;
+    text-align: center;
+  }
+
+  .loading-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .empleado-vista-container {
+      padding: 1rem;
+    }
+
+    .acciones-rapidas {
+      grid-template-columns: 1fr;
+    }
+
+    .empleado-stats-cards {
+      grid-template-columns: 1fr;
+    }
+
+    .tab-btn .tab-text {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  import { VistaEmpleadoHandler } from '../../handlers/vista-empleado';
+  import { JustificativosHandler } from '../../handlers/justificativos-handler';
+  import { verificarAutenticacion } from '../../utils/auth';
+
+  // Verificar autenticación
+  const usuario = await verificarAutenticacion();
+  if (!usuario) {
+    window.location.href = '/login';
+  }
+
+  // Obtener ID del proyecto desde URL
+  const urlParts = window.location.pathname.split('/');
+  const proyectoId = parseInt(urlParts[urlParts.length - 1]);
+
+  // Estado global
+  let empleadoActual: any = null;
+  let proyectoActual: any = null;
+
+  // Inicializar vista
+  async function inicializar() {
+    try {
+      // TODO: Cargar datos del empleado y proyecto
+      // Verificar que el usuario actual es empleado de este proyecto
+      
+      // Por ahora, mock para desarrollo
+      empleadoActual = {
+        id: 1,
+        nombre: usuario.nombre,
+        usuario_vinculado_id: usuario.id,
+      };
+
+      // Inicializar handler
+      await VistaEmpleadoHandler.inicializar(empleadoActual.id, proyectoId);
+      
+      // Actualizar UI
+      actualizarHeader();
+      cargarDatosIniciales();
+      inicializarAccionesRapidas();
+      
+    } catch (error) {
+      console.error('Error inicializando vista:', error);
+    }
+  }
+
+  // Actualizar header
+  function actualizarHeader() {
+    const inicialEl = document.getElementById('empleado-inicial');
+    const nombreEl = document.getElementById('empleado-nombre');
+    
+    if (inicialEl && empleadoActual) {
+      inicialEl.textContent = empleadoActual.nombre.charAt(0).toUpperCase();
+    }
+    
+    if (nombreEl && empleadoActual) {
+      nombreEl.textContent = empleadoActual.nombre;
+    }
+  }
+
+  // Cargar datos iniciales
+  function cargarDatosIniciales() {
+    // TODO: Cargar estadísticas del mes actual
+  }
+
+  // Inicializar acciones rápidas (entrada/salida)
+  function inicializarAccionesRapidas() {
+    const btnEntrada = document.getElementById('btn-marcar-entrada');
+    const btnSalida = document.getElementById('btn-marcar-salida');
+    const estadoJornada = document.getElementById('estado-jornada');
+
+    // Actualizar hora actual cada segundo
+    setInterval(() => {
+      const ahora = new Date();
+      const horaTexto = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      
+      const horaEntrada = document.getElementById('hora-actual-entrada');
+      const horaSalida = document.getElementById('hora-actual-salida');
+      
+      if (horaEntrada) horaEntrada.textContent = horaTexto;
+      if (horaSalida) horaSalida.textContent = horaTexto;
+    }, 1000);
+
+    // Marcar entrada
+    btnEntrada?.addEventListener('click', async () => {
+      // TODO: Registrar entrada en backend
+      console.log('Marcando entrada...');
+      
+      (btnEntrada as HTMLButtonElement).disabled = true;
+      if (btnSalida) (btnSalida as HTMLButtonElement).disabled = false;
+      
+      estadoJornada?.classList.add('activa');
+      const textoEstado = estadoJornada?.querySelector('.texto-estado');
+      if (textoEstado) textoEstado.textContent = 'En jornada laboral';
+    });
+
+    // Marcar salida
+    btnSalida?.addEventListener('click', async () => {
+      // TODO: Registrar salida en backend
+      console.log('Marcando salida...');
+      
+      (btnSalida as HTMLButtonElement).disabled = true;
+      if (btnEntrada) (btnEntrada as HTMLButtonElement).disabled = false;
+      
+      estadoJornada?.classList.remove('activa');
+      const textoEstado = estadoJornada?.querySelector('.texto-estado');
+      if (textoEstado) textoEstado.textContent = 'Fuera de jornada';
+    });
+  }
+
+  // Tabs
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.getAttribute('data-tab');
+      
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      
+      document.getElementById(`tab-${tab}`)?.classList.add('active');
+    });
+  });
+
+  // Selector de mes
+  document.getElementById('mes-anterior')?.addEventListener('click', () => {
+    // TODO: Cambiar al mes anterior
+  });
+
+  document.getElementById('mes-siguiente')?.addEventListener('click', () => {
+    // TODO: Cambiar al mes siguiente
+  });
+
+  // Solicitar justificativo
+  document.getElementById('btn-solicitar-justificativo')?.addEventListener('click', async () => {
+    // TODO: Mostrar modal para solicitar justificativo
+    // JustificativosHandler.solicitarJustificativo(dia, empleado, proyecto);
+  });
+
+  // Inicializar
+  inicializar();
+</script>

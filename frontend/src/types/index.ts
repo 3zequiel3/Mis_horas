@@ -37,6 +37,24 @@ export type {
   TareaListItem
 } from './Tarea';
 
+// Notificaciones
+export type {
+  Notificacion,
+  TipoNotificacion,
+  NotificacionResponse,
+  ContadorNotificacionesResponse
+} from './Notificacion';
+
+// Invitaciones
+export type {
+  Invitacion,
+  InvitacionResponse,
+  InvitacionesResponse,
+  UsuarioBusqueda,
+  UsuariosBusquedaResponse,
+  VerificarEmailResponse
+} from './Invitacion';
+
 // Comunes
 export type {
   ErrorResponse,
@@ -44,3 +62,33 @@ export type {
   Estadisticas,
   TabConfig
 } from './Common';
+
+// Asistencia
+export type {
+  MarcadoAsistencia,
+  MarcarEntradaRequest,
+  MarcarSalidaRequest,
+  EditarMarcadoRequest,
+  EstadoHoyResponse,
+  ObtenerMarcadosParams,
+  DetectarAusenciasRequest,
+  TipoTurno
+} from './Asistencia';
+
+// Deudas
+export type {
+  DeudaHoras,
+  Justificacion,
+  JustificarDeudaRequest,
+  EstadoJustificacion,
+  EstadoDeuda,
+  MotivoDeuda
+} from './Deuda';
+
+// Configuración de Asistencia
+export type {
+  ConfiguracionAsistencia,
+  ActualizarConfiguracionRequest,
+  PoliticaHorasExtras,
+  PeriodoLimite
+} from './ConfiguracionAsistencia';

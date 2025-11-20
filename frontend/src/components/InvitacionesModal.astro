@@ -1,0 +1,390 @@
+---
+/**
+ * Modal de Invitaciones
+ * - Buscar usuarios existentes en el sistema
+ * - Enviar invitaciones por email
+ * - Ver estado de invitaciones enviadas
+ */
+---
+
+<div class="modal-overlay" id="invitaciones-modal-overlay">
+  <div class="modal-content modal-large">
+    <div class="modal-header">
+      <h2>📨 Invitar Empleados al Proyecto</h2>
+      <button class="close-modal" id="close-invitaciones-modal">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Tabs -->
+      <div class="tabs-invitaciones">
+        <button class="tab-btn active" data-tab="enviar">Enviar Invitación</button>
+        <button class="tab-btn" data-tab="pendientes">Invitaciones Enviadas</button>
+      </div>
+
+      <!-- Tab: Enviar Invitación -->
+      <div class="tab-content active" id="tab-enviar">
+        <form id="form-enviar-invitacion">
+          <!-- Seleccionar Empleado -->
+          <div class="form-group">
+            <label for="empleado-select">Empleado del Proyecto *</label>
+            <select id="empleado-select" class="form-control" required>
+              <option value="">Selecciona un empleado...</option>
+            </select>
+            <small class="form-hint">El empleado debe estar creado en el proyecto</small>
+          </div>
+
+          <!-- Buscar Usuario o Email -->
+          <div class="form-group">
+            <label for="usuario-email">Email del Usuario *</label>
+            <div class="input-with-search">
+              <input
+                type="email"
+                id="usuario-email"
+                class="form-control"
+                placeholder="usuario@ejemplo.com"
+                required
+              />
+              <button type="button" id="buscar-usuario-btn" class="btn btn-secondary btn-sm">
+                🔍 Buscar
+              </button>
+            </div>
+            <div id="usuario-info" class="usuario-info" style="display: none;"></div>
+            <small class="form-hint">
+              Si el usuario existe, se asociará directamente. Si no, recibirá un email para registrarse.
+            </small>
+          </div>
+
+          <!-- Mensaje personalizado -->
+          <div class="form-group">
+            <label for="mensaje-invitacion">Mensaje Personalizado (opcional)</label>
+            <textarea
+              id="mensaje-invitacion"
+              class="form-control"
+              rows="3"
+              placeholder="Escribe un mensaje de bienvenida..."
+            ></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" id="cancelar-invitacion">Cancelar</button>
+            <button type="submit" class="btn btn-primary">
+              <span id="enviar-btn-text">📧 Enviar Invitación</span>
+              <span id="enviar-btn-loader" class="btn-loader" style="display: none;"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Tab: Invitaciones Pendientes -->
+      <div class="tab-content" id="tab-pendientes">
+        <div class="invitaciones-lista" id="invitaciones-lista">
+          <div class="loader-container">
+            <div class="loader"></div>
+            <p>Cargando invitaciones...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style is:global>
+  /* Asegurar que SweetAlert2 aparezca sobre el modal */
+  .swal2-container {
+    z-index: 10000 !important;
+  }
+</style>
+
+<script>
+  import { InvitacionService } from '../services/invitaciones';
+  import { AlertUtils } from '../utils/swal';
+  import type { Empleado, UsuarioBusqueda, Invitacion } from '../types';
+
+  let proyectoId: number | null = null;
+  let empleados: Empleado[] = [];
+  let usuarioEncontrado: UsuarioBusqueda | null = null;
+
+  // Referencias DOM
+  const modalOverlay = document.getElementById('invitaciones-modal-overlay');
+  const closeBtn = document.getElementById('close-invitaciones-modal');
+  const cancelarBtn = document.getElementById('cancelar-invitacion');
+  const form = document.getElementById('form-enviar-invitacion') as HTMLFormElement;
+  const empleadoSelect = document.getElementById('empleado-select') as HTMLSelectElement;
+  const emailInput = document.getElementById('usuario-email') as HTMLInputElement;
+  const buscarBtn = document.getElementById('buscar-usuario-btn');
+  const usuarioInfo = document.getElementById('usuario-info');
+  const mensajeTextarea = document.getElementById('mensaje-invitacion') as HTMLTextAreaElement;
+  const enviarBtnText = document.getElementById('enviar-btn-text');
+  const enviarBtnLoader = document.getElementById('enviar-btn-loader');
+  const invitacionesLista = document.getElementById('invitaciones-lista');
+
+  // Tabs
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  // Cerrar modal
+  closeBtn?.addEventListener('click', cerrarModal);
+  cancelarBtn?.addEventListener('click', cerrarModal);
+  modalOverlay?.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) cerrarModal();
+  });
+
+  function cerrarModal() {
+    modalOverlay?.classList.remove('active');
+    form.reset();
+    if (usuarioInfo) usuarioInfo.style.display = 'none';
+    usuarioEncontrado = null;
+  }
+
+  // Tabs
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.getAttribute('data-tab');
+      
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabContents.forEach(c => c.classList.remove('active'));
+      
+      btn.classList.add('active');
+      document.getElementById(`tab-${tab}`)?.classList.add('active');
+
+      if (tab === 'pendientes') {
+        cargarInvitaciones();
+      }
+    });
+  });
+
+  // Buscar usuario
+  buscarBtn?.addEventListener('click', async () => {
+    const email = emailInput.value.trim();
+    const empleadoId = parseInt(empleadoSelect.value);
+    
+    if (!email) {
+      AlertUtils.toast('Ingresa un email', 'warning');
+      return;
+    }
+
+    if (!empleadoId) {
+      AlertUtils.toast('Selecciona primero un empleado', 'warning');
+      return;
+    }
+
+    try {
+      const { existe, usuario, invitacion_previa, puede_reenviar } = await InvitacionService.verificarEmail(email, empleadoId);
+      
+      if (invitacion_previa) {
+        // Ya existe una invitación previa
+        const estadoEmoji = invitacion_previa.estado === 'pendiente' ? '⏳' : 
+                            invitacion_previa.estado === 'aceptada' ? '✅' : 
+                            invitacion_previa.estado === 'rechazada' ? '❌' : '⌛';
+        
+        if (puede_reenviar) {
+          mostrarUsuarioInfo('warning', 
+            `${estadoEmoji} Invitación ${invitacion_previa.estado}`,
+            `Ya existe una invitación ${invitacion_previa.estado} para este empleado y email. Puedes reenviarla si lo deseas.`,
+            invitacion_previa.id
+          );
+        } else if (invitacion_previa.estado === 'aceptada') {
+          mostrarUsuarioInfo('error', 
+            '✅ Invitación ya aceptada',
+            'Este empleado ya aceptó una invitación y está vinculado a un usuario.'
+          );
+        } else {
+          mostrarUsuarioInfo('success', 
+            `⏳ Invitación pendiente vigente`,
+            'Ya existe una invitación pendiente para este empleado. El usuario debe revisar su email.'
+          );
+        }
+      } else if (existe && usuario) {
+        usuarioEncontrado = usuario;
+        mostrarUsuarioInfo('success', `✅ Usuario encontrado: ${usuario.nombre_completo || usuario.username}`, usuario.email);
+      } else {
+        usuarioEncontrado = null;
+        mostrarUsuarioInfo('warning', '⚠️ Usuario no registrado', 'Se enviará un email de invitación para que se registre en el sistema.');
+      }
+    } catch (error) {
+      console.error('Error al buscar usuario:', error);
+      AlertUtils.toast('Error al buscar usuario', 'error');
+    }
+  });
+
+  function mostrarUsuarioInfo(tipo: 'success' | 'warning' | 'error', titulo: string, descripcion: string, invitacionId?: number) {
+    if (!usuarioInfo) return;
+
+    usuarioInfo.className = `usuario-info ${tipo}`;
+    
+    let html = `
+      <strong>${titulo}</strong>
+      <p>${descripcion}</p>
+    `;
+    
+    // Si hay invitación previa que se puede reenviar, agregar botón
+    if (invitacionId) {
+      html += `
+        <button 
+          type="button" 
+          class="btn btn-primary btn-sm" 
+          id="btn-reenviar-invitacion"
+          data-invitacion-id="${invitacionId}"
+        >
+          🔄 Reenviar Invitación
+        </button>
+      `;
+    }
+    
+    usuarioInfo.innerHTML = html;
+    usuarioInfo.style.display = 'block';
+    
+    // Event listener para botón reenviar
+    if (invitacionId) {
+      const btnReenviar = document.getElementById('btn-reenviar-invitacion');
+      btnReenviar?.addEventListener('click', () => reenviarInvitacion(invitacionId));
+    }
+  }
+
+  // Enviar invitación
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const empleadoId = parseInt(empleadoSelect.value);
+    const email = emailInput.value.trim();
+    const mensaje = mensajeTextarea.value.trim();
+
+    if (!proyectoId) {
+      AlertUtils.error('Error', 'No se ha especificado el proyecto');
+      return;
+    }
+
+    // Mostrar loader
+    if (enviarBtnText) enviarBtnText.style.display = 'none';
+    if (enviarBtnLoader) enviarBtnLoader.style.display = 'inline-block';
+
+    try {
+      await InvitacionService.enviarInvitacion(proyectoId, empleadoId, email, mensaje || undefined);
+      
+      AlertUtils.toast('Invitación enviada correctamente', 'success');
+      form.reset();
+      if (usuarioInfo) usuarioInfo.style.display = 'none';
+      usuarioEncontrado = null;
+
+      // Cambiar a tab de pendientes
+      document.querySelector('[data-tab="pendientes"]')?.dispatchEvent(new Event('click'));
+    } catch (error) {
+      console.error('Error al enviar invitación:', error);
+      AlertUtils.error('Error', 'No se pudo enviar la invitación');
+    } finally {
+      if (enviarBtnText) enviarBtnText.style.display = 'inline';
+      if (enviarBtnLoader) enviarBtnLoader.style.display = 'none';
+    }
+  });
+
+  // Cargar invitaciones
+  async function cargarInvitaciones() {
+    if (!proyectoId || !invitacionesLista) return;
+
+    invitacionesLista.innerHTML = `
+      <div class="loader-container">
+        <div class="loader"></div>
+        <p>Cargando invitaciones...</p>
+      </div>
+    `;
+
+    try {
+      const invitaciones = await InvitacionService.obtenerInvitacionesProyecto(proyectoId);
+      
+      if (invitaciones.length === 0) {
+        invitacionesLista.innerHTML = `
+          <div class="invitaciones-empty">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <p>No hay invitaciones enviadas</p>
+          </div>
+        `;
+        return;
+      }
+
+      invitacionesLista.innerHTML = invitaciones.map(inv => crearInvitacionHTML(inv)).join('');
+
+      // Event listeners para reenviar
+      invitaciones.forEach(inv => {
+        const reenviarBtn = document.getElementById(`reenviar-${inv.id}`);
+        reenviarBtn?.addEventListener('click', () => reenviarInvitacion(inv.id));
+      });
+    } catch (error) {
+      console.error('Error al cargar invitaciones:', error);
+      invitacionesLista.innerHTML = `
+        <div class="invitaciones-empty">
+          <p>Error al cargar invitaciones</p>
+        </div>
+      `;
+    }
+  }
+
+  function crearInvitacionHTML(inv: Invitacion): string {
+    const expiracion = new Date(inv.fecha_expiracion).toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: 'short'
+    });
+
+    const nombre = inv.empleado_nombre || inv.empleado?.nombre || 'Empleado';
+    const puedeReenviar = inv.estado === 'pendiente' || inv.estado === 'expirada';
+    
+    const btnReenviar = puedeReenviar
+      ? `<button class="btn btn-secondary btn-sm" id="reenviar-${inv.id}">🔄 Reenviar</button>`
+      : '';
+
+    return `
+      <div class="invitacion-card">
+        <div class="invitacion-row">
+          <div class="invitacion-info-left">
+            <span class="invitacion-nombre">${nombre}</span>
+            <span class="invitacion-email">${inv.email_destinatario}</span>
+          </div>
+          <span class="invitacion-expira">⏰ ${expiracion}</span>
+          <span class="invitacion-estado ${inv.estado}">${inv.estado}</span>
+          ${btnReenviar}
+        </div>
+      </div>
+    `;
+  }
+
+  async function reenviarInvitacion(invitacionId: number) {
+    const result = await AlertUtils.confirm(
+      'Reenviar Invitación',
+      '¿Quieres reenviar esta invitación? Se generará un nuevo token.',
+      'Sí, reenviar',
+      'Cancelar'
+    );
+
+    if (result.isConfirmed) {
+      try {
+        await InvitacionService.reenviarInvitacion(invitacionId);
+        AlertUtils.toast('Invitación reenviada', 'success');
+        await cargarInvitaciones();
+      } catch (error) {
+        console.error('Error al reenviar invitación:', error);
+        AlertUtils.toast('Error al reenviar', 'error');
+      }
+    }
+  }
+
+  // Función global para abrir el modal
+  (window as any).abrirModalInvitaciones = (idProyecto: number, empleadosProyecto: Empleado[]) => {
+    proyectoId = idProyecto;
+    empleados = empleadosProyecto;
+
+    // Llenar select de empleados
+    empleadoSelect.innerHTML = '<option value="">Selecciona un empleado...</option>';
+    empleados.forEach(emp => {
+      const option = document.createElement('option');
+      option.value = emp.id.toString();
+      option.textContent = emp.nombre;
+      empleadoSelect.appendChild(option);
+    });
+
+    modalOverlay?.classList.add('active');
+  };
+</script>

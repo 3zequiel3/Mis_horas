@@ -17,6 +17,8 @@ def create_app():
     app = Flask(__name__)
     
     # Configuración
+    app.url_map.strict_slashes = False  # Evitar redirects 308 por trailing slashes
+    
     app.config['SQLALCHEMY_DATABASE_URI'] = (
         f"mysql+pymysql://{DB_USER}:"
         f"{DB_PASSWORD}@"
@@ -55,17 +57,25 @@ def create_app():
     app.register_blueprint(usuario_bp, url_prefix='/api/usuarios')
     app.register_blueprint(empleado_bp, url_prefix='/api')
     
-    # Crear tablas de manera segura (lazy loading)
-    @app.before_request
-    def create_tables():
-        """Crear tablas si no existen (ejecuta una sola vez)"""
-        if not hasattr(create_tables, 'initialized'):
-            try:
-                with app.app_context():
-                    db.create_all()
-                create_tables.initialized = True
-            except Exception as e:
-                print(f"Advertencia: No se pudieron crear las tablas inicialmente: {e}")
-                print("Las tablas se crearán cuando la BD esté lista...")
+    # Registrar nuevos blueprints del sistema de asistencia
+    from app.routes.invitacion import invitacion_bp
+    from app.routes.notificacion import notificacion_bp
+    from app.routes.asistencia import asistencia_bp
+    from app.routes.deuda import deuda_bp
+    from app.routes.configuracion_asistencia import configuracion_bp
+    
+    app.register_blueprint(invitacion_bp)
+    app.register_blueprint(notificacion_bp)
+    app.register_blueprint(asistencia_bp)
+    app.register_blueprint(deuda_bp)
+    app.register_blueprint(configuracion_bp)
+    
+    # Crear tablas al inicializar la app (solo una vez)
+    with app.app_context():
+        try:
+            db.create_all()
+            print("✓ Tablas de base de datos verificadas/creadas")
+        except Exception as e:
+            print(f"⚠ Advertencia al crear tablas: {e}")
     
     return app

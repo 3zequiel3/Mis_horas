@@ -80,3 +80,14 @@ class ApiResponse:
     def internal_error(message: str = 'Error interno del servidor') -> tuple:
         """Respuesta error interno"""
         return ApiResponse.error(message, 500)
+
+
+# Funciones helper para compatibilidad con rutas
+def success_response(data: Any = None, message: str = 'Éxito', status_code: int = 200) -> tuple:
+    """Función helper para respuestas exitosas"""
+    return ApiResponse.success(data, message, status_code)
+
+
+def error_response(message: str, status_code: int = 400, details: Optional[Dict] = None) -> tuple:
+    """Función helper para respuestas de error"""
+    return ApiResponse.error(message, status_code, details)

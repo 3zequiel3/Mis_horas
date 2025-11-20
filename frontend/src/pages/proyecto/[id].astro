@@ -281,7 +281,7 @@ const pageTitle = 'Tablero de Proyecto';
 
 <script>
   import { AuthService } from '../../services/auth';
-  import { ProyectoService } from '../../services/proyecto';
+  import { ProyectosService } from '../../services/proyectos';
   import { proyectoHandlers } from '../../handlers/proyecto';
   import { TareaService } from '../../services/tarea';
   import { generatePDFFromTemplate } from '../../utils/pdf';
@@ -609,7 +609,7 @@ const pageTitle = 'Tablero de Proyecto';
 
     if (result.isConfirmed) {
       try {
-        await ProyectoService.cambiarEstado(proyecto.id, !isActive);
+        await ProyectosService.cambiarEstado(proyecto.id, !isActive);
         await proyectoHandlers.loadProyecto();
         await AlertUtils.success('Éxito', `Proyecto ${action.toLowerCase()}do correctamente`);
       } catch (error) {
@@ -641,8 +641,8 @@ const pageTitle = 'Tablero de Proyecto';
   window.addEventListener('beforeunload', () => {
     proyectoHandlers.cleanupMultiSelect();
   });
-</script>
 
+</script>
     </div>
   </ProtectedRoute>
 </BaseLayout>

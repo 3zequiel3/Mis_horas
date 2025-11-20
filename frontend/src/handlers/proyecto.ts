@@ -3,7 +3,7 @@
  */
 
 import type { Proyecto, Dia, Usuario } from '../types';
-import { ProyectoService } from '../services/proyecto';
+import { ProyectosService } from '../services/proyectos';
 import { DiaService } from '../services/dia';
 import { TareaService } from '../services/tarea';
 import { AuthService } from '../services/auth';
@@ -126,7 +126,7 @@ export async function loadProyecto(): Promise<void> {
       return;
     }
 
-    state.proyectoActual = await ProyectoService.getProyecto(proyectoId);
+    state.proyectoActual = await ProyectosService.getProyecto(proyectoId);
 
     if (!state.proyectoActual) {
       window.location.href = '/proyectos';
@@ -950,22 +950,28 @@ export function cleanupMultiSelect(): void {
 // ============================================================
 
 async function mostrarModalConfiguracion(): Promise<void> {
+  const proyecto = state.proyectoActual;
+  if (!proyecto) return;
+
   const { value: formValues } = await Swal.fire({
     title: 'Configuración del Proyecto',
     html: `
-      <div style="text-align: left; padding: 10px;">
-        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-          <input 
-            type="checkbox" 
-            id="horas-reales-checkbox" 
-            ${state.proyectoActual?.horas_reales_activas ? 'checked' : ''}
-            style="width: 18px; height: 18px; cursor: pointer;"
-          >
-          <span style="font-size: 15px; color: #c8c8c8;">Activar columna de Horas Reales</span>
-        </label>
-        <p style="color: #9ca3af; font-size: 13px; margin-top: 10px; margin-left: 28px;">
-          Cuando está activada, se mostrará una columna adicional para registrar las horas reales trabajadas.
-        </p>
+      <div style="text-align: left; padding: 15px; max-width: 400px; margin: 0 auto;">
+        <!-- Horas Reales -->
+        <div style="margin-bottom: 20px;">
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <input 
+              type="checkbox" 
+              id="horas-reales-checkbox" 
+              ${proyecto.horas_reales_activas ? 'checked' : ''}
+              style="width: 18px; height: 18px; cursor: pointer;"
+            >
+            <span style="font-size: 15px; color: #c8c8c8;">✅ Activar columna de Horas Reales</span>
+          </label>
+          <p style="color: #9ca3af; font-size: 13px; margin-top: 8px; margin-left: 28px;">
+            Muestra una columna adicional para registrar las horas reales trabajadas.
+          </p>
+        </div>
       </div>
     `,
     showCancelButton: true,
@@ -975,19 +981,20 @@ async function mostrarModalConfiguracion(): Promise<void> {
     color: '#c8c8c8',
     confirmButtonColor: '#667eea',
     cancelButtonColor: '#2d3746',
+    width: '450px',
     preConfirm: () => {
-      const checkbox = document.getElementById('horas-reales-checkbox') as HTMLInputElement;
+      const horasRealesCheckbox = document.getElementById('horas-reales-checkbox') as HTMLInputElement;
       return {
-        horas_reales_activas: checkbox.checked
+        horas_reales_activas: horasRealesCheckbox.checked
       };
     }
   });
 
   if (formValues && state.proyectoActual) {
     try {
-      await ProyectoService.updateConfiguracion(
+      await ProyectosService.updateConfiguracion(
         state.proyectoActual.id,
-        { horas_reales_activas: formValues.horas_reales_activas }
+        formValues
       );
 
       await Swal.fire({

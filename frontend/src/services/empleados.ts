@@ -7,6 +7,11 @@ export class EmpleadosService extends ApiService {
     return this.get(`/api/proyecto/${proyectoId}/empleados`);
   }
 
+  // Alias para getEmpleadosByProyecto
+  static async getEmpleados(proyectoId: number): Promise<Empleado[]> {
+    return this.getEmpleadosByProyecto(proyectoId);
+  }
+
   // Agregar empleado a un proyecto
   static async addEmpleado(proyectoId: number, nombre: string): Promise<Empleado> {
     return this.post(`/api/proyecto/${proyectoId}/empleados`, { nombre });

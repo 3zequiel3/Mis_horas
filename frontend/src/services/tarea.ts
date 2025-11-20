@@ -87,7 +87,7 @@ export class TareaService extends ApiService {
     dia_id: number,
     horas: string
   ): Promise<any> {
-    return this.put(
+    return this.patch(
       `/api/tareas/${tarea_id}/dia/${dia_id}/horas`,
       { horas }
     );

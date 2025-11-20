@@ -1,8 +1,14 @@
 ---
+/**
+ * Tablero de Empleados - Vista ADMIN
+ * Esta página es solo para el administrador del tablero
+ * Si el usuario es un empleado, será redirigido a /tablero-empleado-vista/[id]
+ */
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import ProtectedRoute from "../../components/ProtectedRoute.astro";
 import TurnosModal from "../../components/TurnosModal.astro";
+import InvitacionesModal from "../../components/InvitacionesModal.astro";
 import "../../styles/tabla.css";
 import "../../styles/tareas.css";
 import "../../styles/sidebar-meses.css";
@@ -327,7 +333,7 @@ const pageTitle = "Tablero de Empleados";
 
 <script>
   import { AuthService } from "../../services/auth";
-  import { ProyectoService } from "../../services/proyecto";
+  import { ProyectosService } from "../../services/proyectos";
   import { TareaService } from "../../services/tarea";
   import { EmpleadosService } from "../../services/empleados";
   import { DiaService } from "../../services/dia";
@@ -343,6 +349,67 @@ const pageTitle = "Tablero de Empleados";
   if (!AuthService.isAuthenticated()) {
     window.location.href = "/login";
   }
+
+  // **DETECCIÓN DE ROL: Admin vs Empleado**
+  // Obtener ID del proyecto
+  const urlParts = window.location.pathname.split('/');
+  const proyectoId = parseInt(urlParts[urlParts.length - 1]);
+
+  // Función para verificar si el usuario actual es empleado (no admin) de este tablero
+  async function verificarRolYRedirigir() {
+    try {
+      console.log('🔍 Verificando rol del usuario...');
+      const usuario = await AuthService.getCurrentUser();
+      console.log('👤 Usuario actual:', usuario);
+      
+      if (!usuario) {
+        window.location.href = "/login";
+        return;
+      }
+
+      // Cargar proyecto para verificar quién es el propietario
+      const proyecto = await ProyectosService.getProyecto(proyectoId);
+      console.log('📁 Proyecto:', proyecto);
+      console.log('🔑 Usuario ID:', usuario.id, 'Proyecto Admin ID:', proyecto.usuario_id);
+      
+      // Si el usuario es el propietario, es ADMIN - puede quedarse aquí
+      if (proyecto.usuario_id === usuario.id) {
+        console.log('✅ Usuario es ADMIN del tablero');
+        (window as any).esAdmin = true;
+        (window as any).empleadoActualId = null;
+        return; // Continuar normalmente
+      }
+
+      // Si NO es el propietario, verificar si es empleado
+      console.log('🔍 No es admin, verificando si es empleado...');
+      const empleados = await EmpleadosService.getEmpleados(proyectoId);
+      console.log('👥 Empleados del proyecto:', empleados);
+      
+      const empleadoVinculado = empleados.find(
+        (emp: any) => emp.usuario_id === usuario.id
+      );
+      console.log('🔗 Empleado vinculado encontrado:', empleadoVinculado);
+
+      // Si es empleado, redirigir a vista específica de empleado
+      if (empleadoVinculado) {
+        console.log('✅ Usuario es EMPLEADO - redirigiendo a vista de empleado');
+        window.location.href = `/empleado-vista/${proyectoId}`;
+        return;
+      }
+
+      // Si no es ni admin ni empleado, no tiene acceso
+      await AlertUtils.error('Sin Acceso', 'No tienes permisos para ver este tablero');
+      window.location.href = '/dashboard';
+      
+    } catch (error) {
+      console.error('Error verificando rol:', error);
+      await AlertUtils.error('Error', 'No se pudo verificar el acceso al tablero');
+      window.location.href = '/dashboard';
+    }
+  }
+
+  // Verificar rol antes de continuar
+  await verificarRolYRedirigir();
 
   // Exponer handlers globalmente
   (window as any).TableroEmpleadosHandler = TableroEmpleadosHandler;
@@ -662,7 +729,7 @@ const pageTitle = "Tablero de Empleados";
 
       if (result.isConfirmed) {
         try {
-          await ProyectoService.cambiarEstado(proyecto.id, !isActive);
+          await ProyectosService.cambiarEstado(proyecto.id, !isActive);
           await TableroEmpleadosHandler.loadProyecto();
           await AlertUtils.success(
             "Éxito",
@@ -808,4 +875,7 @@ const pageTitle = "Tablero de Empleados";
       }
     }
   });
+
 </script>
+
+<InvitacionesModal />

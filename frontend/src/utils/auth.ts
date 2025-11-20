@@ -26,3 +26,23 @@ export function getAuthHeaders(): Record<string, string> {
     'Authorization': `Bearer ${token}`,
   };
 }
+
+/**
+ * Verifica si el usuario está autenticado y retorna los datos del usuario
+ */
+export async function verificarAutenticacion(): Promise<any | null> {
+  if (typeof window === 'undefined') return null;
+  
+  const token = getToken();
+  if (!token) return null;
+  
+  const usuarioStr = sessionStorage.getItem('usuario') || localStorage.getItem('usuario');
+  if (!usuarioStr) return null;
+  
+  try {
+    return JSON.parse(usuarioStr);
+  } catch (error) {
+    console.error('Error parsing usuario:', error);
+    return null;
+  }
+}

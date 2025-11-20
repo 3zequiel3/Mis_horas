@@ -6,14 +6,14 @@ empleado_bp = Blueprint('empleados', __name__)
 
 @empleado_bp.route('/proyecto/<int:proyecto_id>/empleados', methods=['GET'])
 @token_required
-def get_empleados(user_id, proyecto_id):
+def get_empleados(usuario_actual, proyecto_id):
     """Obtiene todos los empleados de un proyecto"""
     empleados = EmpleadoService.obtener_empleados_proyecto(proyecto_id)
     return jsonify([e.to_dict() for e in empleados]), 200
 
 @empleado_bp.route('/proyecto/<int:proyecto_id>/empleados', methods=['POST'])
 @token_required
-def add_empleado(user_id, proyecto_id):
+def add_empleado(usuario_actual, proyecto_id):
     """Agrega un empleado a un proyecto"""
     data = request.get_json()
     
@@ -29,7 +29,7 @@ def add_empleado(user_id, proyecto_id):
 
 @empleado_bp.route('/empleados/<int:empleado_id>', methods=['GET'])
 @token_required
-def get_empleado(user_id, empleado_id):
+def get_empleado(usuario_actual, empleado_id):
     """Obtiene un empleado específico"""
     empleado = EmpleadoService.obtener_empleado_por_id(empleado_id)
     
@@ -40,7 +40,7 @@ def get_empleado(user_id, empleado_id):
 
 @empleado_bp.route('/empleados/<int:empleado_id>', methods=['PUT'])
 @token_required
-def update_empleado(user_id, empleado_id):
+def update_empleado(usuario_actual, empleado_id):
     """Actualiza un empleado"""
     data = request.get_json()
     
@@ -57,7 +57,7 @@ def update_empleado(user_id, empleado_id):
 
 @empleado_bp.route('/empleados/<int:empleado_id>', methods=['DELETE'])
 @token_required
-def delete_empleado(user_id, empleado_id):
+def delete_empleado(usuario_actual, empleado_id):
     """Elimina un empleado"""
     success = EmpleadoService.eliminar_empleado(empleado_id)
     

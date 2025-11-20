@@ -6,7 +6,7 @@ usuario_bp = Blueprint('usuarios', __name__)
 
 @usuario_bp.route('/<int:user_id>', methods=['GET'])
 @token_required
-def get_usuario(current_user_id, user_id):
+def get_usuario(usuario_actual, user_id):
     """Obtiene información del usuario"""
     usuario = AuthService.obtener_usuario_por_id(user_id)
     

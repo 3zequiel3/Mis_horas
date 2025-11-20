@@ -1,6 +1,6 @@
 // Gestión de meses: cargar, navegar y crear meses del proyecto
 
-import { ProyectoService } from '../services/proyecto';
+import { ProyectosService } from '../services/proyectos';
 import { AlertUtils } from '../utils/swal';
 import { MESES_ES } from '../utils/formatters';
 
@@ -10,7 +10,7 @@ export const MesesHandler = {
   // Carga meses disponibles del proyecto
   async loadMeses(proyectoId: number) {
     try {
-      this.mesesDisponibles = await ProyectoService.getMeses(proyectoId);
+      this.mesesDisponibles = await ProyectosService.getMeses(proyectoId);
       this.renderMeses();
     } catch (error) {
       console.error('Error cargando meses:', error);
@@ -107,7 +107,7 @@ export const MesesHandler = {
   // Agrega un nuevo mes al proyecto
   async agregarMes(proyectoId: number, anio: number, mes: number) {
     try {
-      await ProyectoService.addMes(proyectoId, anio, mes);
+      await ProyectosService.addMes(proyectoId, anio, mes);
 
       this.closeAddMesModal();
       await AlertUtils.success('Éxito', 'Mes agregado correctamente');
@@ -128,7 +128,7 @@ export const MesesHandler = {
       }
 
       // Crear el mes automáticamente
-      await ProyectoService.addMes(proyectoId, anio, mes);
+      await ProyectosService.addMes(proyectoId, anio, mes);
 
       // Recargar la lista de meses
       await this.loadMeses(proyectoId);

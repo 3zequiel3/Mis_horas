@@ -12,11 +12,13 @@ export interface Dia {
   hora_salida?: string | null;   // Formato HH:MM (modo corrido)
   
   // Sistema de turnos
+  turno?: string | null;  // 'mañana' | 'tarde' | null
   turno_manana_entrada?: string | null;  // Formato HH:MM
   turno_manana_salida?: string | null;   // Formato HH:MM
   turno_tarde_entrada?: string | null;   // Formato HH:MM
   turno_tarde_salida?: string | null;    // Formato HH:MM
   horas_extras?: number;
+  observaciones?: string | null;  // Notas adicionales del día
   
   proyecto_id: number;
   empleado_id?: number;
