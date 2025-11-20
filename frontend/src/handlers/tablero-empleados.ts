@@ -710,7 +710,7 @@ export const TableroEmpleadosHandler = {
       const { generateEmpleadoPDF } = await import('../utils/pdf');
       await generateEmpleadoPDF(
         empleadoNombre,
-        this.state.proyectoActual.nombre,
+        this.state.proyectoActual,
         periodoTexto,
         dias
       );
