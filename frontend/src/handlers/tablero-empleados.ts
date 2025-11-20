@@ -1166,6 +1166,36 @@ export const TableroEmpleadosHandler = {
       // Mostrar modal
       modal.style.display = 'flex';
 
+      // Event listener para botones de turnos en el modal
+      if (modoTurnos) {
+        tbody.addEventListener('click', (e: Event) => {
+          const target = e.target as HTMLElement;
+          if (target.classList.contains('btn-ver-turnos')) {
+            const diaId = parseInt(target.dataset.diaId || '0');
+            const empleadoNombreBtn = target.dataset.empleadoNombre || '';
+            const fecha = target.dataset.fecha || '';
+            const turnoMananaEntrada = target.dataset.turnoMananaEntrada;
+            const turnoMananaSalida = target.dataset.turnoMananaSalida;
+            const turnoTardeEntrada = target.dataset.turnoTardeEntrada;
+            const turnoTardeSalida = target.dataset.turnoTardeSalida;
+
+            // Importar y usar el handler del modal de turnos
+            import('./turnos-modal').then(({ TurnosModalHandler }) => {
+              TurnosModalHandler.init(this.state.proyectoActual!);
+              TurnosModalHandler.abrirModal({
+                diaId,
+                empleadoNombre: empleadoNombreBtn,
+                fecha,
+                turnoMananaEntrada,
+                turnoMananaSalida,
+                turnoTardeEntrada,
+                turnoTardeSalida,
+              });
+            });
+          }
+        });
+      }
+
       // Agregar event listeners para los inputs del modal (usar 'change' en lugar de 'blur')
       const modalChangeHandler = async (e: Event) => {
         const target = e.target as HTMLElement;
