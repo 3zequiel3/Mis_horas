@@ -4,6 +4,7 @@
  */
 
 import { ApiService } from '../services/api';
+import { horasAFormato } from '../utils/formatters';
 import type { Proyecto } from '../types/Proyecto';
 
 interface TurnosData {
@@ -120,24 +121,18 @@ export const TurnosModalHandler = {
     const tardeEntrada = (document.getElementById('turno_tarde_entrada') as HTMLInputElement)?.value;
     const tardeSalida = (document.getElementById('turno_tarde_salida') as HTMLInputElement)?.value;
 
-    console.log('🔍 Valores inputs:', { mananaEntrada, mananaSalida, tardeEntrada, tardeSalida });
-
     const modal = document.getElementById('turnos-modal');
-    if (!modal) {
-      console.error('❌ No se encontró el modal');
-      return;
-    }
+    if (!modal) return;
 
     let totalHoras = 0;
 
     // Calcular turno mañana (máximo las horas configuradas)
     if (mananaEntrada && mananaSalida) {
       const horasManana = this.calcularDiferenciaHoras(mananaEntrada, mananaSalida);
-      console.log('📊 Horas mañana trabajadas:', horasManana);
       
       // Para el subtotal, mostrar las horas trabajadas
       const subtotalManana = modal.querySelector('#subtotal-manana') as HTMLElement;
-      if (subtotalManana) subtotalManana.textContent = this.formatearHoras(horasManana);
+      if (subtotalManana) subtotalManana.textContent = horasAFormato(horasManana);
       
       // Para el total, contar máximo las horas configuradas (sin extras)
       if (this.proyecto?.turno_manana_inicio && this.proyecto?.turno_manana_fin) {
@@ -154,11 +149,10 @@ export const TurnosModalHandler = {
     // Calcular turno tarde (máximo las horas configuradas)
     if (tardeEntrada && tardeSalida) {
       const horasTarde = this.calcularDiferenciaHoras(tardeEntrada, tardeSalida);
-      console.log('📊 Horas tarde trabajadas:', horasTarde);
       
       // Para el subtotal, mostrar las horas trabajadas
       const subtotalTarde = modal.querySelector('#subtotal-tarde') as HTMLElement;
-      if (subtotalTarde) subtotalTarde.textContent = this.formatearHoras(horasTarde);
+      if (subtotalTarde) subtotalTarde.textContent = horasAFormato(horasTarde);
       
       // Para el total, contar máximo las horas configuradas (sin extras)
       if (this.proyecto?.turno_tarde_inicio && this.proyecto?.turno_tarde_fin) {
@@ -172,19 +166,11 @@ export const TurnosModalHandler = {
       if (subtotalTarde) subtotalTarde.textContent = '0:00';
     }
 
-    console.log('✅ Total horas calculado:', totalHoras);
-    console.log('✅ Total horas formateado:', this.formatearHoras(totalHoras));
-
     // Mostrar total
     const totalElement = modal.querySelector('#total-horas') as HTMLElement;
     if (totalElement) {
-      const valorFormateado = this.formatearHoras(totalHoras);
+      const valorFormateado = horasAFormato(totalHoras);
       totalElement.textContent = valorFormateado;
-      console.log('✅ Elemento actualizado, textContent:', totalElement.textContent);
-      console.log('✅ Valor asignado:', valorFormateado);
-      console.log('✅ innerHTML:', totalElement.innerHTML);
-    } else {
-      console.error('❌ No se encontró el elemento total-horas');
     }
 
     // Calcular y mostrar horas extras
@@ -218,19 +204,10 @@ export const TurnosModalHandler = {
 
     if (horasExtras > 0) {
       if (extrasRow) extrasRow.style.display = 'flex';
-      if (extrasValue) extrasValue.textContent = `+${this.formatearHoras(horasExtras)}`;
+      if (extrasValue) extrasValue.textContent = `+${horasAFormato(horasExtras)}`;
     } else {
       if (extrasRow) extrasRow.style.display = 'none';
     }
-  },
-
-  /**
-   * Formatea horas decimales a formato HH:MM
-   */
-  formatearHoras(horas: number): string {
-    const h = Math.floor(horas);
-    const m = Math.round((horas - h) * 60);
-    return `${h}:${m.toString().padStart(2, '0')}`;
   },
 
   /**

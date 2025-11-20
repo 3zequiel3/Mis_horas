@@ -4,21 +4,6 @@ import { ProyectoService } from '../services/proyecto';
 import { AlertUtils } from '../utils/swal';
 import { MESES_ES } from '../utils/formatters';
 
-const MESES_NOMBRES = [
-  'Enero',
-  'Febrero',
-  'Marzo',
-  'Abril',
-  'Mayo',
-  'Junio',
-  'Julio',
-  'Agosto',
-  'Septiembre',
-  'Octubre',
-  'Noviembre',
-  'Diciembre',
-];
-
 export const MesesHandler = {
   mesesDisponibles: [] as [number, number][],
 
@@ -49,7 +34,7 @@ export const MesesHandler = {
 
     mesesList.innerHTML = this.mesesDisponibles
       .map(([anio, mes]) => {
-        const mesNombre = MESES_NOMBRES[mes - 1];
+        const mesNombre = MESES_ES[mes as keyof typeof MESES_ES];
         const isActive = mesActivo && mesActivo.anio === anio && mesActivo.mes === mes;
 
         return `
@@ -80,7 +65,7 @@ export const MesesHandler = {
     const mesInfo = document.getElementById('mes-info');
     const mesInfoText = document.getElementById('mes-info-text');
 
-    const mesNombre = MESES_NOMBRES[mesActivo.mes - 1];
+    const mesNombre = MESES_ES[mesActivo.mes as keyof typeof MESES_ES];
     const text = `${mesNombre} ${mesActivo.anio}`;
 
     if (mesInfoText) mesInfoText.textContent = text;

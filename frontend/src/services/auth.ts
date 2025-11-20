@@ -33,15 +33,12 @@ export class AuthService {
   static setToken(token: string, rememberMe: boolean = false): void {
     if (!isClient()) return;
 
-    console.log('[AuthService.setToken] Guardando token', { rememberMe, tokenLength: token?.length || 0 });
-
     if (rememberMe) {
       // Guardar en localStorage con cookie de 30 días
       const storage = getStorage(false);
       if (storage) {
         storage.setItem(this.TOKEN_PERSIST, token);
         storage.setItem(this.REMEMBER_ME_FLAG, 'true');
-        console.log('[AuthService.setToken] Token guardado en localStorage');
       }
       
       // Establecer cookie para que el servidor (middleware) lo valide
@@ -58,9 +55,6 @@ export class AuthService {
         storage.setItem(this.TOKEN_SESSION, token);
         storage.removeItem(this.TOKEN_PERSIST);
         storage.removeItem(this.REMEMBER_ME_FLAG);
-        console.log('[AuthService.setToken] Token guardado en sessionStorage');
-      } else {
-        console.error('[AuthService.setToken] No se pudo obtener sessionStorage');
       }
       
       // IMPORTANTE: También establecer cookie de sesión para el middleware

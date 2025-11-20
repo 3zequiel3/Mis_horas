@@ -7,7 +7,6 @@ import { DiaService } from '../services/dia';
 import { showErrorModal } from '../utils/modals';
 import { horasAFormato, MESES_ES } from '../utils/formatters';
 import { formatearFechaSinAnio } from '../utils/date';
-import { renderFilasDiasEmpleado } from '../utils/render';
 import Swal from 'sweetalert2';
 
 interface TableroEmpleadosState {
@@ -1204,8 +1203,6 @@ export const TableroEmpleadosHandler = {
           const input = target as HTMLInputElement;
           const diaId = parseInt(input.dataset.diaId || '0');
 
-          console.log('🕐 [Modal] Detectado cambio en input de tiempo:', { diaId, value: input.value });
-
           if (!diaId) return;
 
           const row = input.closest('tr');
@@ -1218,20 +1215,14 @@ export const TableroEmpleadosHandler = {
           const horaEntrada = horaEntradaInput?.value;
           const horaSalida = horaSalidaInput?.value;
 
-          console.log('📊 [Modal] Valores de horarios:', { horaEntrada, horaSalida });
-
           if (horaEntrada && horaSalida) {
             try {
-              console.log('✅ [Modal] Ambos valores presentes, calculando...');
-
               if (horasCell) {
                 horasCell.classList.add('calculating');
                 horasCell.innerHTML = '<span style="opacity: 0.6;">⏳ Calculando...</span>';
               }
 
               const diaActualizado = await DiaService.updateHorarios(diaId, horaEntrada, horaSalida);
-
-              console.log('✅ [Modal] Horarios actualizados correctamente:', diaActualizado);
 
               // Actualizar solo el valor de las horas en el DOM sin recargar todo
               if (horasCell && diaActualizado.horas_trabajadas !== undefined) {
@@ -1276,8 +1267,6 @@ export const TableroEmpleadosHandler = {
                 horasCell.innerHTML = '<span style="color: #ef4444;">❌ Error</span>';
               }
             }
-          } else {
-            console.log('⏸️ [Modal] Faltan valores, esperando...');
           }
         }
       };

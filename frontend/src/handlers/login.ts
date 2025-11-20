@@ -2,12 +2,18 @@
 
 import { AuthService } from '../services/auth';
 import { AlertUtils } from '../utils/swal';
+import { validateRequired, validateAll } from '../utils/validation';
 
 export const LoginHandler = {
   // Valida que los campos requeridos estén llenos
   validarCampos(username: string, password: string): boolean {
-    if (!username.trim() || !password.trim()) {
-      AlertUtils.error('Error', 'Por favor completa todos los campos');
+    const validation = validateAll(
+      validateRequired(username, 'Usuario'),
+      validateRequired(password, 'Contraseña')
+    );
+    
+    if (!validation.valid) {
+      AlertUtils.error('Error', validation.message!);
       return false;
     }
     return true;

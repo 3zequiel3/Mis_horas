@@ -2,12 +2,14 @@
 
 import { AuthService } from '../services/auth';
 import { AlertUtils } from '../utils/swal';
+import { validateRequired, validateEmail, validatePasswordMatch, validatePassword, validateAll } from '../utils/validation';
 
 export const RegisterHandler = {
   // Valida que las contraseñas coincidan
   validarContraseñas(password: string, passwordConfirm: string): boolean {
-    if (password !== passwordConfirm) {
-      AlertUtils.error('Error', 'Las contraseñas no coinciden');
+    const validation = validatePasswordMatch(password, passwordConfirm);
+    if (!validation.valid) {
+      AlertUtils.error('Error', validation.message!);
       return false;
     }
     return true;
@@ -15,8 +17,16 @@ export const RegisterHandler = {
 
   // Valida que todos los campos requeridos estén llenos
   validarCampos(username: string, email: string, password: string): boolean {
-    if (!username.trim() || !email.trim() || !password.trim()) {
-      AlertUtils.error('Error', 'Por favor completa todos los campos requeridos');
+    const validation = validateAll(
+      validateRequired(username, 'Usuario'),
+      validateRequired(email, 'Email'),
+      validateEmail(email),
+      validateRequired(password, 'Contraseña'),
+      validatePassword(password, 8)
+    );
+    
+    if (!validation.valid) {
+      AlertUtils.error('Error', validation.message!);
       return false;
     }
     return true;

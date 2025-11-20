@@ -4,6 +4,7 @@ import { TareaService } from '../services/tarea';
 import { AlertUtils } from '../utils/swal';
 import { horasAFormato } from '../utils/formatters';
 import { formatearFechaConDia, formatearFechaConDiaYAnio } from '../utils/date';
+import { validateRequired } from '../utils/validation';
 
 export interface DiasInfo {
   id: number;
@@ -191,8 +192,10 @@ export const TareaHandler = {
       const editMode = submitBtn?.dataset.editMode === 'true';
       const tareaId = parseInt(submitBtn?.dataset.tareaId || '0');
 
-      if (!titulo.trim()) {
-        await AlertUtils.error('Error', 'El título es requerido');
+      // Validar título
+      const validation = validateRequired(titulo, 'Título');
+      if (!validation.valid) {
+        await AlertUtils.error('Error', validation.message!);
         return false;
       }
 

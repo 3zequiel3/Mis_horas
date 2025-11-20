@@ -2,6 +2,7 @@
 
 import { AuthService } from '../services/auth';
 import { AlertUtils } from '../utils/swal';
+import { validateRequired, validateEmail, validatePassword, validateAll } from '../utils/validation';
 
 export const PerfilHandler = {
   // Carga datos del usuario actual
@@ -33,6 +34,15 @@ export const PerfilHandler = {
       const email = emailInput.value;
       const nombre_completo = nombreInput.value;
 
+      // Validar email si se proporciona
+      if (email) {
+        const emailValidation = validateEmail(email);
+        if (!emailValidation.valid) {
+          await AlertUtils.error('Error', emailValidation.message!);
+          return;
+        }
+      }
+
       await AuthService.updateProfile(nombre_completo, email);
 
       // Mostrar mensaje de éxito
@@ -54,8 +64,15 @@ export const PerfilHandler = {
       const password_actual = passwordActualInput.value;
       const password_nueva = passwordNuevaInput.value;
 
-      if (!password_actual || !password_nueva) {
-        await AlertUtils.warning('Campos requeridos', 'Completa ambas contraseñas');
+      // Validar campos
+      const validation = validateAll(
+        validateRequired(password_actual, 'Contraseña actual'),
+        validateRequired(password_nueva, 'Contraseña nueva'),
+        validatePassword(password_nueva, 8)
+      );
+
+      if (!validation.valid) {
+        await AlertUtils.error('Error', validation.message!);
         return;
       }
 
