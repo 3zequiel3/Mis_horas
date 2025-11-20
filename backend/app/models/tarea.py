@@ -29,6 +29,8 @@ class Tarea(db.Model):
         # Si se solicita y es proyecto de empleados, agregar desglose
         if incluir_desglose_empleados and self.proyecto and self.proyecto.tipo_proyecto == 'empleados':
             desglose = {}
+            total_horas_extras = 0
+            
             for dia in self.dias:
                 if dia.empleado_id:
                     empleado_nombre = dia.empleado.nombre if dia.empleado else f"Empleado {dia.empleado_id}"
@@ -37,11 +39,16 @@ class Tarea(db.Model):
                             'empleado_id': dia.empleado_id,
                             'empleado_nombre': empleado_nombre,
                             'horas_totales': 0,
+                            'horas_extras': 0,
                             'dias_count': 0
                         }
                     desglose[empleado_nombre]['horas_totales'] += dia.horas_trabajadas or 0
+                    desglose[empleado_nombre]['horas_extras'] += dia.horas_extras or 0
                     desglose[empleado_nombre]['dias_count'] += 1
+                    total_horas_extras += dia.horas_extras or 0
             
             result['desglose_empleados'] = list(desglose.values())
+            result['total_horas_extras'] = total_horas_extras
+            result['modo_horarios'] = self.proyecto.modo_horarios if self.proyecto else None
         
         return result

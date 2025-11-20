@@ -130,25 +130,43 @@ export const TurnosModalHandler = {
 
     let totalHoras = 0;
 
-    // Calcular turno mañana
+    // Calcular turno mañana (máximo las horas configuradas)
     if (mananaEntrada && mananaSalida) {
       const horasManana = this.calcularDiferenciaHoras(mananaEntrada, mananaSalida);
-      console.log('📊 Horas mañana:', horasManana);
-      totalHoras += horasManana;
+      console.log('📊 Horas mañana trabajadas:', horasManana);
+      
+      // Para el subtotal, mostrar las horas trabajadas
       const subtotalManana = modal.querySelector('#subtotal-manana') as HTMLElement;
       if (subtotalManana) subtotalManana.textContent = this.formatearHoras(horasManana);
+      
+      // Para el total, contar máximo las horas configuradas (sin extras)
+      if (this.proyecto?.turno_manana_inicio && this.proyecto?.turno_manana_fin) {
+        const horasConfiguradas = this.calcularDiferenciaHoras(this.proyecto.turno_manana_inicio, this.proyecto.turno_manana_fin);
+        totalHoras += Math.min(horasManana, horasConfiguradas);
+      } else {
+        totalHoras += horasManana;
+      }
     } else {
       const subtotalManana = modal.querySelector('#subtotal-manana') as HTMLElement;
       if (subtotalManana) subtotalManana.textContent = '0:00';
     }
 
-    // Calcular turno tarde
+    // Calcular turno tarde (máximo las horas configuradas)
     if (tardeEntrada && tardeSalida) {
       const horasTarde = this.calcularDiferenciaHoras(tardeEntrada, tardeSalida);
-      console.log('📊 Horas tarde:', horasTarde);
-      totalHoras += horasTarde;
+      console.log('📊 Horas tarde trabajadas:', horasTarde);
+      
+      // Para el subtotal, mostrar las horas trabajadas
       const subtotalTarde = modal.querySelector('#subtotal-tarde') as HTMLElement;
       if (subtotalTarde) subtotalTarde.textContent = this.formatearHoras(horasTarde);
+      
+      // Para el total, contar máximo las horas configuradas (sin extras)
+      if (this.proyecto?.turno_tarde_inicio && this.proyecto?.turno_tarde_fin) {
+        const horasConfiguradas = this.calcularDiferenciaHoras(this.proyecto.turno_tarde_inicio, this.proyecto.turno_tarde_fin);
+        totalHoras += Math.min(horasTarde, horasConfiguradas);
+      } else {
+        totalHoras += horasTarde;
+      }
     } else {
       const subtotalTarde = modal.querySelector('#subtotal-tarde') as HTMLElement;
       if (subtotalTarde) subtotalTarde.textContent = '0:00';

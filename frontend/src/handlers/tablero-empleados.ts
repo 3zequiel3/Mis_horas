@@ -278,7 +278,11 @@ export const TableroEmpleadosHandler = {
         });
 
         // Calcular totales
+        const totalExtras = diasSemana.reduce((sum, dia) => sum + (dia.horas_extras || 0), 0);
         const totalTrabajadas = diasSemana.reduce((sum, dia) => sum + (dia.horas_trabajadas || 0), 0);
+        const totalRegulares = this.state.proyectoActual.modo_horarios === 'turnos' 
+          ? (totalTrabajadas - totalExtras) 
+          : totalTrabajadas;
         const totalReales = diasSemana.reduce((sum, dia) => sum + (dia.horas_reales || 0), 0);
 
         // Crear HTML para el empleado con acordeón
@@ -287,7 +291,7 @@ export const TableroEmpleadosHandler = {
             <div class="empleado-accordion-header ${isFirst ? 'active' : ''}" data-empleado-accordion="${empleado.id}">
               <div class="empleado-header-info">
                 <h2>${empleado.nombre}</h2>
-                <span class="empleado-hours-badge">${horasAFormato(totalTrabajadas)}</span>
+                <span class="empleado-hours-badge">${horasAFormato(totalRegulares)}${totalExtras > 0 ? ` <small style="color: #4caf50;">+${horasAFormato(totalExtras)}</small>` : ''}</span>
               </div>
             </div>
             
@@ -314,7 +318,7 @@ export const TableroEmpleadosHandler = {
                         <td><strong>Total:</strong></td>
                         <td></td>
                         ${this.state.proyectoActual.modo_horarios === 'turnos' ? '<td></td>' : '<td></td><td></td>'}
-                        <td><strong>${horasAFormato(totalTrabajadas)}</strong></td>
+                        <td><strong>${horasAFormato(totalRegulares)}</strong>${totalExtras > 0 ? `<br><small style="color: #4caf50;">+${horasAFormato(totalExtras)} extras</small>` : ''}</td>
                         ${this.state.proyectoActual.horas_reales_activas ? `<td><strong>${horasAFormato(totalReales)}</strong></td>` : ''}
                       </tr>
                     </tfoot>
@@ -572,8 +576,10 @@ export const TableroEmpleadosHandler = {
                 ${tieneTurnos ? '⏰ Ver Turnos' : '➕ Agregar Turnos'}
               </button>
             </td>
+            <td class="td-entrada" style="display: none;">--:--</td>
+            <td class="td-salida" style="display: none;">--:--</td>
             <td>
-              ${tieneTurnos ? horasTrabajadas : `<span style="opacity: 0.5; font-size: 0.85rem;">--:--</span>`}
+              ${tieneTurnos ? horasAFormato((dia.horas_trabajadas || 0) - horasExtras) : `<span style="opacity: 0.5; font-size: 0.85rem;">--:--</span>`}
               ${mostrarExtras ? `<br><small style="color: #4caf50;">+${horasAFormato(horasExtras)} extras</small>` : ''}
             </td>
             ${mostrarHorasReales ? `<td>${horasReales || '--:--'}</td>` : ''}
@@ -590,7 +596,8 @@ export const TableroEmpleadosHandler = {
           <tr data-dia-id="${dia.id}" class="${rowClass}">
             <td>${formatearFechaSinAnio(dia.fecha)}</td>
             <td>${dia.dia_semana}</td>
-            <td>
+            <td class="td-turnos" style="display: none;">--</td>
+            <td class="td-entrada">
               <input 
                 type="time" 
                 class="hora-entrada-input" 
@@ -600,7 +607,7 @@ export const TableroEmpleadosHandler = {
                 title="Hora de entrada"
               />
             </td>
-            <td>
+            <td class="td-salida">
               <input 
                 type="time" 
                 class="hora-salida-input" 
@@ -622,8 +629,9 @@ export const TableroEmpleadosHandler = {
           <tr data-dia-id="${dia.id}" class="${rowClass}">
             <td>${formatearFechaSinAnio(dia.fecha)}</td>
             <td>${dia.dia_semana}</td>
-            <td style="text-align: center;">${horaEntrada || '<span style="opacity: 0.4;">--:--</span>'}</td>
-            <td style="text-align: center;">${horaSalida || '<span style="opacity: 0.4;">--:--</span>'}</td>
+            <td class="td-turnos" style="display: none;">--</td>
+            <td class="td-entrada" style="text-align: center;">${horaEntrada || '<span style="opacity: 0.4;">--:--</span>'}</td>
+            <td class="td-salida" style="text-align: center;">${horaSalida || '<span style="opacity: 0.4;">--:--</span>'}</td>
             <td class="${horasClass}">
               ${tieneHorarios ? horasTrabajadas : `<span style="opacity: 0.5; font-size: 0.85rem;">--:--</span>`}
             </td>
@@ -1081,11 +1089,38 @@ export const TableroEmpleadosHandler = {
 
       // Mostrar/ocultar columna de horas reales
       const mostrarHorasReales = this.state.proyectoActual.horas_reales_activas || false;
+      const modoTurnos = this.state.proyectoActual.modo_horarios === 'turnos';
+      
       if (thHorasReales) {
         thHorasReales.style.display = mostrarHorasReales ? '' : 'none';
       }
       if (tdTotalReales) {
         tdTotalReales.style.display = mostrarHorasReales ? '' : 'none';
+      }
+      
+      // Actualizar headers según modo
+      const thTurnos = document.getElementById('empleado-th-turnos');
+      const thEntrada = document.getElementById('empleado-th-entrada');
+      const thSalida = document.getElementById('empleado-th-salida');
+      
+      const tdTurnosFooter = document.querySelectorAll('.td-turnos-footer');
+      const tdEntradaFooter = document.querySelectorAll('.td-entrada-footer');
+      const tdSalidaFooter = document.querySelectorAll('.td-salida-footer');
+      
+      if (modoTurnos) {
+        if (thTurnos) thTurnos.style.display = '';
+        if (thEntrada) thEntrada.style.display = 'none';
+        if (thSalida) thSalida.style.display = 'none';
+        tdTurnosFooter.forEach(td => (td as HTMLElement).style.display = '');
+        tdEntradaFooter.forEach(td => (td as HTMLElement).style.display = 'none');
+        tdSalidaFooter.forEach(td => (td as HTMLElement).style.display = 'none');
+      } else {
+        if (thTurnos) thTurnos.style.display = 'none';
+        if (thEntrada) thEntrada.style.display = '';
+        if (thSalida) thSalida.style.display = '';
+        tdTurnosFooter.forEach(td => (td as HTMLElement).style.display = 'none');
+        tdEntradaFooter.forEach(td => (td as HTMLElement).style.display = '');
+        tdSalidaFooter.forEach(td => (td as HTMLElement).style.display = '');
       }
 
       // Cargar días del mes completo
@@ -1097,15 +1132,32 @@ export const TableroEmpleadosHandler = {
       );
 
       // Calcular totales
+      const sumaHorasExtras = dias.reduce((sum, dia) => sum + (dia.horas_extras || 0), 0);
       const sumaHorasTrabajadas = dias.reduce((sum, dia) => sum + (dia.horas_trabajadas || 0), 0);
+      const sumaHorasRegulares = modoTurnos ? (sumaHorasTrabajadas - sumaHorasExtras) : sumaHorasTrabajadas;
       const sumaHorasReales = dias.reduce((sum, dia) => sum + (dia.horas_reales || 0), 0);
 
       // Renderizar días (ahora editable en el modal también)
       tbody.innerHTML = this.renderDiasEmpleado(dias, mostrarHorasReales, true);
 
-      // Actualizar totales
+      // Aplicar visibilidad a las celdas del tbody según el modo
+      const tdTurnosBody = tbody.querySelectorAll('.td-turnos');
+      const tdEntradaBody = tbody.querySelectorAll('.td-entrada');
+      const tdSalidaBody = tbody.querySelectorAll('.td-salida');
+      
+      if (modoTurnos) {
+        tdTurnosBody.forEach(td => (td as HTMLElement).style.display = '');
+        tdEntradaBody.forEach(td => (td as HTMLElement).style.display = 'none');
+        tdSalidaBody.forEach(td => (td as HTMLElement).style.display = 'none');
+      } else {
+        tdTurnosBody.forEach(td => (td as HTMLElement).style.display = 'none');
+        tdEntradaBody.forEach(td => (td as HTMLElement).style.display = '');
+        tdSalidaBody.forEach(td => (td as HTMLElement).style.display = '');
+      }
+
+      // Actualizar totales (mostrar horas regulares, sin extras)
       if (totalTrabajadas) {
-        totalTrabajadas.textContent = horasAFormato(sumaHorasTrabajadas);
+        totalTrabajadas.textContent = horasAFormato(sumaHorasRegulares);
       }
       if (totalReales) {
         totalReales.textContent = horasAFormato(sumaHorasReales);

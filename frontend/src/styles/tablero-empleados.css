@@ -584,28 +584,29 @@
 /* Botón Ver/Agregar Turnos */
 .btn-ver-turnos {
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.25) 0%, rgba(251, 146, 60, 0.35) 100%);
+  color: #fb923c;
+  border: 1.5px solid rgba(251, 146, 60, 0.5);
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 3px 10px rgba(251, 146, 60, 0.25);
   white-space: nowrap;
   font-family: inherit;
 }
 
 .btn-ver-turnos:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-  background: linear-gradient(135deg, #7c8ef7 0%, #8a5cb5 100%);
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.35) 0%, rgba(251, 146, 60, 0.45) 100%);
+  border-color: rgba(251, 146, 60, 0.7);
+  box-shadow: 0 4px 12px rgba(251, 146, 60, 0.35);
+  transform: translateY(-1px);
 }
 
 .btn-ver-turnos:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(251, 146, 60, 0.3);
 }
 
 .td-turnos {

@@ -202,23 +202,25 @@ const pageTitle = "Tablero de Empleados";
                     <tr>
                       <th>Fecha</th>
                       <th>Día</th>
-                      <th>Entrada</th>
-                      <th>Salida</th>
+                      <th id="empleado-th-turnos" style="display: none;">Turnos</th>
+                      <th id="empleado-th-entrada">Entrada</th>
+                      <th id="empleado-th-salida">Salida</th>
                       <th>Horas Trabajadas</th>
                       <th id="empleado-th-horas-reales">Horas Reales</th>
                     </tr>
                   </thead>
                   <tbody id="empleado-mes-dias-tbody">
                     <tr class="loading-row">
-                      <td colspan="6" class="text-center">Cargando días...</td>
+                      <td colspan="7" class="text-center">Cargando días...</td>
                     </tr>
                   </tbody>
                   <tfoot>
                     <tr class="totals-row">
                       <td><strong>Total del Mes:</strong></td>
                       <td></td>
-                      <td></td>
-                      <td></td>
+                      <td class="td-turnos-footer" style="display: none;"></td>
+                      <td class="td-entrada-footer"></td>
+                      <td class="td-salida-footer"></td>
                       <td
                         ><strong id="empleado-mes-total-trabajadas"
                           >00:00</strong

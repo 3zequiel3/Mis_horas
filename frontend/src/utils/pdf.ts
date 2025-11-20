@@ -361,7 +361,22 @@ export async function generateEmpleadoPDF(
 
       // Crear tabla con drawTableEmpleado (versión personalizada con colores)
       const modoTurnos = proyecto.modo_horarios === 'turnos';
-      currentY = drawTableEmpleado(pdf, dias, margin, currentY, totalFormato, dias.length, modoTurnos);
+      
+      // Calcular totales
+      let totalHorasExtras = 0;
+      let totalHorasRegulares = totalHorasNum; // Por defecto es el total completo
+      
+      if (modoTurnos) {
+        dias.forEach((dia) => {
+          totalHorasExtras += dia.horas_extras || 0;
+        });
+        // Total regulares = total - extras
+        totalHorasRegulares = totalHorasNum - totalHorasExtras;
+      }
+      
+      const totalRegularesFormato = horasAFormato(totalHorasRegulares);
+      
+      currentY = drawTableEmpleado(pdf, dias, margin, currentY, totalRegularesFormato, dias.length, modoTurnos, totalHorasExtras);
     }
 
     // ==================== FOOTER ====================
@@ -408,10 +423,11 @@ function drawTableEmpleado(
   startY: number,
   totalFormato: string,
   totalDias: number,
-  modoTurnos: boolean = false
+  modoTurnos: boolean = false,
+  totalHorasExtras: number = 0
 ): number {
   const headers = modoTurnos
-    ? ['Día', 'Fecha', 'M.Entrada', 'M.Salida', 'T.Entrada', 'T.Salida', 'Extras', 'Total']
+    ? ['Día', 'Fecha', 'Turno Mañana', 'Turno Tarde', 'Extras', 'Total']
     : ['Día', 'Fecha', 'Entrada', 'Salida', 'Horas Trabajadas'];
 
   // Calcular ancho disponible
@@ -475,21 +491,25 @@ function drawTableEmpleado(
 
     let row: string[];
     if (modoTurnos) {
-      // Modo turnos: 8 columnas
+      // Modo turnos: 6 columnas con formato "HH:MM - HH:MM"
       const mananaEntrada = dia.turno_manana_entrada || '--:--';
       const mananaSalida = dia.turno_manana_salida || '--:--';
+      const turnoManana = `${mananaEntrada} - ${mananaSalida}`;
+      
       const tardeEntrada = dia.turno_tarde_entrada || '--:--';
       const tardeSalida = dia.turno_tarde_salida || '--:--';
+      const turnoTarde = `${tardeEntrada} - ${tardeSalida}`;
+      
       const extras = dia.horas_extras ? horasAFormato(dia.horas_extras) : '--:--';
-      const total = dia.horas_trabajadas ? horasAFormato(dia.horas_trabajadas) : '--:--';
+      // Total = horas trabajadas SIN extras (horas regulares)
+      const horasRegulares = (dia.horas_trabajadas || 0) - (dia.horas_extras || 0);
+      const total = horasRegulares > 0 ? horasAFormato(horasRegulares) : '--:--';
 
       row = [
         dia.dia_semana || '-',
         fechaStr,
-        mananaEntrada,
-        mananaSalida,
-        tardeEntrada,
-        tardeSalida,
+        turnoManana,
+        turnoTarde,
         extras,
         total,
       ];
@@ -620,8 +640,9 @@ function drawTableEmpleado(
   // ========== FILA DE TOTALES (DENTRO DE LA TABLA) ==========
   const totalHeight = 10;
 
-  // Verificar si cabe en la página actual
-  if (currentY + totalHeight > pageBottom) {
+  // Verificar si cabe en la página actual (considerar espacio para 2 filas si hay extras en turnos)
+  const espacioNecesario = (modoTurnos && totalHorasExtras > 0) ? totalHeight * 2 : totalHeight;
+  if (currentY + espacioNecesario > pageBottom) {
     pdf.addPage();
     pdf.setFillColor(17, 21, 29); // #11151D
     pdf.rect(0, 0, pageWidth, pageHeight, 'F');
@@ -634,10 +655,10 @@ function drawTableEmpleado(
   let totalValueIndex: number;
 
   if (modoTurnos) {
-    // Modo turnos: combinar Día + Fecha + M.Entrada + M.Salida + T.Entrada + T.Salida + Extras = 7 columnas
-    totalLabelWidth = columnWidths[0] + columnWidths[1] + columnWidths[2] + columnWidths[3] + columnWidths[4] + columnWidths[5] + columnWidths[6];
-    totalValueWidth = columnWidths[7]; // Total
-    totalValueIndex = 7;
+    // Modo turnos: combinar Día + Fecha + Turno Mañana + Turno Tarde + Extras = 5 columnas
+    totalLabelWidth = columnWidths[0] + columnWidths[1] + columnWidths[2] + columnWidths[3] + columnWidths[4];
+    totalValueWidth = columnWidths[5]; // Total
+    totalValueIndex = 5;
   } else {
     // Modo corrido: combinar Día + Fecha + Entrada + Salida = 4 columnas
     totalLabelWidth = columnWidths[0] + columnWidths[1] + columnWidths[2] + columnWidths[3];
@@ -645,6 +666,7 @@ function drawTableEmpleado(
     totalValueIndex = 4;
   }
 
+  // FILA 1: Total Horas (regulares, sin extras en modo turnos)
   pdf.setFillColor(5, 46, 22); // Verde oscuro
   pdf.rect(startX, currentY, totalLabelWidth, totalHeight, 'F');
   pdf.setDrawColor(34, 197, 94); // Verde claro para borde
@@ -654,11 +676,12 @@ function drawTableEmpleado(
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(8);
   pdf.setTextColor(34, 197, 94); // Verde claro
-  pdf.text('Total', startX + totalLabelWidth / 2, currentY + totalHeight / 2 + 1.5, {
+  const labelTotal = (modoTurnos && totalHorasExtras > 0) ? 'Total Horas' : 'Total';
+  pdf.text(labelTotal, startX + totalLabelWidth / 2, currentY + totalHeight / 2 + 1.5, {
     align: 'center',
   });
 
-  // Segunda celda: Valor del total
+  // Segunda celda: Valor del total (horas regulares en modo turnos)
   const totalValueX = startX + totalLabelWidth;
   pdf.setFillColor(5, 46, 22);
   pdf.rect(totalValueX, currentY, totalValueWidth, totalHeight, 'F');
@@ -672,6 +695,38 @@ function drawTableEmpleado(
   });
 
   currentY += totalHeight;
+
+  // FILA 2: Total Horas Extras (solo si es modo turnos y hay extras)
+  if (modoTurnos && totalHorasExtras > 0) {
+    pdf.setFillColor(5, 46, 22); // Verde oscuro
+    pdf.rect(startX, currentY, totalLabelWidth, totalHeight, 'F');
+    pdf.setDrawColor(76, 175, 80); // Verde más claro para extras
+    pdf.setLineWidth(0.5);
+    pdf.rect(startX, currentY, totalLabelWidth, totalHeight);
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+    pdf.setTextColor(76, 175, 80); // Verde claro #4CAF50
+    pdf.text('Total Horas Extras', startX + totalLabelWidth / 2, currentY + totalHeight / 2 + 1.5, {
+      align: 'center',
+    });
+
+    // Segunda celda: Valor de horas extras
+    const extrasValueX = startX + totalLabelWidth;
+    pdf.setFillColor(5, 46, 22);
+    pdf.rect(extrasValueX, currentY, totalValueWidth, totalHeight, 'F');
+    pdf.setDrawColor(76, 175, 80);
+    pdf.rect(extrasValueX, currentY, totalValueWidth, totalHeight);
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(76, 175, 80);
+    const extrasFormato = horasAFormato(totalHorasExtras);
+    pdf.text(extrasFormato, extrasValueX + totalValueWidth / 2, currentY + totalHeight / 2 + 1.5, {
+      align: 'center',
+    });
+
+    currentY += totalHeight;
+  }
 
   return currentY;
 }
