@@ -18,7 +18,7 @@ interface TableroEmpleadosState {
   usuarioActual: Usuario | null;
 }
 
-export const TableroEmpleadosHandler= {
+export const TableroEmpleadosHandler = {
   state: {
     proyectoActual: null as Proyecto | null,
     empleados: [] as Empleado[],
@@ -27,7 +27,7 @@ export const TableroEmpleadosHandler= {
     semanaInicio: new Date(),
     usuarioActual: null as Usuario | null,
   },
-  
+
   // Mantener referencias de los handlers
   acordeonHandler: null as ((e: Event) => void) | null,
   blurHandler: null as ((e: Event) => void) | null,
@@ -139,7 +139,7 @@ export const TableroEmpleadosHandler= {
     // Calcular total de horas sumando de todos los empleados
     if (totalHorasEl && this.state.proyectoActual) {
       let totalHoras = 0;
-      
+
       for (const empleado of this.state.empleados) {
         const dias = await DiaService.getDiasMes(
           this.state.proyectoActual.id,
@@ -149,7 +149,7 @@ export const TableroEmpleadosHandler= {
         );
         totalHoras += dias.reduce((sum: number, dia: any) => sum + (dia.horas_trabajadas || 0), 0);
       }
-      
+
       totalHorasEl.textContent = horasAFormato(totalHoras);
     }
   },
@@ -211,13 +211,17 @@ export const TableroEmpleadosHandler= {
   getSemanActual(): string[] {
     const hoy = new Date();
     const semana: string[] = [];
-    
+
     for (let i = 0; i < 7; i++) {
       const fecha = new Date(hoy);
       fecha.setDate(hoy.getDate() + i);
-      semana.push(fecha.toISOString().split('T')[0]);
+
+      const year = fecha.getFullYear();
+      const month = String(fecha.getMonth() + 1).padStart(2, '0');
+      const day = String(fecha.getDate()).padStart(2, '0');
+      semana.push(`${year}-${month}-${day}`);
     }
-    
+
     return semana;
   },
 
@@ -258,7 +262,7 @@ export const TableroEmpleadosHandler= {
       for (let i = 0; i < empleados.length; i++) {
         const empleado = empleados[i];
         const isFirst = false; // Todos cerrados por defecto
-        
+
         const diasEmpleado = await DiaService.getDiasMes(
           this.state.proyectoActual.id,
           this.state.anioActual,
@@ -348,19 +352,19 @@ export const TableroEmpleadosHandler= {
       this.acordeonHandler = (e: Event) => {
         const target = e.target as HTMLElement;
         const header = target.closest('.empleado-accordion-header') as HTMLElement;
-        
+
         if (header) {
           e.stopPropagation();
           const empleadoId = header.getAttribute('data-empleado-accordion');
-          
+
           if (!empleadoId) return;
-          
+
           // Toggle del acordeón clickeado
           const content = document.querySelector(`[data-empleado-content="${empleadoId}"]`) as HTMLElement;
-          
+
           if (content) {
             const isActive = header.classList.contains('active');
-            
+
             if (isActive) {
               header.classList.remove('active');
               content.classList.remove('active');
@@ -375,12 +379,12 @@ export const TableroEmpleadosHandler= {
       // Handler para change de inputs (hora entrada o salida)
       this.blurHandler = async (e: Event) => {
         const target = e.target as HTMLElement;
-        
+
         // Si es input de hora entrada o salida
         if (target.classList.contains('hora-entrada-input') || target.classList.contains('hora-salida-input')) {
           const input = target as HTMLInputElement;
           const diaId = parseInt(input.dataset.diaId || '0');
-          
+
           if (!diaId) return;
 
           // Buscar la fila para obtener ambos valores
@@ -404,13 +408,13 @@ export const TableroEmpleadosHandler= {
               }
 
               const diaActualizado = await DiaService.updateHorarios(diaId, horaEntrada, horaSalida);
-              
+
               // Actualizar solo el valor de las horas en el DOM sin recargar todo
               if (horasCell && diaActualizado.horas_trabajadas !== undefined) {
                 horasCell.classList.remove('calculating', 'horas-pendiente');
                 horasCell.textContent = horasAFormato(diaActualizado.horas_trabajadas);
               }
-              
+
               // Actualizar totales del empleado sin recargar todo
               const empleadoSection = target.closest('.empleado-section');
               if (empleadoSection) {
@@ -426,9 +430,9 @@ export const TableroEmpleadosHandler= {
                     }
                   }
                 });
-                
+
                 const horasFormateadas = horasAFormato(totalHoras);
-                
+
                 // Actualizar badge en el header del acordeón
                 const badgeEl = empleadoSection.querySelector('.empleado-hours-badge') as HTMLElement;
                 if (badgeEl) {
@@ -438,14 +442,14 @@ export const TableroEmpleadosHandler= {
                   badgeEl.offsetHeight; // Trigger reflow
                   badgeEl.style.display = '';
                 }
-                
+
                 // Actualizar total en el footer de la tabla
                 const footerTotalEl = empleadoSection.querySelector('tfoot td:nth-child(5) strong') as HTMLElement;
                 if (footerTotalEl) {
                   footerTotalEl.textContent = horasFormateadas;
                 }
               }
-              
+
               // Actualizar estilos de la fila según tenga horas o no
               if (row && diaActualizado.horas_trabajadas !== undefined) {
                 if (diaActualizado.horas_trabajadas > 0) {
@@ -456,10 +460,10 @@ export const TableroEmpleadosHandler= {
                   row.classList.add('sin-horas');
                 }
               }
-              
+
               // Actualizar estadísticas globales
               await this.updateTableroStats();
-              
+
             } catch (error) {
               console.error('❌ Error actualizando horarios:', error);
               // Restaurar estado visual en caso de error
@@ -507,11 +511,11 @@ export const TableroEmpleadosHandler= {
       const horasReales = horasAFormato(dia.horas_reales || 0);
       const horaEntrada = dia.hora_entrada || '';
       const horaSalida = dia.hora_salida || '';
-      
+
       // Indicador visual si las horas están completas
       const tieneHorarios = horaEntrada && horaSalida;
       const horasClass = tieneHorarios ? 'horas-calculadas' : 'horas-calculadas horas-pendiente';
-      
+
       // Clase para estilo de fila según tenga horas o no
       const rowClass = (dia.horas_trabajadas || 0) > 0 ? 'con-horas' : 'sin-horas';
 
@@ -588,7 +592,7 @@ export const TableroEmpleadosHandler= {
       });
 
       if (!periodo && periodo !== false) return; // Cancelado
-      
+
       const esSemana = periodo === true; // true = confirmButton (Semana), false = denyButton (Mes)
 
       // Mostrar loading
@@ -710,7 +714,7 @@ export const TableroEmpleadosHandler= {
           this.state.proyectoActual.id,
           { horas_reales_activas: formValues.horas_reales_activas }
         );
-        
+
         await Swal.fire({
           icon: 'success',
           title: 'Configuración actualizada',
@@ -763,7 +767,7 @@ export const TableroEmpleadosHandler= {
     if (nuevoNombre && nuevoNombre.trim() !== nombreActual) {
       try {
         await EmpleadosService.updateEmpleado(empleadoId, { nombre: nuevoNombre.trim() });
-        
+
         Swal.fire({
           icon: 'success',
           title: 'Empleado actualizado',
@@ -814,7 +818,7 @@ export const TableroEmpleadosHandler= {
     if (result.isConfirmed) {
       try {
         await EmpleadosService.deleteEmpleado(empleadoId);
-        
+
         Swal.fire({
           icon: 'success',
           title: 'Empleado eliminado',
@@ -851,10 +855,10 @@ export const TableroEmpleadosHandler= {
 
       const { TareaService } = await import('../services/tarea');
       const tareas = await TareaService.getTareasProyecto(this.state.proyectoActual.id);
-      
+
       const tareasList = document.getElementById('tareas-list');
       const tareasCount = document.getElementById('tareas-count');
-      
+
       if (!tareasList) return;
 
       if (tareasCount) {
@@ -884,7 +888,7 @@ export const TableroEmpleadosHandler= {
           if ((e as PointerEvent).detail === 1) {
             const tareaId = parseInt(element.getAttribute('data-tarea-id') || '0');
             const tarea = tareas.find((t: any) => t.id === tareaId);
-            
+
             if (tarea) {
               // Disparar evento personalizado para que sea manejado en el .astro
               const event = new CustomEvent('view-tarea-empleados', { detail: { tarea } });
@@ -959,13 +963,13 @@ export const TableroEmpleadosHandler= {
       // Agregar event listeners para los inputs del modal (usar 'change' en lugar de 'blur')
       const modalChangeHandler = async (e: Event) => {
         const target = e.target as HTMLElement;
-        
+
         if (target.classList.contains('hora-entrada-input') || target.classList.contains('hora-salida-input')) {
           const input = target as HTMLInputElement;
           const diaId = parseInt(input.dataset.diaId || '0');
-          
+
           console.log('🕐 [Modal] Detectado cambio en input de tiempo:', { diaId, value: input.value });
-          
+
           if (!diaId) return;
 
           const row = input.closest('tr');
@@ -983,16 +987,16 @@ export const TableroEmpleadosHandler= {
           if (horaEntrada && horaSalida) {
             try {
               console.log('✅ [Modal] Ambos valores presentes, calculando...');
-              
+
               if (horasCell) {
                 horasCell.classList.add('calculating');
                 horasCell.innerHTML = '<span style="opacity: 0.6;">⏳ Calculando...</span>';
               }
 
               const diaActualizado = await DiaService.updateHorarios(diaId, horaEntrada, horaSalida);
-              
+
               console.log('✅ [Modal] Horarios actualizados correctamente:', diaActualizado);
-              
+
               // Actualizar solo el valor de las horas en el DOM sin recargar todo
               if (horasCell && diaActualizado.horas_trabajadas !== undefined) {
                 horasCell.classList.remove('calculating', 'horas-pendiente');
@@ -1003,14 +1007,14 @@ export const TableroEmpleadosHandler= {
               const filas = tbody.querySelectorAll('tr');
               let sumaTrabajadasActualizada = 0;
               let sumaRealesActualizada = 0;
-              
+
               filas.forEach(fila => {
                 const horasTrabajadas = (fila.querySelector('.horas-calculadas') as HTMLElement)?.textContent || '00:00';
                 const horasReales = (fila.querySelector('td:nth-child(6)') as HTMLElement)?.textContent || '00:00';
-                
+
                 const [ht, mt] = horasTrabajadas.split(':').map(Number);
                 const [hr, mr] = horasReales.split(':').map(Number);
-                
+
                 sumaTrabajadasActualizada += ht + (mt / 60);
                 sumaRealesActualizada += hr + (mr / 60);
               });
@@ -1026,7 +1030,7 @@ export const TableroEmpleadosHandler= {
                   totalHorasEl.textContent = horasAFormato(sumaTrabajadasActualizada);
                 }
               }
-              
+
               // Actualizar estadísticas globales
               await this.updateTableroStats();
             } catch (error) {

@@ -11,11 +11,11 @@ import { querySelector, querySelectorAll } from '../utils/dom';
 import { showErrorModal, showLoadingModal, closeModal } from '../utils/modals';
 import { MESES_ES, horasAFormato } from '../utils/formatters';
 import { formatearFechaCorta, formatearFechaSinAnio } from '../utils/date';
-import { 
-  debeUsarHorasReales, 
-  obtenerHorasAMostrar, 
+import {
+  debeUsarHorasReales,
+  obtenerHorasAMostrar,
   calcularHorasTarea as calcularHorasTareaUtil,
-  calcularTotalHoras 
+  calcularTotalHoras
 } from '../utils/hours';
 import { MultiSelectTable } from '../utils/multiselect';
 import Swal from 'sweetalert2';
@@ -75,19 +75,22 @@ function getSemanActual(): string[] {
   const hoy = new Date();
   const diaActual = hoy.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
   const diaInicioSemana = state.usuarioActual?.dia_inicio_semana || 0; // 0 = Domingo, 1 = Lunes
-  
+
   // Calcular el primer día de la semana
   let diasAtras = diaActual - diaInicioSemana;
   if (diasAtras < 0) {
     diasAtras += 7;
   }
-  
+
   const primDia = hoy.getDate() - diasAtras;
   const semana = [];
 
   for (let i = primDia; i <= primDia + 6; i++) {
     const fecha = new Date(hoy.getFullYear(), hoy.getMonth(), i);
-    semana.push(fecha.toISOString().split('T')[0]);
+    const year = fecha.getFullYear();
+    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+    const day = String(fecha.getDate()).padStart(2, '0');
+    semana.push(`${year}-${month}-${day}`);
   }
 
   return semana;
@@ -174,7 +177,7 @@ async function loadProyectoConEmpleados(): Promise<void> {
     for (let i = 0; i < empleados.length; i++) {
       const empleado = empleados[i];
       const isFirst = i === 0; // El primero estará abierto por defecto
-      
+
       const diasEmpleado = await DiaService.getDiasMes(
         state.proyectoActual.id,
         state.anioActual,
@@ -244,11 +247,11 @@ async function loadProyectoConEmpleados(): Promise<void> {
       header.addEventListener('click', (e) => {
         const target = e.currentTarget as HTMLElement;
         const empleadoId = target.dataset.empleadoAccordion;
-        
+
         // Toggle del acordeón clickeado
         const content = document.querySelector(`[data-empleado-content="${empleadoId}"]`) as HTMLElement;
         const isActive = target.classList.contains('active');
-        
+
         if (isActive) {
           target.classList.remove('active');
           content.classList.remove('active');
@@ -352,13 +355,13 @@ async function exportarPDFEmpleado(empleadoId: number, empleadoNombre: string): 
 
     // Obtener tareas (filtrar por días del empleado)
     const todasTareas = await TareaService.getTareasProyecto(state.proyectoActual!.id);
-    const tareasEmpleado = todasTareas.filter(tarea => 
+    const tareasEmpleado = todasTareas.filter(tarea =>
       tarea.dias && tarea.dias.some((dia: Dia) => dia.empleado_id === empleadoId)
     );
 
     const { generatePDFFromTemplate } = await import('../utils/pdf');
     const mes = MESES_ES[state.mesActual as keyof typeof MESES_ES] || `Mes ${state.mesActual}`;
-    
+
     await generatePDFFromTemplate(
       `${state.proyectoActual!.nombre} - ${empleadoNombre}`,
       mes,
@@ -387,11 +390,11 @@ function getMesStatus(): 'futuro' | 'activo' | 'pasado' {
 
   if (state.anioActual > anioActual) return 'futuro';
   if (state.anioActual < anioActual) return 'pasado';
-  
+
   // Mismo año
   if (state.mesActual > mesActual) return 'futuro';
   if (state.mesActual < mesActual) return 'pasado';
-  
+
   return 'activo';
 }
 
@@ -420,11 +423,11 @@ export async function loadDias(): Promise<void> {
     if (mesStatus !== 'activo') {
       // Mostrar mensaje en lugar de tabla
       const esFuturo = mesStatus === 'futuro';
-      const mensaje = esFuturo 
-        ? 'Mes aún no iniciado' 
+      const mensaje = esFuturo
+        ? 'Mes aún no iniciado'
         : 'Mes terminado';
       const icono = esFuturo ? '📅' : '✓';
-      
+
       const html = `
         <tr>
           <td colspan="4" class="mes-message-row">
@@ -438,7 +441,7 @@ export async function loadDias(): Promise<void> {
 
       if (diasTbody) diasTbody.innerHTML = html;
       if (mesDiasTbody) mesDiasTbody.innerHTML = html;
-      
+
       // Ocultar totales cuando el mes no está activo
       toggleTotalsRow(false);
       return;
@@ -545,10 +548,10 @@ function renderTablaDias(
     totalReales += horasAMostrar;
 
     const row = document.createElement('tr');
-    
+
     // Agregar data-dia-id para multi-select
     row.setAttribute('data-dia-id', dia.id.toString());
-    
+
     // Agregar clase según las horas trabajadas
     if ((dia.horas_trabajadas || 0) === 0) {
       row.classList.add('dia-sin-horas');
@@ -591,7 +594,7 @@ function renderTablaDias(
 
   // Actualizar totales
   updateTotals(totalTrabId, totalRealId, totalTrabajadas, totalReales);
-  
+
   // Refrescar multi-select si está activo
   if (tbodyId === 'dias-tbody' && state.multiSelectSemanal) {
     state.multiSelectSemanal.refresh();
@@ -664,11 +667,11 @@ function updateProjectHeader(): void {
   const statusEl = querySelector<HTMLElement>('#proyecto-status');
 
   if (nombreEl) nombreEl.textContent = state.proyectoActual.nombre;
-  
+
   if (periodoEl) {
     periodoEl.textContent = `${MESES_ES[state.proyectoActual.mes as keyof typeof MESES_ES]} ${state.proyectoActual.anio}`;
   }
-  
+
   if (statusEl) {
     statusEl.className = `badge ${state.proyectoActual.activo ? 'badge-active' : 'badge-inactive'}`;
     statusEl.textContent = state.proyectoActual.activo ? '✓ Activo' : '✗ Inactivo';
@@ -714,7 +717,7 @@ async function updateHoras(diaId: number, horasStr: string): Promise<void> {
     await DiaService.updateHoras(diaId, horasStr);
     await loadDias();
     updateTotalPanel();
-    
+
     // Recargar tareas para reflejar recálculo automático del backend
     await loadTareas();
   } catch (error) {
@@ -770,7 +773,7 @@ function createSelectionHeaderControls(sectionId: string): HTMLElement {
   const controls = document.createElement('div');
   controls.className = 'selection-header-controls';
   controls.id = `${sectionId}-selection-controls`;
-  
+
   controls.innerHTML = `
     <div class="selection-info">
       <span class="selection-count" id="${sectionId}-selection-count">0 días seleccionados</span>
@@ -784,7 +787,7 @@ function createSelectionHeaderControls(sectionId: string): HTMLElement {
       </button>
     </div>
   `;
-  
+
   return controls;
 }
 
@@ -794,7 +797,7 @@ function createSelectionHeaderControls(sectionId: string): HTMLElement {
 function toggleSelectionControls(sectionId: string, isActive: boolean): void {
   const controls = querySelector<HTMLElement>(`#${sectionId}-selection-controls`);
   const title = querySelector<HTMLElement>(`#${sectionId}-title`);
-  
+
   if (controls) {
     if (isActive) {
       controls.classList.add('active');
@@ -831,7 +834,7 @@ function updateSelectionCount(sectionId: string, selectedIds: Set<number>): void
     const count = selectedIds.size;
     countEl.textContent = `${count} día${count !== 1 ? 's' : ''} seleccionado${count !== 1 ? 's' : ''}`;
   }
-  
+
   const btnCreateTask = querySelector<HTMLButtonElement>(`#${sectionId}-btn-create-task`);
   if (btnCreateTask) {
     btnCreateTask.disabled = selectedIds.size === 0;
@@ -870,7 +873,7 @@ function initMultiSelectForTable(
   if (btnCreateTask) {
     btnCreateTask.addEventListener('click', () => {
       const selectedIds = instance.getSelectedIds();
-      
+
       // Disparar evento para abrir modal de crear tarea con días pre-seleccionados
       const event = new CustomEvent('create-tarea-with-dias', {
         detail: { diaIds: selectedIds }
@@ -906,23 +909,23 @@ export function initMultiSelect(): void {
       // Crear wrapper para el header
       const headerWrapper = document.createElement('div');
       headerWrapper.className = 'section-header';
-      
+
       // Agregar ID al título
       h2.id = 'semana-section-title';
-      
+
       // Crear controles
       const controls = createSelectionHeaderControls('semana-section');
-      
+
       // Insertar antes del h2 actual
       h2.parentNode!.insertBefore(headerWrapper, h2);
       headerWrapper.appendChild(h2);
       headerWrapper.appendChild(controls);
-      
+
       // Inicializar multi-select para tabla semanal
       state.multiSelectSemanal = initMultiSelectForTable('dias-table', 'semana-section', state.multiSelectSemanal);
     }
   }
-  
+
   // Inicializar multi-select para tabla mensual (modal)
   // Los controles ya están en el HTML del modal
   state.multiSelectMensual = initMultiSelectForTable('mes-dias-table', 'mes-section', state.multiSelectMensual);
@@ -986,7 +989,7 @@ async function mostrarModalConfiguracion(): Promise<void> {
         state.proyectoActual.id,
         { horas_reales_activas: formValues.horas_reales_activas }
       );
-      
+
       await Swal.fire({
         icon: 'success',
         title: 'Configuración actualizada',
