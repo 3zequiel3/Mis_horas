@@ -58,7 +58,6 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 
-
 # Logs
 *.log
 logs/
@@ -109,7 +108,11 @@ data/*.json
 # config.local.py
 # development.ini
 
+# Data y backups
 data/*
+migrations/
+backups/
 
+# Scripts y SQL
 *.sh
 *.sql
