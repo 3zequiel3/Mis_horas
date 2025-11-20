@@ -1,9 +1,10 @@
 import { defineConfig } from 'astro/config';
 import node from '@astrojs/node';
 import dotenv from 'dotenv';
+import path from 'path';
 
-// Cargar variables del .env
-dotenv.config();
+// Cargar variables del .env desde la raíz del proyecto (un nivel arriba)
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 
 export default defineConfig({
   output: 'server',
@@ -18,11 +19,11 @@ export default defineConfig({
     ssr: {
       external: ['fsevents']
     },
+    envDir: path.resolve(process.cwd(), '..'),
     define: {
-      // URLs diferentes para SSR (servidor) y cliente
-      'import.meta.env.VITE_API_URL_SERVER': JSON.stringify(process.env.VITE_API_URL || 'http://mis_horas_backend:5000'),
-      // Usar window.location.hostname para adaptar automáticamente al host actual
-      'import.meta.env.VITE_API_URL_CLIENT': JSON.stringify('__DYNAMIC__')
+      // Exponer las variables de entorno para el cliente
+      'import.meta.env.VITE_API_URL_SERVER': JSON.stringify(process.env.VITE_API_URL_SERVER),
+      'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL)
     }
   }
 });

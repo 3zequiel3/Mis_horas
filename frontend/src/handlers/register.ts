@@ -40,10 +40,10 @@ export const RegisterHandler = {
         return false;
       }
 
-      // Registrar
+      // Registrar (ahora devuelve token y auto-inicia sesión)
       await AuthService.register(username, email, password, nombre_completo);
 
-      // Mostrar éxito y redirigir
+      // Mostrar éxito y redirigir al dashboard
       this.mostrarMensajeExito();
       return true;
     } catch (error) {
@@ -54,17 +54,17 @@ export const RegisterHandler = {
     }
   },
 
-  // Muestra mensaje de éxito y redirige al login
+  // Muestra mensaje de éxito y redirige al dashboard (sesión iniciada)
   mostrarMensajeExito() {
     const successDiv = document.getElementById('success-message');
     if (successDiv) {
-      successDiv.textContent = '✅ Cuenta creada exitosamente. Redirigiendo al login...';
+      successDiv.textContent = '✅ Cuenta creada exitosamente. Redirigiendo...';
       successDiv.style.display = 'block';
     }
 
-    // Redirigir después de 1.5s
+    // Redirigir al dashboard después de 1.5s
     setTimeout(() => {
-      window.location.href = '/login';
+      window.location.href = '/dashboard';
     }, 1500);
   },
 

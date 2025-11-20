@@ -84,6 +84,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV}
       VITE_API_URL: ${VITE_API_URL}
+      VITE_API_URL_SERVER: ${VITE_API_URL_SERVER}
     depends_on:
       - backend
     networks:

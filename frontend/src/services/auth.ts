@@ -165,7 +165,7 @@ export class AuthService {
     email: string,
     password: string,
     nombre_completo?: string
-  ): Promise<{ usuario: Usuario }> {
+  ): Promise<AuthResponse> {
     const response = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -178,7 +178,13 @@ export class AuthService {
       throw new Error(error.error || 'Error en el registro');
     }
 
-    return response.json();
+    const data: AuthResponse = await response.json();
+    
+    // Auto-login: guardar token sin remember_me (sesión temporal)
+    this.setToken(data.access_token, false);
+    setStorageItem(this.USER_STORAGE, JSON.stringify(data.usuario));
+
+    return data;
   }
 
   static async login(
