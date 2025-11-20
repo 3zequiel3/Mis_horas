@@ -110,3 +110,6 @@ data/*.json
 # development.ini
 
 data/*
+
+*.sh
+*.sql
