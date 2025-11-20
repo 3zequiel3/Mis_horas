@@ -57,9 +57,7 @@ Thumbs.db
 *.db
 *.sqlite
 *.sqlite3
-*.sql
-# Docker
-.dockerignore
+
 
 # Logs
 *.log

@@ -1,0 +1,63 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+.npm
+.eslintcache
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv
+*.egg-info
+dist
+build
+.pytest_cache
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Misc
+.env.local
+.env.*.local
+*.log
+*.pid
+*.seed
+.cache
+.next
+.nuxt
+dist
+coverage
+
+# Testing
+.nyc_output
+coverage
+test
+tests
+cypress
+.jest
+
+# Build
+.next
+dist
+build
