@@ -87,6 +87,8 @@ export function renderBotonesAccion(config: {
   verUrl?: string;
   editarOnClick?: string;
   eliminarOnClick?: string;
+  desactivarOnClick?: string;
+  activo?: boolean;
   customButtons?: string;
 }): string {
   const buttons: string[] = [];
@@ -99,7 +101,15 @@ export function renderBotonesAccion(config: {
     buttons.push(`<button class="btn-sm btn-primary" onclick="${config.editarOnClick}">✏️ Editar</button>`);
   }
   
-  if (config.eliminarOnClick) {
+  // Mostrar Desactivar si está activo, o Eliminar si está inactivo
+  if (config.desactivarOnClick !== undefined && config.activo !== undefined) {
+    if (config.activo) {
+      buttons.push(`<button class="btn-sm btn-warning" onclick="${config.desactivarOnClick}">⏸️ Desactivar</button>`);
+    } else {
+      buttons.push(`<button class="btn-sm btn-danger" onclick="${config.desactivarOnClick}">🗑️ Eliminar</button>`);
+    }
+  } else if (config.eliminarOnClick) {
+    // Fallback para compatibilidad con código existente
     buttons.push(`<button class="btn-sm btn-danger" onclick="${config.eliminarOnClick}">🗑️ Eliminar</button>`);
   }
   

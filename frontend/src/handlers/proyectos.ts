@@ -60,7 +60,8 @@ function renderTableView(): void {
       <td>${formatearFechaSegura(p.fecha_creacion)}</td>
       <td>${renderBotonesAccion({
         verUrl: url,
-        eliminarOnClick: `window.proyectosHandlers.deleteProyecto(${p.id})`
+        desactivarOnClick: `window.proyectosHandlers.deleteProyecto(${p.id}, ${p.activo})`,
+        activo: p.activo
       })}</td>
     </tr>
   `;
@@ -80,6 +81,8 @@ function renderCardsView(): void {
     .map(
       (p) => {
         const url = p.tipo_proyecto === 'empleados' ? `/tablero-empleados/${p.id}` : `/proyecto/${p.id}`;
+        const btnText = p.activo ? '⏸️ Desactivar' : '🗑️ Eliminar';
+        const btnClass = p.activo ? 'btn-warning' : 'btn-danger';
         return `
     <div class="proyecto-card" onclick="if(window.innerWidth > 768) window.location.href='${url}'">
       <h3>${p.nombre}</h3>
@@ -103,7 +106,7 @@ function renderCardsView(): void {
       <div class="proyecto-card-footer">
         <div class="proyecto-card-actions">
           <a href="${url}" class="btn-sm" onclick="event.stopPropagation()">👁️ Ver</a>
-          <button class="btn-sm btn-danger" onclick="event.stopPropagation(); window.proyectosHandlers.deleteProyecto(${p.id})">🗑️ Eliminar</button>
+          <button class="btn-sm ${btnClass}" onclick="event.stopPropagation(); window.proyectosHandlers.deleteProyecto(${p.id}, ${p.activo})">${btnText}</button>
         </div>
       </div>
     </div>
@@ -146,40 +149,58 @@ export function initializeTabs(): void {
 }
 
 /**
- * Elimina un proyecto con confirmación
+ * Desactiva o elimina un proyecto según su estado
  */
-export async function deleteProyecto(id: number): Promise<void> {
+export async function deleteProyecto(id: number, activo: boolean): Promise<void> {
+  // Si está activo, desactivar. Si está inactivo, eliminar permanentemente
+  const isDelete = !activo;
+  
   const result = await Swal.fire({
-    title: '¿Eliminar proyecto?',
-    text: 'Esta acción no se puede deshacer',
+    title: isDelete ? '¿Eliminar proyecto?' : '¿Desactivar proyecto?',
+    text: isDelete ? 'Esta acción eliminará permanentemente el proyecto de la base de datos' : 'El proyecto será marcado como inactivo',
     icon: 'warning',
     showCancelButton: true,
     background: '#0f1419',
     color: '#c8c8c8',
     confirmButtonColor: '#ef4444',
     cancelButtonColor: '#2d3746',
-    confirmButtonText: 'Sí, eliminar',
+    confirmButtonText: isDelete ? 'Sí, eliminar' : 'Sí, desactivar',
     cancelButtonText: 'Cancelar',
     iconColor: '#f59e0b',
   });
 
   if (result.isConfirmed) {
     try {
-      await ProyectoService.cambiarEstado(id, false);
-      Swal.fire({
-        title: 'Desactivado',
-        text: 'Proyecto desactivado exitosamente',
-        icon: 'success',
-        background: '#0f1419',
-        color: '#c8c8c8',
-        confirmButtonColor: '#10b981',
-        iconColor: '#10b981',
-      });
+      if (isDelete) {
+        // Eliminar de la base de datos
+        await ProyectoService.deleteProyecto(id);
+        Swal.fire({
+          title: 'Eliminado',
+          text: 'Proyecto eliminado permanentemente',
+          icon: 'success',
+          background: '#0f1419',
+          color: '#c8c8c8',
+          confirmButtonColor: '#10b981',
+          iconColor: '#10b981',
+        });
+      } else {
+        // Solo desactivar
+        await ProyectoService.cambiarEstado(id, false);
+        Swal.fire({
+          title: 'Desactivado',
+          text: 'Proyecto desactivado exitosamente',
+          icon: 'success',
+          background: '#0f1419',
+          color: '#c8c8c8',
+          confirmButtonColor: '#10b981',
+          iconColor: '#10b981',
+        });
+      }
       await loadProyectos();
     } catch (error) {
       Swal.fire({
         title: 'Error',
-        text: 'No se pudo desactivar el proyecto',
+        text: isDelete ? 'No se pudo eliminar el proyecto' : 'No se pudo desactivar el proyecto',
         icon: 'error',
         background: '#0f1419',
         color: '#c8c8c8',

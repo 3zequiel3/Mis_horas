@@ -207,6 +207,17 @@
   border-color: rgba(244, 67, 54, 0.5);
 }
 
+.btn-sm.btn-warning {
+  background: rgba(255, 152, 0, 0.1);
+  border-color: rgba(255, 152, 0, 0.3);
+  color: #ff9800;
+}
+
+.btn-sm.btn-warning:hover {
+  background: rgba(255, 152, 0, 0.2);
+  border-color: rgba(255, 152, 0, 0.5);
+}
+
 /* Cards */
 .cards-container {
   display: grid;

@@ -253,15 +253,16 @@ class ProyectoService:
     
     @staticmethod
     def eliminar_proyecto(proyecto_id: int):
-        """Elimina un proyecto y sus días asociados"""
+        """Elimina un proyecto y todos sus datos asociados (días, tareas, empleados)"""
         proyecto = Proyecto.query.filter(Proyecto.id == proyecto_id).first()
         if not proyecto:
             return False
         
-        # Eliminar días del proyecto
-        Dia.query.filter(Dia.proyecto_id == proyecto_id).delete()
-        
-        # Eliminar proyecto
+        # SQLAlchemy automáticamente eliminará:
+        # - Días (cascade="all, delete-orphan")
+        # - Tareas (cascade="all, delete-orphan")
+        # - Empleados (cascade="all, delete-orphan")
+        # - Relaciones en tarea_dia (por la configuración de la tabla intermedia)
         db.session.delete(proyecto)
         db.session.commit()
         return True

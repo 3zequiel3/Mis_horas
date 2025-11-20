@@ -76,4 +76,11 @@ export class ProyectoService extends ApiService {
   ): Promise<Proyecto> {
     return this.put(`/api/proyectos/${proyecto_id}/configuracion`, data);
   }
+
+  /**
+   * Elimina un proyecto permanentemente
+   */
+  static async deleteProyecto(proyecto_id: number): Promise<void> {
+    return this.delete(`/api/proyectos/${proyecto_id}`);
+  }
 }
