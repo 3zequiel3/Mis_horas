@@ -5,6 +5,11 @@ Rutas para gestión de configuración de asistencia
 from flask import Blueprint, request, jsonify
 from app.decorators import token_required
 from app.utils.response import success_response, error_response
+from app.utils import (
+    obtener_o_crear_configuracion_asistencia,
+    verificar_permiso_proyecto,
+    validar_configuracion_horarios
+)
 from app.models import Proyecto, ConfiguracionAsistencia, Empleado
 from app import db
 from datetime import datetime
@@ -36,13 +41,8 @@ def obtener_configuracion(usuario_actual, proyecto_id):
             return error_response('No tienes permisos para ver la configuración de este proyecto', 403)
         
         # Buscar o crear configuración
-        config = ConfiguracionAsistencia.query.filter_by(proyecto_id=proyecto_id).first()
-        
-        if not config:
-            # Crear configuración por defecto
-            config = ConfiguracionAsistencia(proyecto_id=proyecto_id)
-            db.session.add(config)
-            db.session.commit()
+        config = obtener_o_crear_configuracion_asistencia(proyecto_id, db.session)
+        db.session.commit()
         
         return success_response(
             data={'configuracion': config.to_dict()}
@@ -159,20 +159,13 @@ def activar_modo_asistencia(usuario_actual, proyecto_id):
         if not proyecto or proyecto.usuario_id != usuario_actual['id']:
             return error_response('No tienes permisos para activar la asistencia en este proyecto', 403)
         
-        # Verificar que el proyecto tiene configuración de turnos
-        if not proyecto.modo_horarios or proyecto.modo_horarios == 'corrido':
-            if not proyecto.horario_inicio or not proyecto.horario_fin:
-                return error_response(
-                    'Debes configurar los horarios laborales del proyecto antes de activar la asistencia',
-                    400
-                )
+        # Validar que el proyecto tiene configuración de horarios
+        es_valido, mensaje_error = validar_configuracion_horarios(proyecto)
+        if not es_valido:
+            return error_response(mensaje_error, 400)
         
         # Buscar o crear configuración
-        config = ConfiguracionAsistencia.query.filter_by(proyecto_id=proyecto_id).first()
-        
-        if not config:
-            config = ConfiguracionAsistencia(proyecto_id=proyecto_id)
-            db.session.add(config)
+        config = obtener_o_crear_configuracion_asistencia(proyecto_id, db.session)
         
         config.modo_asistencia_activo = True
         db.session.commit()
@@ -196,10 +189,10 @@ def desactivar_modo_asistencia(usuario_actual, proyecto_id):
     try:
         
         proyecto = Proyecto.query.get(proyecto_id)
-        if not proyecto or proyecto.usuario_id != usuario_actual['id']:
+        if not proyecto or not verificar_permiso_proyecto(proyecto, usuario_actual['id']):
             return error_response('No tienes permisos para desactivar la asistencia en este proyecto', 403)
         
-        config = ConfiguracionAsistencia.query.filter_by(proyecto_id=proyecto_id).first()
+        config = obtener_o_crear_configuracion_asistencia(proyecto_id, db.session)
         
         if not config:
             return error_response('No existe configuración de asistencia para este proyecto', 404)

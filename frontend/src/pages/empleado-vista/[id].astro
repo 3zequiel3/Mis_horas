@@ -726,7 +726,6 @@ const pageTitle = "Mi Tablero";
       // Filtrar solo la semana actual si se solicita
       if (soloSemana) {
         const semanaFechas = getSemanActual();
-        console.log('📅 Fechas de la semana esperadas:', semanaFechas);
         
         dias = dias.filter((dia: any) => {
           // Normalizar fecha del día (manejar tanto formato ISO como string simple)
@@ -742,12 +741,8 @@ const pageTitle = "Mi Tablero";
             diaFecha = dia.fecha;
           }
           
-          const incluido = semanaFechas.includes(diaFecha);
-          console.log(`Día ${diaFecha}: ${incluido ? '✅ incluido' : '❌ excluido'}`);
-          return incluido;
+          return semanaFechas.includes(diaFecha);
         });
-        
-        console.log(`📊 Días filtrados: ${dias.length} de la semana actual`);
       }
       
       if (dias.length === 0) {

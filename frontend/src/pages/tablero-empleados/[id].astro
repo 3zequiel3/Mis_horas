@@ -358,9 +358,7 @@ const pageTitle = "Tablero de Empleados";
   // Función para verificar si el usuario actual es empleado (no admin) de este tablero
   async function verificarRolYRedirigir() {
     try {
-      console.log('🔍 Verificando rol del usuario...');
       const usuario = await AuthService.getCurrentUser();
-      console.log('👤 Usuario actual:', usuario);
       
       if (!usuario) {
         window.location.href = "/login";
@@ -369,30 +367,23 @@ const pageTitle = "Tablero de Empleados";
 
       // Cargar proyecto para verificar quién es el propietario
       const proyecto = await ProyectosService.getProyecto(proyectoId);
-      console.log('📁 Proyecto:', proyecto);
-      console.log('🔑 Usuario ID:', usuario.id, 'Proyecto Admin ID:', proyecto.usuario_id);
       
       // Si el usuario es el propietario, es ADMIN - puede quedarse aquí
       if (proyecto.usuario_id === usuario.id) {
-        console.log('✅ Usuario es ADMIN del tablero');
         (window as any).esAdmin = true;
         (window as any).empleadoActualId = null;
         return; // Continuar normalmente
       }
 
       // Si NO es el propietario, verificar si es empleado
-      console.log('🔍 No es admin, verificando si es empleado...');
       const empleados = await EmpleadosService.getEmpleados(proyectoId);
-      console.log('👥 Empleados del proyecto:', empleados);
       
       const empleadoVinculado = empleados.find(
         (emp: any) => emp.usuario_id === usuario.id
       );
-      console.log('🔗 Empleado vinculado encontrado:', empleadoVinculado);
 
       // Si es empleado, redirigir a vista específica de empleado
       if (empleadoVinculado) {
-        console.log('✅ Usuario es EMPLEADO - redirigiendo a vista de empleado');
         window.location.href = `/empleado-vista/${proyectoId}`;
         return;
       }

@@ -8,6 +8,11 @@ from app.models import (
     ConfiguracionAsistencia, DeudaHoras
 )
 from app.services.notificacion_service import NotificacionService
+from app.utils import (
+    calcular_horas_extras,
+    obtener_configuracion_asistencia,
+    calcular_horas_debidas_dia
+)
 from datetime import datetime, date, time, timedelta, timezone
 from typing import Optional, Tuple
 
@@ -133,11 +138,11 @@ class AsistenciaService:
             
             # Calcular horas extras y normales
             proyecto = Proyecto.query.get(proyecto_id)
-            config = ConfiguracionAsistencia.query.filter_by(proyecto_id=proyecto_id).first()
+            config = obtener_configuracion_asistencia(proyecto_id)
             
             if config and config.modo_asistencia_activo:
-                horas_normales, horas_extras = AsistenciaService._calcular_horas_extras(
-                    marcado, proyecto, config
+                horas_normales, horas_extras = calcular_horas_extras(
+                    horas_trabajadas, proyecto, marcado.turno
                 )
                 marcado.horas_normales = horas_normales
                 marcado.horas_extras = horas_extras
@@ -184,49 +189,7 @@ class AsistenciaService:
             print(f"Error al marcar salida: {str(e)}")
             return None, str(e)
     
-    @staticmethod
-    def _calcular_horas_extras(marcado, proyecto, config):
-        """Calcula las horas extras y normales según el turno y configuración"""
-        horas_trabajadas = float(marcado.horas_trabajadas)
-        
-        # Determinar horario laboral esperado
-        if proyecto.modo_horarios == 'turnos':
-            if marcado.turno == 'manana':
-                hora_inicio = proyecto.turno_manana_inicio
-                hora_fin = proyecto.turno_manana_fin
-            elif marcado.turno == 'tarde':
-                hora_inicio = proyecto.turno_tarde_inicio
-                hora_fin = proyecto.turno_tarde_fin
-            else:
-                # Turno especial, usar horario general
-                hora_inicio = proyecto.horario_inicio
-                hora_fin = proyecto.horario_fin
-        else:
-            # Modo corrido
-            hora_inicio = proyecto.horario_inicio
-            hora_fin = proyecto.horario_fin
-        
-        if not hora_inicio or not hora_fin:
-            return horas_trabajadas, 0
-        
-        # Calcular horas esperadas
-        hora_inicio_dt = datetime.combine(date.today(), hora_inicio)
-        hora_fin_dt = datetime.combine(date.today(), hora_fin)
-        
-        if hora_fin_dt <= hora_inicio_dt:
-            hora_fin_dt += timedelta(days=1)
-        
-        horas_esperadas = (hora_fin_dt - hora_inicio_dt).total_seconds() / 3600
-        
-        # Calcular horas extras
-        if horas_trabajadas > horas_esperadas:
-            horas_extras = horas_trabajadas - horas_esperadas
-            horas_normales = horas_esperadas
-        else:
-            horas_extras = 0
-            horas_normales = horas_trabajadas
-        
-        return round(horas_normales, 2), round(horas_extras, 2)
+
     
     @staticmethod
     def _procesar_horas_extras(empleado_id: int, proyecto_id: int, horas_extras: float, config):
@@ -314,7 +277,7 @@ class AsistenciaService:
                 
                 if not marcado or not marcado.hora_entrada:
                     # Empleado ausente, calcular horas debidas
-                    horas_debidas = AsistenciaService._calcular_horas_debidas_dia(proyecto, empleado)
+                    horas_debidas = calcular_horas_debidas_dia(proyecto, empleado)
                     
                     if horas_debidas > 0:
                         # Crear o actualizar deuda
@@ -339,44 +302,4 @@ class AsistenciaService:
         except Exception as e:
             db.session.rollback()
             print(f"Error al detectar ausencias: {str(e)}")
-    
-    @staticmethod
-    def _calcular_horas_debidas_dia(proyecto, empleado):
-        """Calcula las horas que un empleado debe por un día completo"""
-        # Si tiene horario especial, usar ese
-        if empleado.usa_horario_especial and empleado.horario_especial_inicio and empleado.horario_especial_fin:
-            hora_inicio = empleado.horario_especial_inicio
-            hora_fin = empleado.horario_especial_fin
-        elif proyecto.modo_horarios == 'corrido':
-            hora_inicio = proyecto.horario_inicio
-            hora_fin = proyecto.horario_fin
-        else:
-            # En modo turnos, sumar ambos turnos
-            if proyecto.turno_manana_inicio and proyecto.turno_manana_fin:
-                manana_dt = datetime.combine(date.today(), proyecto.turno_manana_fin) - \
-                           datetime.combine(date.today(), proyecto.turno_manana_inicio)
-                horas_manana = manana_dt.total_seconds() / 3600
-            else:
-                horas_manana = 0
-            
-            if proyecto.turno_tarde_inicio and proyecto.turno_tarde_fin:
-                tarde_dt = datetime.combine(date.today(), proyecto.turno_tarde_fin) - \
-                          datetime.combine(date.today(), proyecto.turno_tarde_inicio)
-                horas_tarde = tarde_dt.total_seconds() / 3600
-            else:
-                horas_tarde = 0
-            
-            return round(horas_manana + horas_tarde, 2)
-        
-        if not hora_inicio or not hora_fin:
-            return 8.0  # Default 8 horas
-        
-        hora_inicio_dt = datetime.combine(date.today(), hora_inicio)
-        hora_fin_dt = datetime.combine(date.today(), hora_fin)
-        
-        if hora_fin_dt <= hora_inicio_dt:
-            hora_fin_dt += timedelta(days=1)
-        
-        horas = (hora_fin_dt - hora_inicio_dt).total_seconds() / 3600
-        
-        return round(horas, 2)
+

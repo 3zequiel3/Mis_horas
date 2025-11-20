@@ -8,6 +8,10 @@ from app.models import (
     MarcadoAsistencia, Empleado, Proyecto, 
     ConfiguracionAsistencia, Dia
 )
+from app.utils import (
+    obtener_hora_cierre_turno,
+    calcular_horas_extras
+)
 from datetime import datetime, date, time, timedelta, timezone
 from app.services.notificacion_service import NotificacionService
 
@@ -96,9 +100,7 @@ class MarcadoAutomaticoService:
         
         # Si es de hoy, verificar si pasó la hora de cierre
         if marcado.fecha == fecha_actual:
-            hora_cierre = MarcadoAutomaticoService._obtener_hora_cierre_turno(
-                marcado, proyecto
-            )
+            hora_cierre = obtener_hora_cierre_turno(proyecto, marcado.turno)
             
             if not hora_cierre:
                 # Si no hay hora de cierre definida, no marcar automáticamente
@@ -113,30 +115,14 @@ class MarcadoAutomaticoService:
         
         return False
     
-    @staticmethod
-    def _obtener_hora_cierre_turno(marcado, proyecto):
-        """Obtiene la hora de cierre según el turno del marcado"""
-        if proyecto.modo_horarios == 'corrido':
-            return proyecto.horario_fin
-        elif proyecto.modo_horarios == 'turnos':
-            if marcado.turno == 'manana':
-                return proyecto.turno_manana_fin
-            elif marcado.turno == 'tarde':
-                return proyecto.turno_tarde_fin
-            else:
-                # Turno especial o no definido, usar horario general
-                return proyecto.horario_fin
-        
-        return None
+
     
     @staticmethod
     def _marcar_salida_automatica(marcado, proyecto, config):
         """Marca la salida automática en la hora de cierre del turno"""
         try:
             # Obtener hora de cierre
-            hora_cierre = MarcadoAutomaticoService._obtener_hora_cierre_turno(
-                marcado, proyecto
-            )
+            hora_cierre = obtener_hora_cierre_turno(proyecto, marcado.turno)
             
             if not hora_cierre:
                 print(f"⚠️ No se pudo determinar hora de cierre para marcado {marcado.id}")
@@ -151,8 +137,8 @@ class MarcadoAutomaticoService:
             marcado.horas_trabajadas = horas_trabajadas
             
             # Calcular horas extras y normales
-            horas_normales, horas_extras = MarcadoAutomaticoService._calcular_horas_extras(
-                marcado, proyecto, config
+            horas_normales, horas_extras = calcular_horas_extras(
+                horas_trabajadas, proyecto, marcado.turno
             )
             marcado.horas_normales = horas_normales
             marcado.horas_extras = horas_extras
@@ -201,49 +187,7 @@ class MarcadoAutomaticoService:
         except Exception as e:
             print(f"❌ Error al marcar salida automática para marcado {marcado.id}: {str(e)}")
     
-    @staticmethod
-    def _calcular_horas_extras(marcado, proyecto, config):
-        """Calcula las horas extras y normales según el turno y configuración"""
-        horas_trabajadas = float(marcado.horas_trabajadas)
-        
-        # Determinar horario laboral esperado
-        if proyecto.modo_horarios == 'turnos':
-            if marcado.turno == 'manana':
-                hora_inicio = proyecto.turno_manana_inicio
-                hora_fin = proyecto.turno_manana_fin
-            elif marcado.turno == 'tarde':
-                hora_inicio = proyecto.turno_tarde_inicio
-                hora_fin = proyecto.turno_tarde_fin
-            else:
-                # Turno especial, usar horario general
-                hora_inicio = proyecto.horario_inicio
-                hora_fin = proyecto.horario_fin
-        else:
-            # Modo corrido
-            hora_inicio = proyecto.horario_inicio
-            hora_fin = proyecto.horario_fin
-        
-        if not hora_inicio or not hora_fin:
-            return horas_trabajadas, 0
-        
-        # Calcular horas esperadas
-        hora_inicio_dt = datetime.combine(date.today(), hora_inicio)
-        hora_fin_dt = datetime.combine(date.today(), hora_fin)
-        
-        if hora_fin_dt <= hora_inicio_dt:
-            hora_fin_dt += timedelta(days=1)
-        
-        horas_esperadas = (hora_fin_dt - hora_inicio_dt).total_seconds() / 3600
-        
-        # Calcular horas extras
-        if horas_trabajadas > horas_esperadas:
-            horas_extras = horas_trabajadas - horas_esperadas
-            horas_normales = horas_esperadas
-        else:
-            horas_extras = 0
-            horas_normales = horas_trabajadas
-        
-        return round(horas_normales, 2), round(horas_extras, 2)
+
     
     @staticmethod
     def procesar_horas_extras_con_confirmacion():
