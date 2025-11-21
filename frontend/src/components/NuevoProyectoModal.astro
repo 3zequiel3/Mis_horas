@@ -60,6 +60,51 @@
         </select>
       </div>
 
+      <div class="form-group">
+        <label for="modal-modo-horarios">Sistema de Horarios</label>
+        <select id="modal-modo-horarios" name="modo_horarios">
+          <option value="corrido">Modo Corrido (entrada/salida)</option>
+          <option value="turnos">Turnos (mañana / tarde)</option>
+        </select>
+      </div>
+
+      <div id="modal-horarios-container" class="form-group" style="display: none;">
+        <label>Horarios del Tablero</label>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="modal-horario-inicio">Horario inicio (HH:MM)</label>
+            <input type="time" id="modal-horario-inicio" name="horario_inicio" />
+          </div>
+          <div class="form-group">
+            <label for="modal-horario-fin">Horario fin (HH:MM)</label>
+            <input type="time" id="modal-horario-fin" name="horario_fin" />
+          </div>
+        </div>
+
+        <div id="modal-turnos-container" style="display:none; margin-top: 0.5rem;">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="modal-turno-manana-inicio">Turno mañana inicio</label>
+              <input type="time" id="modal-turno-manana-inicio" name="turno_manana_inicio" />
+            </div>
+            <div class="form-group">
+              <label for="modal-turno-manana-fin">Turno mañana fin</label>
+              <input type="time" id="modal-turno-manana-fin" name="turno_manana_fin" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="modal-turno-tarde-inicio">Turno tarde inicio</label>
+              <input type="time" id="modal-turno-tarde-inicio" name="turno_tarde_inicio" />
+            </div>
+            <div class="form-group">
+              <label for="modal-turno-tarde-fin">Turno tarde fin</label>
+              <input type="time" id="modal-turno-tarde-fin" name="turno_tarde_fin" />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="modal-empleados-container" class="form-group" style="display: none;">
         <label>Empleados</label>
         <div id="modal-empleados-list" class="empleados-list">

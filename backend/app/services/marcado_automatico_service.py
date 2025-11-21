@@ -92,27 +92,29 @@ class MarcadoAutomaticoService:
         """
         ahora = datetime.now(LOCAL_TZ)
         fecha_actual = ahora.date()
-        hora_actual = ahora.time()
-        
+
         # Si el marcado es de días anteriores, definitivamente debe cerrarse
         if marcado.fecha < fecha_actual:
             return True
-        
+
         # Si es de hoy, verificar si pasó la hora de cierre
         if marcado.fecha == fecha_actual:
             hora_cierre = obtener_hora_cierre_turno(proyecto, marcado.turno)
-            
+
             if not hora_cierre:
                 # Si no hay hora de cierre definida, no marcar automáticamente
                 return False
-            
-            # Verificar si ya pasó la hora de cierre
-            if hora_actual >= hora_cierre:
+
+            # Construir datetime aware para la hora de cierre en la fecha del marcado
+            cierre_dt = datetime.combine(marcado.fecha, hora_cierre).replace(tzinfo=LOCAL_TZ)
+
+            # Verificar si ya pasó la hora de cierre comparando datetimes
+            if ahora >= cierre_dt:
                 # Si el empleado confirmó que sigue trabajando, no marcar automáticamente
                 if marcado.confirmacion_continua:
                     return False
                 return True
-        
+
         return False
     
 
@@ -185,9 +187,14 @@ class MarcadoAutomaticoService:
             
             print(f"✅ Salida automática marcada para empleado {marcado.empleado_id} " +
                   f"en proyecto {proyecto.nombre} - Hora: {hora_cierre}")
+            # Commit por marcado para mantener la sesión consistente y aislar errores
+            db.session.commit()
             
         except Exception as e:
-            print(f"❌ Error al marcar salida automática para marcado {marcado.id}: {str(e)}")
+            db.session.rollback()
+            print(f"❌ Error al marcar salida automática para marcado {getattr(marcado, 'id', 'N/A')}: {str(e)}")
+            import traceback
+            traceback.print_exc()
     
 
     

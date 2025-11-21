@@ -5,6 +5,7 @@ Rutas para gestión de marcado de asistencia
 from flask import Blueprint, request, jsonify
 from app.decorators import token_required
 from app.utils.response import success_response, error_response
+from app.utils import calcular_horas_extras
 from datetime import datetime, date
 from app.models import (
     Empleado, Proyecto, MarcadoAsistencia,
@@ -342,8 +343,8 @@ def editar_marcado(usuario_actual, marcado_id):
                 config = ConfiguracionAsistencia.query.filter_by(proyecto_id=marcado.proyecto_id).first()
                 
                 if config:
-                    horas_normales, horas_extras = AsistenciaService._calcular_horas_extras(
-                        marcado, proyecto, config
+                    horas_normales, horas_extras = calcular_horas_extras(
+                        horas_trabajadas, proyecto, marcado.turno
                     )
                     marcado.horas_normales = horas_normales
                     marcado.horas_extras = horas_extras

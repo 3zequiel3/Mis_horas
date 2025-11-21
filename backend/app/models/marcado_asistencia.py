@@ -59,9 +59,9 @@ class MarcadoAsistencia(db.Model):
         """Calcula las horas trabajadas entre entrada y salida"""
         if not self.hora_entrada or not self.hora_salida:
             return 0
-        
         # Convertir a datetime para hacer cálculos
-        fecha_base = datetime.now(LOCAL_TZ).date()
+        # Usar la fecha del marcado para evitar errores cuando se procesa marcados de días anteriores
+        fecha_base = self.fecha if self.fecha else datetime.now(LOCAL_TZ).date()
         entrada_dt = datetime.combine(fecha_base, self.hora_entrada)
         salida_dt = datetime.combine(fecha_base, self.hora_salida)
         
