@@ -6,6 +6,12 @@ from flask import Blueprint, request, jsonify
 from app.decorators import token_required
 from app.utils.response import success_response, error_response
 from datetime import datetime, date
+from app.models import (
+    Empleado, Proyecto, MarcadoAsistencia,
+    ConfiguracionAsistencia, Dia, Notificacion
+)
+from app.services.asistencia_service import AsistenciaService
+from app import db
 
 asistencia_bp = Blueprint('asistencia', __name__, url_prefix='/api/asistencia')
 

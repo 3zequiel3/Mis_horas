@@ -165,6 +165,8 @@ class MarcadoAutomaticoService:
             dia.hora_salida = marcado.hora_salida
             dia.horas_extras = float(marcado.horas_extras)
             
+            # Hacer flush para obtener el ID del dia antes de asignarlo
+            db.session.flush()
             marcado.dia_id = dia.id
             
             # Agregar observación
