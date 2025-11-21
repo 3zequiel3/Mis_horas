@@ -5,7 +5,7 @@ services:
   # ============================================================
   db:
     image: mysql:8.0
-    container_name: timeflow_db
+    container_name: timeflow_db_dev
     restart: always
     ports:
       - "${DB_PUBLIC_PORT}:3306"
@@ -23,7 +23,7 @@ services:
       interval: 10s
       start_period: 20s
     networks:
-      - timeflow-network
+      - timeflow-network-dev
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
   # ============================================================
@@ -33,7 +33,7 @@ services:
     build:
       context: .
       dockerfile: ./backend/Dockerfile
-    container_name: timeflow_backend
+    container_name: timeflow_backend_dev
     restart: always
     ports:
       - "${BACKEND_PUBLIC_PORT}:5000"
@@ -58,7 +58,7 @@ services:
       db:
         condition: service_healthy
     networks:
-      - timeflow-network
+      - timeflow-network-dev
     command: python main.py
 
   # ============================================================
@@ -68,7 +68,7 @@ services:
     build:
       context: .
       dockerfile: ./frontend/Dockerfile
-    container_name: timeflow_frontend
+    container_name: timeflow_frontend_dev
     restart: always
     ports:
       - "${FRONTEND_PUBLIC_PORT}:3000"
@@ -86,7 +86,7 @@ services:
     depends_on:
       - backend
     networks:
-      - timeflow-network
+      - timeflow-network-dev
     command: npm run dev
 
 # ============================================================
@@ -100,5 +100,5 @@ volumes:
 # REDES
 # ============================================================
 networks:
-  timeflow-network:
+  timeflow-network-dev:
     driver: bridge
