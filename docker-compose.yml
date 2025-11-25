@@ -54,6 +54,13 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS}
       API_HOST: ${API_HOST}
       API_PORT: ${API_PORT}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USE_TLS: ${SMTP_USE_TLS}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME}
     depends_on:
       db:
         condition: service_healthy

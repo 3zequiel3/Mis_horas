@@ -24,9 +24,16 @@ def init_scheduler():
     
     scheduler = BackgroundScheduler()
     
+    # Función wrapper para ejecutar con contexto de aplicación
+    def run_with_app_context(func):
+        def wrapper():
+            with app.app_context():
+                func()
+        return wrapper
+    
     # Ejecutar marcado automático cada hora
     scheduler.add_job(
-        func=lambda: MarcadoAutomaticoService.procesar_marcados_automaticos(),
+        func=run_with_app_context(MarcadoAutomaticoService.procesar_marcados_automaticos),
         trigger="cron",
         hour='*',
         minute=0,
@@ -36,7 +43,7 @@ def init_scheduler():
     
     # Procesar horas extras cada 2 horas
     scheduler.add_job(
-        func=lambda: MarcadoAutomaticoService.procesar_horas_extras_con_confirmacion(),
+        func=run_with_app_context(MarcadoAutomaticoService.procesar_horas_extras_con_confirmacion),
         trigger="cron",
         hour='*/2',
         minute=0,

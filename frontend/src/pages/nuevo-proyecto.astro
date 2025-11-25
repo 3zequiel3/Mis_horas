@@ -10,147 +10,243 @@ const pageTitle = 'Nuevo Tablero';
 <BaseLayout title={pageTitle}>
   <ProtectedRoute>
     <Header />
-    <div class="container">
     <div class="nuevo-proyecto-container">
       <div class="proyecto-card">
-        <div class="card-header">
-          <h1>Crear Nuevo Tablero</h1>
-          <p>Completa los campos para crear un nuevo tablero de trabajo</p>
-        </div>
-
         <form id="proyecto-form" class="proyecto-form">
-          <div class="form-group">
-            <label for="nombre">Nombre del Tablero *</label>
-            <input
-              type="text"
-              id="nombre"
-              name="nombre"
-              placeholder="Ej: App Web Tienda"
-              required
-            />
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="anio">Año *</label>
-              <select id="anio" name="anio" required>
-                <option value="">Selecciona un año</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="mes">Mes *</label>
-              <select id="mes" name="mes" required>
-                <option value="">Selecciona un mes</option>
-                <option value="1">Enero</option>
-                <option value="2">Febrero</option>
-                <option value="3">Marzo</option>
-                <option value="4">Abril</option>
-                <option value="5">Mayo</option>
-                <option value="6">Junio</option>
-                <option value="7">Julio</option>
-                <option value="8">Agosto</option>
-                <option value="9">Septiembre</option>
-                <option value="10">Octubre</option>
-                <option value="11">Noviembre</option>
-                <option value="12">Diciembre</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="tipo_proyecto">Tipo de Tablero *</label>
-            <select id="tipo_proyecto" name="tipo_proyecto" required>
-              <option value="personal">Trabajo Personal</option>
-              <option value="empleados">Con Empleados</option>
-            </select>
-          </div>
-
-          <div id="empleados-container" class="form-group" style="display: none;">
-            <label>Empleados</label>
-            <div id="empleados-list">
-              <div class="empleado-item">
-                <input type="text" class="empleado-input" placeholder="Nombre del empleado" maxlength="100" />
-                <button type="button" class="btn-remove-empleado">Eliminar</button>
+          <!-- PASO 1: Información Básica -->
+          <div class="wizard-step active" data-step="1">
+            <div class="step-content">
+              <div class="step-icon">📋</div>
+              <h3>Información del Tablero</h3>
+              
+              <div class="form-group">
+                <label for="nombre">Nombre del Tablero *</label>
+                <input
+                  type="text"
+                  id="nombre"
+                  name="nombre"
+                  placeholder="Ej: Proyecto Web 2025"
+                  required
+                />
               </div>
-            </div>
-            <button type="button" id="add-empleado-btn" class="btn btn-secondary-outline">+ Agregar Empleado</button>
-          </div>
 
-          <!-- Sistema de Turnos -->
-          <div class="form-section">
-            <h3>⏰ Sistema de Horarios</h3>
-            
-            <div class="form-group">
-              <label for="modo_horarios">Modo de Horarios *</label>
-              <select id="modo_horarios" name="modo_horarios">
-                <option value="corrido">De corrido (Entrada/Salida única)</option>
-                <option value="turnos">Por turnos (Mañana/Tarde)</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Horario Laboral (opcional - para cálculo de horas extras)</label>
-              <div class="time-row">
-                <div class="time-input-group">
-                  <label for="horario_inicio">Desde</label>
-                  <input type="time" id="horario_inicio" name="horario_inicio" />
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="anio">Año *</label>
+                  <select id="anio" name="anio" required>
+                    <option value="">Selecciona un año</option>
+                  </select>
                 </div>
-                <div class="time-input-group">
-                  <label for="horario_fin">Hasta</label>
-                  <input type="time" id="horario_fin" name="horario_fin" />
-                </div>
-              </div>
-            </div>
 
-            <div id="turnos-config" class="turnos-config" style="display: none;">
-              <div class="turno-group">
-                <h4>🌅 Turno Mañana</h4>
-                <div class="time-row">
-                  <div class="time-input-group">
-                    <label for="turno_manana_inicio">Desde</label>
-                    <input type="time" id="turno_manana_inicio" name="turno_manana_inicio" />
-                  </div>
-                  <div class="time-input-group">
-                    <label for="turno_manana_fin">Hasta</label>
-                    <input type="time" id="turno_manana_fin" name="turno_manana_fin" />
-                  </div>
+                <div class="form-group">
+                  <label for="mes">Mes *</label>
+                  <select id="mes" name="mes" required>
+                    <option value="">Selecciona un mes</option>
+                    <option value="1">Enero</option>
+                    <option value="2">Febrero</option>
+                    <option value="3">Marzo</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Mayo</option>
+                    <option value="6">Junio</option>
+                    <option value="7">Julio</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+                  </select>
                 </div>
               </div>
 
-              <div class="turno-group">
-                <h4>🌆 Turno Tarde</h4>
-                <div class="time-row">
-                  <div class="time-input-group">
-                    <label for="turno_tarde_inicio">Desde</label>
-                    <input type="time" id="turno_tarde_inicio" name="turno_tarde_inicio" />
+              <div class="form-group">
+                <label for="descripcion">Descripción (Opcional)</label>
+                <textarea
+                  id="descripcion"
+                  name="descripcion"
+                  placeholder="Describe el propósito del tablero..."
+                  rows="3"
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="step-actions">
+              <a href="/proyectos" class="btn btn-secondary">Cancelar</a>
+              <button type="button" class="btn btn-primary" data-next-step="2">
+                Siguiente <span class="btn-icon">→</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- PASO 2: Tipo de Tablero -->
+          <div class="wizard-step" data-step="2">
+            <div class="step-content">
+              <div class="step-icon">🎯</div>
+              <h3>¿Cómo gestionarás este tablero?</h3>
+              
+              <div class="tipo-tablero-grid">
+                <div class="tipo-card" data-tipo="personal">
+                  <div class="tipo-icon">💼</div>
+                  <h4>Personal</h4>
+                  <p>Solo tu trabajo personal</p>
+                  <div class="tipo-check">✓</div>
+                </div>
+
+                <div class="tipo-card" data-tipo="empleados">
+                  <div class="tipo-icon">👥</div>
+                  <h4>Con Empleados</h4>
+                  <p>Gestiona tu equipo de trabajo</p>
+                  <div class="tipo-check">✓</div>
+                </div>
+              </div>
+
+              <input type="hidden" id="tipo_proyecto" name="tipo_proyecto" required />
+            </div>
+
+            <div class="step-actions">
+              <button type="button" class="btn btn-secondary" data-prev-step="1">
+                <span class="btn-icon">←</span> Atrás
+              </button>
+            </div>
+          </div>
+
+          <!-- PASO 3: Empleados -->
+          <div class="wizard-step" data-step="3">
+            <div class="step-content">
+              <div class="step-icon">👥</div>
+              <h3>Gestión de Empleados</h3>
+
+              <div id="empleados-list" class="empleados-list">
+                <div class="empleado-item">
+                  <div class="form-group">
+                    <label>Nombre del Empleado</label>
+                    <input type="text" class="empleado-nombre" placeholder="Juan Pérez" maxlength="100" />
                   </div>
-                  <div class="time-input-group">
-                    <label for="turno_tarde_fin">Hasta</label>
-                    <input type="time" id="turno_tarde_fin" name="turno_tarde_fin" />
+                  <div class="form-group">
+                    <label>Usuario (Opcional) <span class="link-icon">🔗</span></label>
+                    <input type="email" class="empleado-email" placeholder="usuario@mail.com" />
+                  </div>
+                  <button type="button" class="btn-remove-empleado" title="Eliminar empleado">✕</button>
+                </div>
+              </div>
+
+              <button type="button" id="add-empleado-btn" class="btn btn-add-item">
+                <span>+</span> Agregar Empleado
+              </button>
+            </div>
+
+            <div class="step-actions">
+              <button type="button" class="btn btn-secondary" data-prev-step="2">
+                <span class="btn-icon">←</span> Atrás
+              </button>
+              <button type="button" class="btn btn-primary" data-next-step="4">
+                Siguiente <span class="btn-icon">→</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- PASO 4: Selección Tipo de Horario -->
+          <div class="wizard-step" data-step="4">
+            <div class="step-content">
+              <div class="step-icon">⏰</div>
+              <h3>¿Cómo configurarás los horarios?</h3>
+              
+              <div class="tipo-tablero-grid">
+                <div class="tipo-card" data-modo="corrido">
+                  <div class="tipo-icon">⏱️</div>
+                  <h4>Horario Corrido</h4>
+                  <p>Entrada y salida simple</p>
+                  <div class="tipo-check">✓</div>
+                </div>
+
+                <div class="tipo-card" data-modo="turnos">
+                  <div class="tipo-icon">🔄</div>
+                  <h4>Por Turnos</h4>
+                  <p>Mañana y tarde separados</p>
+                  <div class="tipo-check">✓</div>
+                </div>
+              </div>
+
+              <input type="hidden" id="modo_horarios" name="modo_horarios" />
+            </div>
+
+            <div class="step-actions">
+              <button type="button" class="btn btn-secondary" data-prev-step="3">
+                <span class="btn-icon">←</span> Atrás
+              </button>
+            </div>
+          </div>
+
+          <!-- PASO 5A: Horario Corrido -->
+          <div class="wizard-step" data-step="5a">
+            <div class="step-content">
+              <div class="step-icon">⏱️</div>
+              <h3>Configura el Horario Laboral</h3>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="horario_inicio">Horario inicio *</label>
+                  <input type="time" id="horario_inicio" name="horario_inicio" required />
+                </div>
+                <div class="form-group">
+                  <label for="horario_fin">Horario fin *</label>
+                  <input type="time" id="horario_fin" name="horario_fin" required />
+                </div>
+              </div>
+            </div>
+
+            <div class="step-actions">
+              <button type="button" class="btn btn-secondary" data-prev-step="4">
+                <span class="btn-icon">←</span> Atrás
+              </button>
+              <button type="submit" class="btn btn-primary btn-lg">
+                <span class="btn-icon">✓</span> Crear Tablero
+              </button>
+            </div>
+          </div>
+
+          <!-- PASO 5B: Configuración de Turnos -->
+          <div class="wizard-step" data-step="5b">
+            <div class="step-content">
+              <div class="step-icon">🔄</div>
+              <h3>Configura los Turnos</h3>
+
+              <div class="turno-section">
+                <h5>🌅 Turno Mañana</h5>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="turno_manana_inicio">Desde *</label>
+                    <input type="time" id="turno_manana_inicio" name="turno_manana_inicio" required />
+                  </div>
+                  <div class="form-group">
+                    <label for="turno_manana_fin">Hasta *</label>
+                    <input type="time" id="turno_manana_fin" name="turno_manana_fin" required />
+                  </div>
+                </div>
+              </div>
+
+              <div class="turno-section">
+                <h5>🌆 Turno Tarde</h5>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="turno_tarde_inicio">Desde *</label>
+                    <input type="time" id="turno_tarde_inicio" name="turno_tarde_inicio" required />
+                  </div>
+                  <div class="form-group">
+                    <label for="turno_tarde_fin">Hasta *</label>
+                    <input type="time" id="turno_tarde_fin" name="turno_tarde_fin" required />
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label for="descripcion">Descripción (Opcional)</label>
-            <textarea
-              id="descripcion"
-              name="descripcion"
-              placeholder="Describe el propósito del tablero..."
-              rows="4"
-            ></textarea>
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary btn-lg">
-              Crear Tablero
-            </button>
-            <a href="/proyectos" class="btn btn-secondary btn-lg">
-              Cancelar
-            </a>
+            <div class="step-actions">
+              <button type="button" class="btn btn-secondary" data-prev-step="4">
+                <span class="btn-icon">←</span> Atrás
+              </button>
+              <button type="submit" class="btn btn-primary btn-lg">
+                <span class="btn-icon">✓</span> Crear Tablero
+              </button>
+            </div>
           </div>
         </form>
 
@@ -163,11 +259,6 @@ const pageTitle = 'Nuevo Tablero';
         </div>
       </div>
     </div>
-  </div>
-</BaseLayout>
-
-<style>
-</style>
 
 <script>
   import { AuthService } from '../services/auth';
@@ -178,79 +269,164 @@ const pageTitle = 'Nuevo Tablero';
     window.location.href = '/login';
   }
 
+  // Estado del wizard
+  let currentStep = 1;
+  let tipoSeleccionado: 'personal' | 'empleados' | null = null;
+  let modoHorarioSeleccionado: 'corrido' | 'turnos' | null = null;
+
   // Inicializar select de años y meses
   ProyectoFormHandler.inicializarAnios();
   ProyectoFormHandler.inicializarMes();
 
-  // Gestión de tipo de proyecto
-  const tipoProyectoSelect = document.getElementById('tipo_proyecto') as HTMLSelectElement;
-  const empleadosContainer = document.getElementById('empleados-container') as HTMLElement;
+  // Funciones de navegación
+  function showStep(stepNumber: number | string) {
+    const steps = document.querySelectorAll('.wizard-step');
+    steps.forEach(step => {
+      const stepEl = step as HTMLElement;
+      const stepValue = stepEl.dataset.step || '';
+      if (stepValue === stepNumber.toString()) {
+        stepEl.classList.add('active');
+      } else {
+        stepEl.classList.remove('active');
+      }
+    });
+    if (typeof stepNumber === 'number') {
+      currentStep = stepNumber;
+    }
+  }
+
+  function validateStep1(): boolean {
+    const nombre = (document.getElementById('nombre') as HTMLInputElement).value;
+    const anio = (document.getElementById('anio') as HTMLSelectElement).value;
+    const mes = (document.getElementById('mes') as HTMLSelectElement).value;
+    
+    if (!nombre.trim()) {
+      alert('Por favor ingresa el nombre del tablero');
+      return false;
+    }
+    if (!anio) {
+      alert('Por favor selecciona un año');
+      return false;
+    }
+    if (!mes) {
+      alert('Por favor selecciona un mes');
+      return false;
+    }
+    return true;
+  }
+
+  // Botones de navegación
+  document.querySelectorAll('[data-next-step]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const nextStep = parseInt((btn as HTMLElement).dataset.nextStep || '0');
+      
+      if (currentStep === 1 && !validateStep1()) {
+        return;
+      }
+      
+      showStep(nextStep);
+    });
+  });
+
+  document.querySelectorAll('[data-prev-step]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const prevStep = parseInt((btn as HTMLElement).dataset.prevStep || '0');
+      showStep(prevStep);
+    });
+  });
+
+  // Selección de tipo de tablero
+  const tipoCards = document.querySelectorAll('.tipo-card');
+  const tipoInput = document.getElementById('tipo_proyecto') as HTMLInputElement;
+
+  tipoCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const tipo = (card as HTMLElement).dataset.tipo as 'personal' | 'empleados';
+      tipoSeleccionado = tipo;
+      tipoInput.value = tipo;
+      
+      // Actualizar UI
+      tipoCards.forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      
+      // Navegar según tipo
+      if (tipo === 'personal') {
+        // Si es personal, ir directo a crear (mostrar botón de submit en paso 2)
+        setTimeout(() => {
+          const success = ProyectoFormHandler.crearProyecto();
+        }, 300);
+      } else {
+        // Si es con empleados, ir a paso 3
+        setTimeout(() => showStep(3), 300);
+      }
+    });
+  });
+
+  // Selección de modo de horario
+  const modoCards = document.querySelectorAll('[data-modo]');
+  const modoInput = document.getElementById('modo_horarios') as HTMLInputElement;
+
+  modoCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const modo = (card as HTMLElement).dataset.modo as 'corrido' | 'turnos';
+      modoHorarioSeleccionado = modo;
+      modoInput.value = modo;
+      
+      // Actualizar UI
+      modoCards.forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      
+      // Limpiar campos según el modo seleccionado
+      if (modo === 'corrido') {
+        // Limpiar campos de turnos
+        (document.getElementById('turno_manana_inicio') as HTMLInputElement).value = '';
+        (document.getElementById('turno_manana_fin') as HTMLInputElement).value = '';
+        (document.getElementById('turno_tarde_inicio') as HTMLInputElement).value = '';
+        (document.getElementById('turno_tarde_fin') as HTMLInputElement).value = '';
+        setTimeout(() => showStep('5a'), 300);
+      } else {
+        // Limpiar campos de horario corrido
+        (document.getElementById('horario_inicio') as HTMLInputElement).value = '';
+        (document.getElementById('horario_fin') as HTMLInputElement).value = '';
+        setTimeout(() => showStep('5b'), 300);
+      }
+    });
+  });
+
+  // Gestión de empleados
   const addEmpleadoBtn = document.getElementById('add-empleado-btn') as HTMLButtonElement;
   const empleadosList = document.getElementById('empleados-list') as HTMLElement;
 
-  // Gestión de sistema de turnos
-  const modoHorariosSelect = document.getElementById('modo_horarios') as HTMLSelectElement;
-  const turnosConfig = document.getElementById('turnos-config') as HTMLElement;
-  const sistemaHorariosSection = document.querySelector('.form-section') as HTMLElement;
-
-  // Función para verificar si mostrar sistema de turnos
-  const actualizarVisibilidadTurnos = () => {
-    const esEmpleados = tipoProyectoSelect.value === 'empleados';
-    const esTurnos = modoHorariosSelect.value === 'turnos';
-    
-    // Mostrar sección de sistema de horarios solo si es con empleados
-    if (esEmpleados) {
-      sistemaHorariosSection.style.display = 'block';
-      // Mostrar configuración de turnos solo si es modo turnos
-      if (esTurnos) {
-        turnosConfig.style.display = 'block';
+  function setupEmpleadoRemove(item: Element) {
+    const removeBtn = item.querySelector('.btn-remove-empleado');
+    removeBtn?.addEventListener('click', () => {
+      if (empleadosList.querySelectorAll('.empleado-item').length > 1) {
+        item.remove();
       } else {
-        turnosConfig.style.display = 'none';
+        alert('Debe haber al menos un empleado');
       }
-    } else {
-      sistemaHorariosSection.style.display = 'none';
-      turnosConfig.style.display = 'none';
-    }
-  };
+    });
+  }
 
-  tipoProyectoSelect?.addEventListener('change', () => {
-    if (tipoProyectoSelect.value === 'empleados') {
-      empleadosContainer.style.display = 'block';
-    } else {
-      empleadosContainer.style.display = 'none';
-    }
-    actualizarVisibilidadTurnos();
-  });
+  // Setup inicial del primer empleado
+  setupEmpleadoRemove(empleadosList.querySelector('.empleado-item')!);
 
-  // Mostrar/ocultar configuración de turnos
-  modoHorariosSelect?.addEventListener('change', () => {
-    actualizarVisibilidadTurnos();
-  });
-
-  // Inicializar visibilidad al cargar
-  actualizarVisibilidadTurnos();
-
-  // Agregar empleado
   addEmpleadoBtn?.addEventListener('click', () => {
     const empleadoItem = document.createElement('div');
     empleadoItem.className = 'empleado-item';
     empleadoItem.innerHTML = `
-      <input type="text" class="empleado-input" placeholder="Nombre del empleado" maxlength="100" />
-      <button type="button" class="btn-remove-empleado">Eliminar</button>
+      <div class="form-group">
+        <label>Nombre del Empleado</label>
+        <input type="text" class="empleado-nombre" placeholder="Juan Pérez" maxlength="100" />
+      </div>
+      <div class="form-group">
+        <label>Usuario (Opcional) <span class="link-icon">🔗</span></label>
+        <input type="email" class="empleado-email" placeholder="usuario@mail.com" />
+      </div>
+      <button type="button" class="btn-remove-empleado" title="Eliminar empleado">✕</button>
     `;
     empleadosList.appendChild(empleadoItem);
-
-    // Agregar evento de eliminar
-    const removeBtn = empleadoItem.querySelector('.btn-remove-empleado');
-    removeBtn?.addEventListener('click', () => {
-      empleadoItem.remove();
-    });
-  });
-
-  // Eventos de eliminar para el primer empleado
-  document.querySelector('.btn-remove-empleado')?.addEventListener('click', function(e) {
-    const target = e.target as HTMLElement;
-    target.closest('.empleado-item')?.remove();
+    setupEmpleadoRemove(empleadoItem);
   });
 
   // Manejo del formulario
