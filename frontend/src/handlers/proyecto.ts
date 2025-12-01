@@ -506,6 +506,7 @@ export async function loadDias(): Promise<void> {
     // Mostrar totales para meses actuales y pasados
     toggleTotalsRow(true);
 
+    // Cargar días del mes (una sola llamada al backend)
     state.diasActuales = await DiaService.getDiasMes(
       state.proyectoActual.id,
       state.anioActual,
@@ -531,13 +532,14 @@ export async function loadDias(): Promise<void> {
       return;
     }
 
-    // Obtener días de la semana actual
+    // Obtener días de la semana actual (filtrado en memoria, más rápido)
     const semanaFechas = getSemanActual();
     const diasSemana = state.diasActuales.filter((dia) => {
       const diaFecha = new Date(dia.fecha).toISOString().split('T')[0];
       return semanaFechas.includes(diaFecha);
     });
 
+    // Renderizar ambas tablas con los datos ya cargados
     renderTablaDias(diasSemana, 'dias-tbody', 'total-trabajadas', 'total-reales');
     renderTablaDias(state.diasActuales, 'mes-dias-tbody', 'mes-total-trabajadas', 'mes-total-reales');
   } catch (error) {
@@ -612,30 +614,26 @@ function renderTablaDias(
   const tbody = querySelector<HTMLTableSectionElement>(`#${tbodyId}`);
   if (!tbody) return;
 
-  tbody.innerHTML = '';
-
+  // Usar DocumentFragment para mejor rendimiento
+  const fragment = document.createDocumentFragment();
+  const usarHorasReales = useHorasReales();
+  
   let totalTrabajadas = 0;
   let totalReales = 0;
 
+  // Optimización: crear todas las filas antes de agregarlas al DOM
   dias.forEach((dia) => {
     totalTrabajadas += dia.horas_trabajadas || 0;
     totalReales += dia.horas_reales || 0;
 
     const row = document.createElement('tr');
-
-    // Agregar data-dia-id para multi-select
     row.setAttribute('data-dia-id', dia.id.toString());
+    row.className = (dia.horas_trabajadas || 0) === 0 ? 'dia-sin-horas' : 'dia-con-horas';
 
-    // Agregar clase según las horas trabajadas
-    if ((dia.horas_trabajadas || 0) === 0) {
-      row.classList.add('dia-sin-horas');
-    } else {
-      row.classList.add('dia-con-horas');
-    }
-
-    const columnasExtras = useHorasReales()
+    // Construir HTML de forma más eficiente
+    const columnasExtras = usarHorasReales
       ? `<td title="Horas Reales"><strong>${horasAFormato(dia.horas_reales || 0)}</strong></td>`
-      : '<td></td>';
+      : '<td style="display: none;"></td>';
 
     row.innerHTML = `
       <td>${formatearFechaCorta(dia.fecha)}</td>
@@ -643,25 +641,30 @@ function renderTablaDias(
       <td>
         <input type="text" class="horas-input horas-trabajadas" 
           data-dia-id="${dia.id}" 
-          value="${horasAFormato(dia.horas_trabajadas || 0)}" />
+          value="${horasAFormato(dia.horas_trabajadas || 0)}" 
+          autocomplete="off" />
       </td>
       ${columnasExtras}
     `;
 
-    // Marcar columna Horas Reales como oculta si no se usa
-    if (!useHorasReales()) {
-      const lastTd = row.lastElementChild as HTMLElement;
-      if (lastTd) lastTd.style.display = 'none';
-    }
-
-    // Event listener para cambios
+    // Event listener para cambios (delegación de eventos más eficiente)
     const input = row.querySelector<HTMLInputElement>('.horas-trabajadas');
     if (input) {
       input.addEventListener('change', () => updateHoras(dia.id, input.value));
+      // También actualizar al presionar Enter
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          input.blur();
+        }
+      });
     }
 
-    tbody.appendChild(row);
+    fragment.appendChild(row);
   });
+
+  // Una sola operación de DOM para agregar todas las filas
+  tbody.innerHTML = '';
+  tbody.appendChild(fragment);
 
   // Actualizar visibilidad de columnas
   updateColumnVisibility();
@@ -680,6 +683,61 @@ function renderTablaDias(
 /**
  * Actualiza la visibilidad de columnas de horas reales
  */
+/**
+ * Actualiza una fila de día en una tabla específica sin re-renderizar toda la tabla
+ */
+function updateDiaRowInTable(dia: Dia, tbodyId: string): void {
+  const tbody = document.querySelector<HTMLTableSectionElement>(`#${tbodyId}`);
+  if (!tbody) return;
+  
+  // Buscar la fila del día
+  const row = tbody.querySelector<HTMLTableRowElement>(`tr[data-dia-id="${dia.id}"]`);
+  if (!row) return;
+  
+  // Actualizar clases según las horas trabajadas
+  row.className = (dia.horas_trabajadas || 0) === 0 ? 'dia-sin-horas' : 'dia-con-horas';
+  
+  // Actualizar el input de horas trabajadas
+  const input = row.querySelector<HTMLInputElement>('.horas-trabajadas');
+  if (input) {
+    input.value = horasAFormato(dia.horas_trabajadas || 0);
+  }
+  
+  // Actualizar horas reales si la columna está visible
+  const usarHorasReales = useHorasReales();
+  if (usarHorasReales) {
+    const horasRealesCell = row.cells[3]; // 4ta columna (índice 3)
+    if (horasRealesCell) {
+      horasRealesCell.innerHTML = `<strong>${horasAFormato(dia.horas_reales || 0)}</strong>`;
+    }
+  }
+}
+
+/**
+ * Actualiza los totales desde el estado actual sin recargar
+ */
+function updateTotalsFromState(): void {
+  // Obtener días de la semana actual
+  const semanaFechas = getSemanActual();
+  const diasSemana = state.diasActuales.filter((dia) => {
+    const diaFecha = new Date(dia.fecha).toISOString().split('T')[0];
+    return semanaFechas.includes(diaFecha);
+  });
+  
+  // Calcular totales semanales
+  const totalSemanaTrabajadas = diasSemana.reduce((sum, d) => sum + (d.horas_trabajadas || 0), 0);
+  const totalSemanaReales = diasSemana.reduce((sum, d) => sum + (d.horas_reales || 0), 0);
+  
+  // Calcular totales mensuales
+  const totalMesTrabajadas = state.diasActuales.reduce((sum, d) => sum + (d.horas_trabajadas || 0), 0);
+  const totalMesReales = state.diasActuales.reduce((sum, d) => sum + (d.horas_reales || 0), 0);
+  
+  // Actualizar UI
+  updateTotals('total-trabajadas', 'total-reales', totalSemanaTrabajadas, totalSemanaReales);
+  updateTotals('mes-total-trabajadas', 'mes-total-reales', totalMesTrabajadas, totalMesReales);
+  updateTotalPanel();
+}
+
 function updateColumnVisibility(): void {
   const usarHorasReales = useHorasReales();
   
@@ -814,12 +872,31 @@ function updateProjectCard(): void {
  */
 async function updateHoras(diaId: number, horasStr: string): Promise<void> {
   try {
-    await DiaService.updateHoras(diaId, horasStr);
-    await loadDias();
-    updateTotalPanel();
-
-    // Recargar tareas para reflejar recálculo automático del backend
-    await loadTareas();
+    // Actualizar en el backend
+    const diaActualizado = await DiaService.updateHoras(diaId, horasStr);
+    
+    if (!diaActualizado) {
+      showErrorModal('Error', 'No se pudo actualizar las horas');
+      return;
+    }
+    
+    // Actualizar el día en el estado local
+    const index = state.diasActuales.findIndex(d => d.id === diaId);
+    if (index !== -1) {
+      state.diasActuales[index] = diaActualizado;
+    }
+    
+    // Actualizar la fila visualmente en ambas tablas (semanal y mensual)
+    updateDiaRowInTable(diaActualizado, 'dias-tbody');
+    updateDiaRowInTable(diaActualizado, 'mes-dias-tbody');
+    
+    // Actualizar solo los totales en lugar de recargar todo
+    updateTotalsFromState();
+    
+    // Recargar tareas en background sin bloquear (solo si hay tareas que afectar)
+    if (state.tareasActuales.length > 0) {
+      loadTareas().catch(err => console.error('Error recargando tareas:', err));
+    }
   } catch (error) {
     console.error('Error actualizando horas:', error);
     showErrorModal('Error', 'No se pudo actualizar las horas');
