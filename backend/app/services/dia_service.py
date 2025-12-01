@@ -59,10 +59,25 @@ class DiaService:
         db.session.commit()
         db.session.refresh(dia)
         
-        # Recalcular tareas afectadas
-        DiaService.recalcular_tareas_afectadas(dia, dia.proyecto_id)
+        # Recalcular tareas afectadas solo si el día tiene tareas asociadas
+        DiaService.recalcular_tareas_afectadas_optimizado(dia, dia.proyecto_id)
         
         return dia
+    
+    @staticmethod
+    def recalcular_tareas_afectadas_optimizado(dia: Dia, proyecto_id: int):
+        """Recalcula tareas afectadas solo si el día tiene tareas asociadas (optimizado)"""
+        # Verificar primero si el día tiene tareas asociadas (más eficiente)
+        tareas_count = db.session.query(func.count(tarea_dia.c.tarea_id)).filter(
+            tarea_dia.c.dia_id == dia.id
+        ).scalar()
+        
+        if tareas_count == 0:
+            # No hay tareas asociadas, no es necesario recalcular
+            return
+        
+        # Solo si hay tareas, las recalculamos
+        DiaService.recalcular_tareas_afectadas(dia, proyecto_id)
     
     @staticmethod
     def recalcular_tareas_afectadas(dia: Dia, proyecto_id: int):
@@ -132,8 +147,8 @@ class DiaService:
             db.session.commit()
             db.session.refresh(dia)
             
-            # Recalcular tareas afectadas
-            DiaService.recalcular_tareas_afectadas(dia, dia.proyecto_id)
+            # Recalcular tareas afectadas solo si el día tiene tareas asociadas
+            DiaService.recalcular_tareas_afectadas_optimizado(dia, dia.proyecto_id)
             
             return dia
             
@@ -251,9 +266,9 @@ class DiaService:
             db.session.commit()
             db.session.refresh(dia)
             
-            # Recalcular tareas si es necesario
+            # Recalcular tareas solo si el día tiene tareas asociadas (optimizado)
             if user_id:
-                DiaService.recalcular_tareas_afectadas(dia, dia.proyecto_id)
+                DiaService.recalcular_tareas_afectadas_optimizado(dia, dia.proyecto_id)
             
             return dia
             
