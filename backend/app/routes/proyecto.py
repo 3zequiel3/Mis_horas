@@ -103,6 +103,8 @@ def add_mes(usuario_actual, proyecto_id):
     if not data or not all(k in data for k in ['anio', 'mes']):
         return jsonify({'error': 'Campos requeridos: anio, mes'}), 400
     
+    print(f"[ADD_MES] Creando mes {data['mes']}/{data['anio']} para proyecto {proyecto_id}")
+    
     success = ProyectoService.agregar_mes_proyecto(
         proyecto_id,
         data['anio'],
@@ -110,8 +112,10 @@ def add_mes(usuario_actual, proyecto_id):
     )
     
     if not success:
+        print(f"[ADD_MES] Error: El mes ya existe o proyecto no encontrado")
         return jsonify({'error': 'El mes ya existe o proyecto no encontrado'}), 400
     
+    print(f"[ADD_MES] Mes creado exitosamente")
     return jsonify({'message': 'Mes agregado exitosamente'}), 201
 
 @proyecto_bp.route('/<int:proyecto_id>/estado', methods=['PUT'])

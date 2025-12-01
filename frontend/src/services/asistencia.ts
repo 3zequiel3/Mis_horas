@@ -111,6 +111,11 @@ export class AsistenciaService extends ApiService {
     marcadoId: number,
     data: { aprobar: boolean; observaciones?: string }
   ): Promise<MarcadoAsistencia> {
-    return this.put(`/api/asistencia/marcados/${marcadoId}/confirmar-horas-extras`, data);
+    // Backend espera la propiedad `confirmada`
+    const payload = {
+      confirmada: data.aprobar,
+      observaciones: data.observaciones
+    };
+    return this.put(`/api/asistencia/marcados/${marcadoId}/confirmar-horas-extras`, payload);
   }
 }

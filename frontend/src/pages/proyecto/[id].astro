@@ -116,7 +116,7 @@ const pageTitle = 'Tablero de Proyecto';
           <!-- Totales -->
           <div class="section totales-panel">
             <div class="total-item">
-              <span>Total Horas Reales:</span>
+              <span>Total:</span>
               <strong id="panel-total-reales" class="total-value">06:00</strong>
             </div>
           </div>
@@ -191,7 +191,7 @@ const pageTitle = 'Tablero de Proyecto';
                     <th>Fecha</th>
                     <th>Día</th>
                     <th>Horas Trabajadas</th>
-                    <th>Horas Reales</th>
+                    <th id="th-mes-horas-reales">Horas Reales</th>
                   </tr>
                 </thead>
                 <tbody id="mes-dias-tbody">
@@ -204,7 +204,7 @@ const pageTitle = 'Tablero de Proyecto';
                     <td><strong>Total del Mes:</strong></td>
                     <td></td>
                     <td><strong id="mes-total-trabajadas">00:00</strong></td>
-                    <td><strong id="mes-total-reales">00:00</strong></td>
+                    <td id="td-mes-total-reales"><strong id="mes-total-reales">00:00</strong></td>
                   </tr>
                 </tfoot>
               </table>
@@ -368,7 +368,7 @@ const pageTitle = 'Tablero de Proyecto';
   document.addEventListener('view-tarea', (event: any) => {
     const tarea = event.detail.tarea;
     TareaHandler.tareaEnVista = tarea;
-    const usaHorasReales = proyectoHandlers.state.usuarioActual?.usar_horas_reales || false;
+    const usaHorasReales = proyectoHandlers.state.proyectoActual?.horas_reales_activas || false;
     TareaHandler.renderizarVistaDetalle(tarea, usaHorasReales);
     document.getElementById('view-tarea-modal')!.style.display = 'flex';
   });
@@ -536,11 +536,22 @@ const pageTitle = 'Tablero de Proyecto';
       // Actualizar UI
       const periodoEl = document.getElementById('proyecto-periodo');
       if (periodoEl) {
-        periodoEl.textContent = `${MESES_ES[mes as keyof typeof MESES_ES]} ${anio}`;
+        const hoy = new Date();
+        const mesActualReal = hoy.getMonth() + 1;
+        const anioActualReal = hoy.getFullYear();
+        const esMesPasado = anio < anioActualReal || (anio === anioActualReal && mes < mesActualReal);
+        
+        if (esMesPasado) {
+          periodoEl.innerHTML = `${MESES_ES[mes as keyof typeof MESES_ES]} ${anio} <span style="margin-left: 8px; padding: 2px 8px; background: #555; border-radius: 4px; font-size: 0.75rem;">✓ Terminado</span>`;
+        } else {
+          periodoEl.textContent = `${MESES_ES[mes as keyof typeof MESES_ES]} ${anio}`;
+        }
       }
 
+      // renderMeses recibe el mes seleccionado (para marcarlo con check)
       MesesHandler.renderMeses({ anio, mes });
-      MesesHandler.updateMesInfo({ anio, mes });
+      // updateMesInfo siempre muestra el mes actual real del sistema
+      MesesHandler.updateMesInfo();
     }
   });
 
@@ -626,7 +637,10 @@ const pageTitle = 'Tablero de Proyecto';
     if (proyecto) {
       // Cargar meses
       await MesesHandler.loadMeses(proyecto.id);
-      MesesHandler.updateMesInfo({ anio: proyecto.anio, mes: proyecto.mes });
+      // Renderizar meses marcando el mes del proyecto como seleccionado
+      MesesHandler.renderMeses({ anio: proyecto.anio, mes: proyecto.mes });
+      // updateMesInfo siempre muestra el mes actual real del sistema
+      MesesHandler.updateMesInfo();
 
       // Actualizar nombre del sidebar
       const sidebarNombre = document.getElementById('proyecto-nombre-sidebar');

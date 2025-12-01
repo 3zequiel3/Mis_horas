@@ -64,25 +64,46 @@ export const ProyectoFormHandler = {
         return false;
       }
 
-      // Validar configuración de turnos si está en modo turnos
-      if (modoHorarios === 'turnos') {
-        if (!turnoMananaInicio || !turnoMananaFin || !turnoTardeInicio || !turnoTardeFin) {
-          await AlertUtils.error('Error', 'Debes configurar los horarios de ambos turnos');
-          return false;
+      // Validar configuración de horarios según el modo seleccionado
+      if (tipoProyecto === 'empleados') {
+        if (modoHorarios === 'turnos') {
+          if (!turnoMananaInicio || !turnoMananaFin || !turnoTardeInicio || !turnoTardeFin) {
+            await AlertUtils.error('Error', 'Debes configurar los horarios de ambos turnos');
+            return false;
+          }
+        } else if (modoHorarios === 'corrido') {
+          if (!horarioInicio || !horarioFin) {
+            await AlertUtils.error('Error', 'Debes configurar el horario de entrada y salida');
+            return false;
+          }
         }
       }
 
       // Obtener empleados si es proyecto con empleados
       let empleados: string[] = [];
+      let empleadosEmails: { [nombre: string]: string } = {};
+      
       if (tipoProyecto === 'empleados') {
-        const empleadosInputs = document.querySelectorAll('.empleado-input') as NodeListOf<HTMLInputElement>;
-        empleados = Array.from(empleadosInputs)
-          .map(input => input.value
-            .replace(/[\r\n\t]/g, ' ')  // Reemplazar saltos de línea y tabs por espacio
-            .replace(/\s+/g, ' ')       // Normalizar múltiples espacios a uno solo
-            .trim()                      // Eliminar espacios al inicio y final
-          )
-          .filter(nombre => nombre !== '');
+        const empleadosItems = document.querySelectorAll('.empleado-item');
+        
+        empleadosItems.forEach(item => {
+          const nombreInput = item.querySelector('.empleado-nombre') as HTMLInputElement;
+          const emailInput = item.querySelector('.empleado-email') as HTMLInputElement;
+          
+          if (nombreInput && nombreInput.value.trim()) {
+            const nombre = nombreInput.value
+              .replace(/[\r\n\t]/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim();
+            
+            empleados.push(nombre);
+            
+            // Si tiene email asociado, guardarlo
+            if (emailInput && emailInput.value.trim()) {
+              empleadosEmails[nombre] = emailInput.value.trim();
+            }
+          }
+        });
 
         if (empleados.length === 0) {
           await AlertUtils.error('Error', 'Debes agregar al menos un empleado');

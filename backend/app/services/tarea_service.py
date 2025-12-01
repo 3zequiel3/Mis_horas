@@ -135,20 +135,16 @@ class TareaService:
         from app.models.proyecto import Proyecto
         
         proyecto = Proyecto.query.filter(Proyecto.id == tarea.proyecto_id).first()
-        usuario = Usuario.query.filter(Usuario.id == usuario_id).first()
         
-        # Para proyectos de empleados, siempre usar horas_trabajadas
-        if proyecto and proyecto.tipo_proyecto == 'empleados':
-            # Suma horas_trabajadas de todos los días de todos los empleados
-            total_horas = sum(dia.horas_trabajadas or 0 for dia in tarea.dias)
+        # Usar configuración del proyecto
+        usar_horas_reales = proyecto.horas_reales_activas if proyecto else False
+        
+        if usar_horas_reales:
+            # Si el proyecto tiene horas reales activas, sumar horas_reales
+            total_horas = sum(dia.horas_reales or 0 for dia in tarea.dias)
         else:
-            # Para proyectos personales, usar configuración del usuario
-            usar_horas_reales = usuario.usar_horas_reales if usuario else False
-            
-            if usar_horas_reales:
-                total_horas = sum(dia.horas_reales or 0 for dia in tarea.dias)
-            else:
-                total_horas = sum(dia.horas_trabajadas or 0 for dia in tarea.dias)
+            # Si no, sumar horas_trabajadas
+            total_horas = sum(dia.horas_trabajadas or 0 for dia in tarea.dias)
         
         return horas_a_formato(total_horas)
     

@@ -36,12 +36,13 @@ class DiaService:
         if not dia:
             return None
         
-        usuario = Usuario.query.filter(Usuario.id == user_id).first()
-        usar_horas_reales = usuario.usar_horas_reales if usuario else False
+        # Obtener configuración del proyecto
+        proyecto = Proyecto.query.filter(Proyecto.id == dia.proyecto_id).first()
+        usar_horas_reales = proyecto.horas_reales_activas if proyecto else False
         
         horas_float = formato_a_horas(horas_str)
         
-        # Actualizar según la configuración del usuario
+        # Actualizar según la configuración del proyecto
         if usar_horas_reales:
             # Si usa horas reales:
             # - Guardar entrada en horas_trabajadas
@@ -59,19 +60,20 @@ class DiaService:
         db.session.refresh(dia)
         
         # Recalcular tareas afectadas
-        DiaService.recalcular_tareas_afectadas(dia, user_id)
+        DiaService.recalcular_tareas_afectadas(dia, dia.proyecto_id)
         
         return dia
     
     @staticmethod
-    def recalcular_tareas_afectadas(dia: Dia, user_id: int):
-        """Recalcula tareas afectadas según la configuración del usuario"""
+    def recalcular_tareas_afectadas(dia: Dia, proyecto_id: int):
+        """Recalcula tareas afectadas según la configuración del proyecto"""
         tareas = Tarea.query.join(tarea_dia).filter(
             tarea_dia.c.dia_id == dia.id
         ).all()
         
-        usuario = Usuario.query.filter(Usuario.id == user_id).first()
-        usar_horas_reales = usuario.usar_horas_reales if usuario else False
+        # Obtener configuración del proyecto
+        proyecto = Proyecto.query.filter(Proyecto.id == proyecto_id).first()
+        usar_horas_reales = proyecto.horas_reales_activas if proyecto else False
         
         for tarea in tareas:
             if usar_horas_reales:
@@ -116,14 +118,22 @@ class DiaService:
             dia.hora_salida = hora_salida
             dia.horas_trabajadas = horas_trabajadas
             
-            # Las horas_reales no se modifican en tablero de empleados
-            # pero si existían, las mantenemos
+            # Obtener configuración del proyecto
+            proyecto = Proyecto.query.filter(Proyecto.id == dia.proyecto_id).first()
+            usar_horas_reales = proyecto.horas_reales_activas if proyecto else False
+            
+            if usar_horas_reales:
+                # Si el proyecto tiene horas reales activas, calcular como la mitad
+                dia.horas_reales = horas_trabajadas / 2
+            else:
+                # Si no, limpiar horas_reales
+                dia.horas_reales = 0
             
             db.session.commit()
             db.session.refresh(dia)
             
             # Recalcular tareas afectadas
-            DiaService.recalcular_tareas_afectadas(dia, user_id)
+            DiaService.recalcular_tareas_afectadas(dia, dia.proyecto_id)
             
             return dia
             
@@ -225,6 +235,16 @@ class DiaService:
             # Actualizar horas trabajadas
             dia.horas_trabajadas = total_horas
             
+            # Obtener configuración del proyecto para horas reales
+            usar_horas_reales = proyecto.horas_reales_activas if proyecto else False
+            
+            if usar_horas_reales:
+                # Si el proyecto tiene horas reales activas, calcular como la mitad
+                dia.horas_reales = total_horas / 2
+            else:
+                # Si no, limpiar horas_reales
+                dia.horas_reales = 0
+            
             # Guardar horas extras calculadas
             dia.horas_extras = round(horas_extras_calculadas, 2) if horas_extras_calculadas > 0 else 0
             
@@ -233,7 +253,7 @@ class DiaService:
             
             # Recalcular tareas si es necesario
             if user_id:
-                DiaService.recalcular_tareas_afectadas(dia, user_id)
+                DiaService.recalcular_tareas_afectadas(dia, dia.proyecto_id)
             
             return dia
             

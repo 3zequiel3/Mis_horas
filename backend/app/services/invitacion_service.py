@@ -181,8 +181,11 @@ class InvitacionService:
             if not usuario or usuario.email != invitacion.email_destinatario:
                 return None, "No tienes permisos para aceptar esta invitación"
             
-            # Verificar que el empleado no esté ya asociado
+            # Verificar que el empleado existe y no esté ya asociado
             empleado = Empleado.query.get(invitacion.empleado_id)
+            if not empleado:
+                return None, "El empleado no existe o fue eliminado"
+                
             if empleado.usuario_id is not None:
                 return None, "El empleado ya está asociado a otro usuario"
             

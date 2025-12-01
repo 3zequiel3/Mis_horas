@@ -1,13 +1,12 @@
 /* ===========================
-   NUEVO PROYECTO STYLES
+   NUEVO PROYECTO WIZARD STYLES
    =========================== */
 
 .nuevo-proyecto-container {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  min-height: calc(100vh - 200px);
-  padding: 2rem 0;
+  padding: 2rem 1rem 4rem;
 }
 
 .proyecto-card {
@@ -16,49 +15,161 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   padding: 2.5rem;
   width: 100%;
-  max-width: 900px;
+  max-width: 700px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   position: relative;
-  overflow: hidden;
-}
-
-.proyecto-card::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.1), transparent);
-  border-radius: 50%;
-}
-
-.card-header {
-  position: relative;
-  z-index: 1;
+  display: flex;
+  flex-direction: column;
   margin-bottom: 2rem;
 }
 
-.card-header h1 {
-  font-size: 2rem;
-  margin: 0 0 0.5rem 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 700;
-}
-
-.card-header p {
-  color: var(--text-secondary);
-  margin: 0;
-  font-size: 0.95rem;
+.proyecto-card,
+.proyecto-card * {
+  overflow: visible !important;
+  max-height: none !important;
 }
 
 .proyecto-form {
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: visible !important;
 }
+
+/* ===========================
+   WIZARD STEPS
+   =========================== */
+
+.wizard-step {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.wizard-step.active {
+  display: flex;
+  flex-direction: column;
+  overflow: visible !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.step-content {
+  margin-bottom: 1rem;
+  overflow: visible !important;
+  height: auto !important;
+}
+
+.step-icon {
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.step-content h3 {
+  text-align: center;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  margin: 0 0 2rem 0;
+  font-weight: 600;
+}
+
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ===========================
+   TIPO DE TABLERO CARDS
+   =========================== */
+
+.tipo-tablero-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.tipo-card {
+  background: var(--bg-secondary);
+  border: 2px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.tipo-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+}
+
+.tipo-card.selected {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+}
+
+.tipo-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.tipo-card h4 {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+}
+
+.tipo-card p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.tipo-check {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.3s ease;
+}
+
+.tipo-card.selected .tipo-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ===========================
+   FORM ELEMENTS
+   =========================== */
 
 .form-group {
   margin-bottom: 1.5rem;
@@ -73,6 +184,8 @@
 }
 
 .form-group input[type='text'],
+.form-group input[type='email'],
+.form-group input[type='time'],
 .form-group select,
 .form-group textarea {
   width: 100%;
@@ -87,11 +200,14 @@
 }
 
 .form-group input[type='text']::placeholder,
+.form-group input[type='email']::placeholder,
 .form-group textarea::placeholder {
   color: rgba(255, 255, 255, 0.4);
 }
 
 .form-group input[type='text']:focus,
+.form-group input[type='email']:focus,
+.form-group input[type='time']:focus,
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
@@ -111,25 +227,37 @@
   min-height: 100px;
 }
 
+/* Form Actions */
 .form-actions {
   display: flex;
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.btn-lg {
-  padding: 1rem 1.5rem;
-  font-size: 1rem;
+.btn {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
   font-weight: 600;
   border-radius: 8px;
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
-  flex: 1;
   text-decoration: none;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-lg {
+  padding: 0.85rem 1.5rem;
+  font-size: 1rem;
+}
+
+.btn-icon {
+  font-size: 1.1rem;
 }
 
 .btn-primary {
@@ -185,67 +313,141 @@
   }
 }
 
-/* Empleados */
-#empleados-list {
+/* ===========================
+   EMPLEADOS SECTION
+   =========================== */
+
+.empleados-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  max-height: 450px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.5rem;
+}
+
+/* Scrollbar personalizado para empleados-list */
+.empleados-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.empleados-list::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.empleados-list::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.4);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.empleados-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.6);
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 .empleado-item {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 1rem;
+  align-items: end;
+  background: var(--bg-secondary);
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  animation: slideIn 0.3s ease;
 }
 
-.empleado-input {
-  flex: 1;
-  padding: 0.75rem 1rem;
+.empleado-item .form-group {
+  margin-bottom: 0;
+}
+
+.empleado-nombre,
+.empleado-email {
+  background: var(--bg-tertiary);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 0.625rem 1rem;
   color: var(--text-primary);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  width: 100%;
+  font-family: inherit;
 }
 
-.empleado-input:focus {
+.empleado-nombre:focus,
+.empleado-email:focus {
   outline: none;
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
+  border-color: var(--primary);
+  background: var(--bg-secondary);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+.empleado-nombre::placeholder,
+.empleado-email::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.link-icon {
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+
 .btn-remove-empleado {
-  padding: 0.5rem 0.75rem;
   background: rgba(244, 67, 54, 0.1);
-  border: 1px solid rgba(244, 67, 54, 0.3);
-  border-radius: 6px;
   color: #f44336;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
   cursor: pointer;
-  font-size: 1.2rem;
-  transition: all 0.3s ease;
-  line-height: 1;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: end;
+  margin-bottom: 0.1rem;
 }
 
 .btn-remove-empleado:hover {
   background: rgba(244, 67, 54, 0.2);
   border-color: rgba(244, 67, 54, 0.5);
+  transform: scale(1.05);
 }
 
-.btn-secondary-outline {
-  background: transparent;
-  color: #667eea;
-  border: 1px solid #667eea;
-  padding: 0.625rem 1.25rem;
+.btn-add-item {
+  background: rgba(102, 126, 234, 0.1) !important;
+  color: #667eea !important;
+  border: 1px dashed rgba(102, 126, 234, 0.4) !important;
+  padding: 0.7rem 1.25rem !important;
   border-radius: 8px;
-  font-size: 0.9rem;
   cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   transition: all 0.3s ease;
+  width: 100%;
 }
 
-.btn-secondary-outline:hover {
-  background: rgba(102, 126, 234, 0.1);
+.btn-add-item:hover {
+  background: rgba(102, 126, 234, 0.15) !important;
+  border-color: rgba(102, 126, 234, 0.6) !important;
+  transform: translateY(-2px);
+}
+
+.btn-add-item span {
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 
 .form-group label input[type='checkbox'] {
@@ -253,101 +455,139 @@
   margin-right: 0.5rem;
 }
 
-/* Sistema de Turnos */
-.form-section {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-}
+/* ===========================
+   HORARIOS SECTION
+   =========================== */
 
-.form-section h3 {
-  margin: 0 0 1.5rem 0;
-  font-size: 1.1rem;
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.time-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.time-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.time-input-group label {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.time-input-group input[type='time'] {
-  padding: 0.75rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
-  font-size: 0.95rem;
-  font-family: inherit;
-  transition: all 0.3s ease;
-}
-
-.time-input-group input[type='time']:focus {
-  outline: none;
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.turnos-config {
+.horario-config {
   margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.turno-group {
-  margin-bottom: 1.5rem;
+.turno-section {
+  padding: 1.25rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.turno-group:last-child {
+.turno-section:last-child {
   margin-bottom: 0;
 }
 
-.turno-group h4 {
+.turno-section h5 {
   margin: 0 0 1rem 0;
   font-size: 1rem;
-  color: var(--text-primary);
   font-weight: 600;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-/* Responsive */
-@media (max-width: 640px) {
+/* ===========================
+   INFO BOX
+   =========================== */
+
+.info-box {
+  background: rgba(102, 126, 234, 0.08);
+  border-left: 3px solid rgba(102, 126, 234, 0.5);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.info-box .info-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.info-box p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ===========================
+   RESPONSIVE
+   =========================== */
+
+@media (max-width: 768px) {
+  .nuevo-proyecto-container {
+    padding: 1rem 0.75rem 2rem;
+  }
+
   .proyecto-card {
+    padding: 1.5rem 1.25rem;
     padding: 1.5rem;
   }
 
-  .card-header h1 {
-    font-size: 1.5rem;
+  .step-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .step-content h3 {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .tipo-tablero-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .tipo-card {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .tipo-icon {
+    font-size: 2.5rem;
+  }
+
+  .empleado-item {
+    grid-template-columns: 1fr;
+    gap: 0.875rem;
+    padding: 1rem;
+  }
+
+  .btn-remove-empleado {
+    align-self: stretch;
+    width: 100%;
+    height: auto;
+    padding: 0.65rem;
+    margin-bottom: 0;
   }
 
   .form-row {
     grid-template-columns: 1fr;
   }
 
-  .form-actions {
-    flex-direction: column;
+  .form-group {
+    margin-bottom: 1.25rem;
   }
 
-  .time-row {
-    grid-template-columns: 1fr;
+  .step-actions {
+    flex-direction: column;
+    padding-top: 1.25rem;
+    margin-top: 1.25rem;
+  }
+
+  .btn, .btn-lg {
+    width: 100%;
+  }
+
+  .info-box {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.85rem;
+  }
+
+  .turno-section {
+    padding: 1rem;
   }
 }
