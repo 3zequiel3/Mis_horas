@@ -361,9 +361,10 @@ function renderDiasEmpleado(dias: Dia[], mostrarHorasReales: boolean): string {
  * Exporta PDF de un empleado específico
  */
 async function exportarPDFEmpleado(empleadoId: number, empleadoNombre: string): Promise<void> {
+  const { AlertUtils } = await import('../utils/swal');
+  
   try {
-    const { AlertUtils } = await import('../utils/swal');
-    AlertUtils.loading('Generando PDF...');
+    await AlertUtils.loading('Generando PDF...');
 
     // Obtener todos los días del empleado del mes
     const dias = await DiaService.getDiasMes(
@@ -390,12 +391,18 @@ async function exportarPDFEmpleado(empleadoId: number, empleadoNombre: string): 
       dias
     );
 
+    // Cerrar loading explícitamente antes de mostrar success
     AlertUtils.close();
+    
+    // Pequeño delay para asegurar que se cierra el loading
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Mostrar éxito
     await AlertUtils.success('Éxito', 'PDF descargado correctamente');
   } catch (error) {
     console.error('Error generando PDF:', error);
-    const { AlertUtils } = await import('../utils/swal');
     AlertUtils.close();
+    await new Promise(resolve => setTimeout(resolve, 100));
     await AlertUtils.error('Error', 'No se pudo generar el PDF');
   }
 }

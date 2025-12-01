@@ -104,10 +104,11 @@ export const AlertUtils = {
    * Alerta de carga con spinner
    */
   loading: (title: string, text?: string) => {
-    Swal.fire({
+    return Swal.fire({
       title,
       text,
       ...DARK_THEME_CONFIG,
+      showConfirmButton: false,
       didOpen: () => {
         Swal.showLoading();
       },

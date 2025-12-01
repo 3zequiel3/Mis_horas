@@ -787,30 +787,50 @@ export const TableroEmpleadosHandler = {
 
       // Generar PDF usando la utilidad
       const { generateEmpleadoPDF } = await import('../utils/pdf');
-      await generateEmpleadoPDF(
-        empleadoNombre,
-        this.state.proyectoActual,
-        periodoTexto,
-        dias
-      );
+      
+      try {
+        await generateEmpleadoPDF(
+          empleadoNombre,
+          this.state.proyectoActual,
+          periodoTexto,
+          dias
+        );
 
-      // Cerrar loading y mostrar éxito
-      Swal.fire({
-        icon: 'success',
-        title: '¡PDF Generado!',
-        text: 'El archivo se ha descargado correctamente',
-        showConfirmButton: false,
-        timer: 2000,
-        background: '#0f1419',
-        color: '#c8c8c8',
-        iconColor: '#43e97b'
-      });
+        // Cerrar loading explícitamente
+        Swal.close();
+        
+        // Mostrar éxito
+        await Swal.fire({
+          icon: 'success',
+          title: '¡PDF Generado!',
+          text: 'El archivo se ha descargado correctamente',
+          timer: 2500,
+          showConfirmButton: true,
+          confirmButtonText: 'OK',
+          background: '#0f1419',
+          color: '#c8c8c8',
+          iconColor: '#43e97b',
+          confirmButtonColor: '#43e97b'
+        });
+      } catch (pdfError) {
+        console.error('Error al generar PDF:', pdfError);
+        Swal.close();
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo generar el PDF. Verifica los datos e intenta nuevamente.',
+          background: '#0f1419',
+          color: '#c8c8c8',
+          iconColor: '#ef4444',
+          confirmButtonColor: '#ef4444'
+        });
+      }
     } catch (error) {
-      console.error('Error generando PDF:', error);
+      console.error('Error en exportación:', error);
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'No se pudo generar el PDF',
+        text: 'Ocurrió un error inesperado',
         background: '#0f1419',
         color: '#c8c8c8',
         iconColor: '#ef4444',
