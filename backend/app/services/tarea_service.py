@@ -7,7 +7,7 @@ from app.utils.formatters import horas_a_formato
 
 class TareaService:
     @staticmethod
-    def crear_tarea(proyecto_id: int, titulo: str, detalle: str = "", 
+    def crear_tarea(proyecto_id: int, titulo: str, mes: int, anio: int, detalle: str = "", 
                    que_falta: str = "", dias_ids: list = None, usuario_id: int = None):
         """Crea una nueva tarea"""
         from app.models.proyecto import Proyecto
@@ -17,6 +17,8 @@ class TareaService:
             detalle=detalle,
             que_falta=que_falta,
             proyecto_id=proyecto_id,
+            mes=mes,
+            anio=anio,
             horas="00:00"  # Inicializar con 00:00
         )
         
@@ -56,9 +58,16 @@ class TareaService:
         return tarea
     
     @staticmethod
-    def obtener_tareas_proyecto(proyecto_id: int):
-        """Obtiene tareas del proyecto"""
-        return Tarea.query.filter(Tarea.proyecto_id == proyecto_id).all()
+    def obtener_tareas_proyecto(proyecto_id: int, mes: int = None, anio: int = None):
+        """Obtiene tareas del proyecto, opcionalmente filtradas por mes y año"""
+        query = Tarea.query.filter(Tarea.proyecto_id == proyecto_id)
+        
+        if mes is not None:
+            query = query.filter(Tarea.mes == mes)
+        if anio is not None:
+            query = query.filter(Tarea.anio == anio)
+        
+        return query.all()
     
     @staticmethod
     def obtener_tarea_por_id(tarea_id: int):

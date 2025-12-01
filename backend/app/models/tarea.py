@@ -10,6 +10,8 @@ class Tarea(db.Model):
     horas = db.Column(db.String(50), default="")
     que_falta = db.Column(db.Text, nullable=True)
     proyecto_id = db.Column(db.Integer, db.ForeignKey("proyectos.id"), nullable=False)
+    mes = db.Column(db.Integer, nullable=False)
+    anio = db.Column(db.Integer, nullable=False)
 
     proyecto = db.relationship("Proyecto", back_populates="tareas")
     dias = db.relationship("Dia", secondary=tarea_dia, back_populates="tareas")
@@ -23,6 +25,8 @@ class Tarea(db.Model):
             'horas': self.horas,
             'que_falta': self.que_falta,
             'proyecto_id': self.proyecto_id,
+            'mes': self.mes,
+            'anio': self.anio,
             'dias': [dia.to_dict() for dia in self.dias],
         }
         

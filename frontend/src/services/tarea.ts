@@ -9,8 +9,13 @@ export class TareaService extends ApiService {
   /**
    * Obtiene todas las tareas de un proyecto
    */
-  static async getTareasProyecto(proyecto_id: number): Promise<Tarea[]> {
-    return this.get(`/api/tareas/proyecto/${proyecto_id}`);
+  static async getTareasProyecto(proyectoId: number, mes?: number, anio?: number): Promise<Tarea[]> {
+    let url = `/api/tareas/proyecto/${proyectoId}`;
+    const params = new URLSearchParams();
+    if (mes !== undefined) params.append('mes', mes.toString());
+    if (anio !== undefined) params.append('anio', anio.toString());
+    if (params.toString()) url += `?${params.toString()}`;
+    return this.get(url);
   }
 
   /**

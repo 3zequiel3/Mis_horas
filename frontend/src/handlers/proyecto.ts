@@ -554,7 +554,11 @@ export async function loadTareas(): Promise<void> {
   try {
     if (!state.proyectoActual) return;
 
-    state.tareasActuales = await TareaService.getTareasProyecto(state.proyectoActual.id);
+    state.tareasActuales = await TareaService.getTareasProyecto(
+      state.proyectoActual.id,
+      state.mesActual,
+      state.anioActual
+    );
 
     const listEl = querySelector<HTMLElement>('#tareas-list');
     const countEl = querySelector<HTMLElement>('#tareas-count');

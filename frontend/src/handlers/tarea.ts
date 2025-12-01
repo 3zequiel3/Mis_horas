@@ -205,9 +205,16 @@ export const TareaHandler = {
         await TareaService.updateTarea(tareaId, titulo, detalle, que_falta, diasIds);
         await AlertUtils.success('Éxito', 'Tarea actualizada correctamente');
       } else {
+        // Obtener mes y anio del proyecto actual
+        const proyectoHandlers = (window as any).proyectoHandlers;
+        const mes = proyectoHandlers?.state?.mesActual || new Date().getMonth() + 1;
+        const anio = proyectoHandlers?.state?.anioActual || new Date().getFullYear();
+        
         await TareaService.createTarea(
           proyectoId,
           titulo,
+          mes,
+          anio,
           detalle,
           que_falta,
           diasIds.length > 0 ? diasIds : undefined

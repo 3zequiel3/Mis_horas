@@ -7,8 +7,10 @@ tarea_bp = Blueprint('tareas', __name__)
 @tarea_bp.route('/proyecto/<int:proyecto_id>', methods=['GET'])
 @token_required
 def get_tareas_proyecto(usuario_actual, proyecto_id):
-    """Obtiene tareas de un proyecto"""
-    tareas = TareaService.obtener_tareas_proyecto(proyecto_id)
+    """Obtiene tareas de un proyecto, opcionalmente filtradas por mes y año"""
+    mes = request.args.get('mes', type=int)
+    anio = request.args.get('anio', type=int)
+    tareas = TareaService.obtener_tareas_proyecto(proyecto_id, mes, anio)
     # Incluir desglose de empleados en la respuesta
     return jsonify([t.to_dict(incluir_desglose_empleados=True) for t in tareas]), 200
 
@@ -18,8 +20,8 @@ def create_tarea(usuario_actual):
     """Crea una nueva tarea"""
     data = request.get_json()
     
-    if not data or 'titulo' not in data or 'proyecto_id' not in data:
-        return jsonify({'error': 'Campos requeridos: titulo, proyecto_id'}), 400
+    if not data or 'titulo' not in data or 'proyecto_id' not in data or 'mes' not in data or 'anio' not in data:
+        return jsonify({'error': 'Campos requeridos: titulo, proyecto_id, mes, anio'}), 400
     
     # Si dias_ids es lista vacía, pasarlo como None para que no procese
     dias_ids = data.get('dias_ids')
@@ -29,6 +31,8 @@ def create_tarea(usuario_actual):
     tarea = TareaService.crear_tarea(
         proyecto_id=data['proyecto_id'],
         titulo=data['titulo'],
+        mes=data['mes'],
+        anio=data['anio'],
         detalle=data.get('detalle', ''),
         que_falta=data.get('que_falta', ''),
         dias_ids=dias_ids,
