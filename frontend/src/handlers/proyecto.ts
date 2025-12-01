@@ -70,14 +70,26 @@ function calcularHorasTarea(tarea: any): string {
 
 /**
  * Obtiene la semana actual en formato YYYY-MM-DD
- * Respeta la preferencia del usuario para el día de inicio de semana
+ * Solo calcula la semana si estamos viendo el mes actual
+ * Para meses pasados, retorna array vacío (se mostrará mensaje especial)
  */
 function getSemanActual(): string[] {
   const hoy = new Date();
+  const mesActualSistema = hoy.getMonth() + 1;
+  const anioActualSistema = hoy.getFullYear();
+  
+  const esMesActual = state.anioActual === anioActualSistema && state.mesActual === mesActualSistema;
+  
+
+  // Si no es el mes actual, retornar array vacío
+  if (!esMesActual) {
+    return [];
+  }
+
+  // Calcular semana actual solo para el mes en curso
   const diaActual = hoy.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
   const diaInicioSemana = state.usuarioActual?.dia_inicio_semana || 0; // 0 = Domingo, 1 = Lunes
 
-  // Calcular el primer día de la semana
   let diasAtras = diaActual - diaInicioSemana;
   if (diasAtras < 0) {
     diasAtras += 7;
@@ -91,8 +103,11 @@ function getSemanActual(): string[] {
     const year = fecha.getFullYear();
     const month = String(fecha.getMonth() + 1).padStart(2, '0');
     const day = String(fecha.getDate()).padStart(2, '0');
-    semana.push(`${year}-${month}-${day}`);
+    const fechaStr = `${year}-${month}-${day}`;
+    semana.push(fechaStr);
   }
+
+  console.log('📅 [SEMANA] Días de la semana actual:', semana);
 
   return semana;
 }
@@ -534,13 +549,46 @@ export async function loadDias(): Promise<void> {
 
     // Obtener días de la semana actual (filtrado en memoria, más rápido)
     const semanaFechas = getSemanActual();
-    const diasSemana = state.diasActuales.filter((dia) => {
-      const diaFecha = new Date(dia.fecha).toISOString().split('T')[0];
-      return semanaFechas.includes(diaFecha);
-    });
+    
+    // Si semanaFechas está vacío, es porque estamos viendo un mes pasado
+    if (semanaFechas.length === 0) {
+      // Mostrar mensaje bonito de mes terminado
+      const hoy = new Date();
+      const mesActualSistema = hoy.getMonth() + 1;
+      const anioActualSistema = hoy.getFullYear();
+      const esMesFuturo = state.anioActual > anioActualSistema || 
+                          (state.anioActual === anioActualSistema && state.mesActual > mesActualSistema);
+      
+      const html = `
+        <tr>
+          <td colspan="4" class="mes-message-row">
+            <div class="mes-message mes-terminado">
+              <span class="mes-icon">📅</span>
+              <span class="mes-text">${esMesFuturo ? 'Mes Futuro' : 'Mes Finalizado'}</span>
+              <p style="margin-top: 8px; font-size: 0.9em; opacity: 0.8;">
+                ${esMesFuturo 
+                  ? 'Este mes aún no ha comenzado' 
+                  : 'Has llegado al final de este mes. ¡Buen trabajo!'}
+              </p>
+            </div>
+          </td>
+        </tr>
+      `;
+      if (diasTbody) diasTbody.innerHTML = html;
+      toggleTotalsRow(false);
+    } else {
+      // Filtrar días de la semana actual
+      const diasSemana = state.diasActuales.filter((dia) => {
+        const diaFecha = new Date(dia.fecha).toISOString().split('T')[0];
+        return semanaFechas.includes(diaFecha);
+      });
+      
+      // Renderizar tabla normal para el mes actual
+      renderTablaDias(diasSemana, 'dias-tbody', 'total-trabajadas', 'total-reales');
+      toggleTotalsRow(true);
+    }
 
-    // Renderizar ambas tablas con los datos ya cargados
-    renderTablaDias(diasSemana, 'dias-tbody', 'total-trabajadas', 'total-reales');
+    // Renderizar tabla mensual completa (siempre disponible)
     renderTablaDias(state.diasActuales, 'mes-dias-tbody', 'mes-total-trabajadas', 'mes-total-reales');
   } catch (error) {
     console.error('Error cargando días:', error);
