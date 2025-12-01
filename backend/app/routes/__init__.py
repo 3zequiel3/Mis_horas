@@ -20,6 +20,15 @@ from app.routes.asistencia import asistencia_bp
 from app.routes.deuda import deuda_bp
 from app.routes.configuracion_asistencia import configuracion_bp
 
+# Importar blueprints de Fase 2: RBAC y Auditoría
+from app.routes.auditoria import auditoria_bp
+from app.routes.aprobaciones import aprobaciones_bp
+
+# Importar blueprints de Fase 3: Motor Financiero
+from app.routes.rates import rates_bp
+from app.routes.budgets import budgets_bp
+from app.routes.expenses import expenses_bp
+
 auth_bp = Blueprint('auth', __name__)
 
 def generate_token(user_id: int, remember_me: bool = False) -> str:
@@ -183,3 +192,6 @@ def logout(usuario_actual):
     # El logout simplemente valida que el token es correcto
     # El cliente debe borrar el token del localStorage/cookies
     return jsonify({'message': 'Sesión cerrada exitosamente'}), 200
+
+# Exportar blueprints de Fase 3
+__all__ = ['rates_bp', 'budgets_bp', 'expenses_bp']

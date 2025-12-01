@@ -2,22 +2,30 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Header from '../../components/Header.astro';
 import ProtectedRoute from '../../components/ProtectedRoute.astro';
+import ConfigDrawer from '../../components/ConfigDrawer.astro';
+import ProjectSidebar from '../../components/ProjectSidebar.astro';
 import '../../styles/proyecto.css';
 import '../../styles/tabla.css';
 import '../../styles/tareas.css';
 import '../../styles/modales.css';
 import '../../styles/sidebar-meses.css';
+import '../../styles/project-views.css';
 
 const pageTitle = 'Tablero de Proyecto';
 
 // Los handlers y servicios se importan en el script
+// El sidebar se inicializará dinámicamente con los modules_config del proyecto
 ---
 
 <BaseLayout title={pageTitle}>
   <ProtectedRoute>
     <Header />
-    <div class="container">
-    <div class="proyecto-view">
+    <ConfigDrawer />
+    <ProjectSidebar />
+    
+    <div class="container" id="proyecto-layout">
+      <!-- Vista Dashboard (actual tablero) -->
+      <div id="view-dashboard" class="project-view active">
       <!-- Header del Proyecto -->
       <div class="proyecto-header">
         <div>
@@ -101,8 +109,11 @@ const pageTitle = 'Tablero de Proyecto';
           <!-- Panel de Tareas -->
           <div class="section tareas-panel">
             <div class="tareas-header">
-              <h2>📋 Tareas <span id="tareas-count" class="tareas-badge">0</span></h2>
-              <button id="nueva-tarea-btn" class="btn btn-small">+ Nueva tarea</button>
+              <div class="tareas-title-group">
+                <h2>📋 Tareas</h2>
+                <span id="tareas-count" class="tareas-badge">0</span>
+              </div>
+              <button id="nueva-tarea-btn" class="btn btn-small">+</button>
             </div>
 
             <!-- Lista de Tareas -->
@@ -126,8 +137,11 @@ const pageTitle = 'Tablero de Proyecto';
             📥 Exportar PDF
           </button>
         </div>
+        <!-- Fin tareas-column -->
       </div>
+      <!-- Fin proyecto-grid -->
       </div>
+      <!-- Fin proyecto-wrapper -->
 
       <!-- Modal para agregar mes -->
       <div class="add-mes-modal" id="add-mes-modal">
@@ -273,11 +287,6 @@ const pageTitle = 'Tablero de Proyecto';
       </div>
 
       <div id="error-message" class="alert alert-error" style="display: none;"></div>
-    </div>
-  </div>
-</BaseLayout>
-
-
 
 <script>
   import { AuthService } from '../../services/auth';
@@ -596,9 +605,14 @@ const pageTitle = 'Tablero de Proyecto';
     }
   });
 
-  // Botón de Configuración
-  document.getElementById('config-btn')?.addEventListener('click', () => {
-    proyectoHandlers.mostrarModalConfiguracion();
+  // Botón de Configuración - Abrir drawer
+  document.getElementById('config-btn')?.addEventListener('click', async () => {
+    const proyecto = proyectoHandlers.state.proyectoActual;
+    if (proyecto) {
+      const { ConfigDrawerHandler } = await import('../../handlers/config-drawer');
+      const drawer = new ConfigDrawerHandler(proyecto.id);
+      await drawer.open();
+    }
   });
 
   // Finalizar o Reactivar proyecto
@@ -645,6 +659,11 @@ const pageTitle = 'Tablero de Proyecto';
       // Actualizar nombre del sidebar
       const sidebarNombre = document.getElementById('proyecto-nombre-sidebar');
       if (sidebarNombre) sidebarNombre.textContent = proyecto.nombre;
+
+      // Actualizar módulos del sidebar según configuración del proyecto
+      if (typeof (window as any).updateSidebarModules === 'function') {
+        (window as any).updateSidebarModules(proyecto.modules_config || {});
+      }
     }
     
     // Inicializar modo de selección múltiple
@@ -656,7 +675,30 @@ const pageTitle = 'Tablero de Proyecto';
     proyectoHandlers.cleanupMultiSelect();
   });
 
+  // Inicializar handler de vistas
+  const { ProjectViewHandler } = await import('../../handlers/project-view');
+  const currentProyecto = proyectoHandlers.state.proyectoActual;
+  if (currentProyecto) {
+    const viewHandler = new ProjectViewHandler(currentProyecto.id);
+    (window as any).viewHandler = viewHandler;
+  }
+
 </script>
+
+      </div>
+      <!-- Fin Vista Dashboard -->
+
+      <!-- Otras vistas (ocultas por defecto) -->
+      <div id="view-audit" class="project-view">
+        <h2>Auditoría</h2>
+        <p>Vista de auditoría pendiente de implementar...</p>
+      </div>
+      
+      <div id="view-approvals" class="project-view">
+        <h2>Aprobaciones</h2>
+        <p>Vista de aprobaciones pendiente de implementar...</p>
+      </div>
     </div>
+    <!-- Fin container -->
   </ProtectedRoute>
 </BaseLayout>

@@ -1,0 +1,744 @@
+---
+/**
+ * Página de Gestión de Miembros de Organización
+ * Lista miembros, invitar por email, cambiar roles, eliminar
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Header from '../../../components/Header.astro';
+import ProtectedRoute from '../../../components/ProtectedRoute.astro';
+
+const { id } = Astro.params;
+---
+
+<BaseLayout title="Miembros de la Organización">
+  <ProtectedRoute />
+  <Header />
+  
+  <main class="container">
+    <div class="page-header">
+      <h1>👥 Miembros de la Organización</h1>
+      <div class="header-actions">
+        <button id="btn-invitar" class="btn btn-primary">
+          ✉️ Invitar Miembro
+        </button>
+        <button id="btn-volver" class="btn btn-secondary">
+          ← Volver
+        </button>
+      </div>
+    </div>
+
+    <div id="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Cargando miembros...</p>
+    </div>
+
+    <div id="content" style="display: none;">
+      <div class="org-info-card">
+        <h2 id="org-nombre">Cargando...</h2>
+        <p class="member-count">
+          <span id="total-miembros">0</span> miembros activos
+        </p>
+      </div>
+
+      <div class="members-section">
+        <div class="section-header">
+          <h3>Miembros Activos</h3>
+          <input 
+            type="text" 
+            id="search-member" 
+            class="search-input" 
+            placeholder="🔍 Buscar por nombre o email..."
+          />
+        </div>
+
+        <div class="members-table">
+          <div class="table-header">
+            <div class="col-user">Usuario</div>
+            <div class="col-role">Rol</div>
+            <div class="col-date">Miembro desde</div>
+            <div class="col-actions">Acciones</div>
+          </div>
+          <div id="members-list" class="table-body">
+            <!-- Filas dinámicas -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Invitar Miembro -->
+  <div id="modal-invitar" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>✉️ Invitar Nuevo Miembro</h2>
+        <button class="modal-close" id="modal-close">×</button>
+      </div>
+      <form id="form-invitar" class="modal-body">
+        <div class="form-group">
+          <label for="invite-email" class="required">Email</label>
+          <input 
+            type="email" 
+            id="invite-email" 
+            class="form-control" 
+            placeholder="usuario@ejemplo.com"
+            required 
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="invite-role" class="required">Rol</label>
+          <select id="invite-role" class="form-control" required>
+            <option value="">Selecciona un rol...</option>
+            <option value="admin">⚙️ Administrador - Gestión completa</option>
+            <option value="manager">📋 Manager - Gestión de proyectos</option>
+            <option value="member">👤 Miembro - Trabajo en proyectos</option>
+            <option value="viewer">👁️ Observador - Solo lectura</option>
+          </select>
+        </div>
+
+        <div class="info-box">
+          <strong>ℹ️ Información:</strong>
+          <p>Se enviará un correo de invitación al email proporcionado.</p>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-invite">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary">
+            Enviar Invitación
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .page-header h1 {
+    margin: 0;
+    font-size: 2rem;
+    color: #333;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-secondary {
+    background: #f5f5f5;
+    color: #666;
+  }
+
+  .btn-secondary:hover {
+    background: #e0e0e0;
+  }
+
+  .btn-danger {
+    background: #e74c3c;
+    color: white;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .btn-change-role {
+    background: #3498db;
+    color: white;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .loading-container {
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .org-info-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .org-info-card h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+  }
+
+  .member-count {
+    margin: 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+
+  .members-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .section-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #333;
+  }
+
+  .search-input {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    width: 300px;
+    max-width: 100%;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+
+  .members-table {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+    font-weight: 600;
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .table-body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .member-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    align-items: center;
+    transition: background 0.2s ease;
+  }
+
+  .member-row:hover {
+    background: #f8f9fa;
+  }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1.1rem;
+  }
+
+  .user-details h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: #333;
+  }
+
+  .user-details p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #999;
+  }
+
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    width: fit-content;
+  }
+
+  .role-badge.owner { background: #ffd700; color: #333; }
+  .role-badge.admin { background: #e3f2fd; color: #1976d2; }
+  .role-badge.manager { background: #f3e5f5; color: #7b1fa2; }
+  .role-badge.member { background: #e8f5e9; color: #388e3c; }
+  .role-badge.viewer { background: #fff3e0; color: #f57c00; }
+
+  .member-date {
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .member-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal.active {
+    display: flex;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #333;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .modal-close:hover {
+    color: #333;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  label {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+  }
+
+  label.required::after {
+    content: ' *';
+    color: #e74c3c;
+  }
+
+  .form-control {
+    padding: 0.75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .info-box {
+    background: #e3f2fd;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #1976d2;
+  }
+
+  .info-box strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #1976d2;
+  }
+
+  .info-box p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+  }
+
+  @media (max-width: 768px) {
+    .table-header,
+    .member-row {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+
+    .col-user, .col-role, .col-date, .col-actions {
+      display: none;
+    }
+
+    .member-row {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .member-actions {
+      width: 100%;
+      justify-content: stretch;
+    }
+
+    .member-actions button {
+      flex: 1;
+    }
+  }
+</style>
+
+<script define:vars={{ orgId: id }}>
+  import { OrganizationService } from '../../../services/organization';
+  import Swal from 'sweetalert2';
+
+  const loading = document.getElementById('loading');
+  const content = document.getElementById('content');
+  const membersList = document.getElementById('members-list');
+  const searchInput = document.getElementById('search-member');
+  const btnInvitar = document.getElementById('btn-invitar');
+  const btnVolver = document.getElementById('btn-volver');
+  const modal = document.getElementById('modal-invitar');
+  const modalClose = document.getElementById('modal-close');
+  const formInvitar = document.getElementById('form-invitar');
+  const btnCancelarInvite = document.getElementById('btn-cancelar-invite');
+
+  let members = [];
+  let currentUserRole = '';
+
+  const roleLabels = {
+    'owner': '👑 Propietario',
+    'admin': '⚙️ Admin',
+    'manager': '📋 Manager',
+    'member': '👤 Miembro',
+    'viewer': '👁️ Observador'
+  };
+
+  async function cargarMiembros() {
+    try {
+      const data = await OrganizationService.getOrganizationMembers(parseInt(orgId));
+      members = data.miembros || [];
+      currentUserRole = data.rol_usuario || '';
+
+      // Actualizar info de org
+      const orgNombreEl = document.getElementById('org-nombre');
+      const totalMiembrosEl = document.getElementById('total-miembros');
+      if (orgNombreEl) orgNombreEl.textContent = data.nombre_organizacion || 'Organización';
+      if (totalMiembrosEl) totalMiembrosEl.textContent = members.length.toString();
+
+      renderMiembros(members);
+      loading.style.display = 'none';
+      content.style.display = 'block';
+    } catch (error) {
+      console.error('Error al cargar miembros:', error);
+      await Swal.fire({
+        title: 'Error',
+        text: 'No se pudieron cargar los miembros',
+        icon: 'error'
+      });
+    }
+  }
+
+  function renderMiembros(miembros) {
+    if (miembros.length === 0) {
+      membersList.innerHTML = '<div style="padding: 2rem; text-align: center; color: #999;">No hay miembros registrados</div>';
+      return;
+    }
+
+    membersList.innerHTML = miembros.map(m => {
+      const initials = (m.nombre_usuario || m.email || '?').charAt(0).toUpperCase();
+      const fecha = new Date(m.fecha_union).toLocaleDateString('es-ES');
+      const canModify = currentUserRole === 'owner' || (currentUserRole === 'admin' && m.rol !== 'owner');
+
+      return `
+        <div class="member-row" data-member-id="${m.usuario_id}">
+          <div class="user-info">
+            <div class="user-avatar">${initials}</div>
+            <div class="user-details">
+              <h4>${m.nombre_usuario || 'Sin nombre'}</h4>
+              <p>${m.email}</p>
+            </div>
+          </div>
+          <div class="role-badge ${m.rol}">${roleLabels[m.rol] || m.rol}</div>
+          <div class="member-date">${fecha}</div>
+          <div class="member-actions">
+            ${canModify && m.rol !== 'owner' ? `
+              <button class="btn btn-change-role btn-sm" data-user-id="${m.usuario_id}" data-current-role="${m.rol}">
+                🔄 Cambiar Rol
+              </button>
+              <button class="btn btn-danger btn-sm" data-user-id="${m.usuario_id}">
+                🗑️ Eliminar
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Event listeners
+    document.querySelectorAll('.btn-change-role').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const target = e.target;
+        const userId = target.dataset.userId;
+        const currentRole = target.dataset.currentRole;
+        if (userId && currentRole) {
+          await cambiarRol(parseInt(userId), currentRole);
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-danger').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const target = e.target;
+        const userId = target.dataset.userId;
+        if (userId) {
+          await eliminarMiembro(parseInt(userId));
+        }
+      });
+    });
+  }
+
+  async function cambiarRol(userId, currentRole) {
+    const { value: newRole } = await Swal.fire({
+      title: 'Cambiar Rol',
+      input: 'select',
+      inputOptions: {
+        'admin': '⚙️ Administrador',
+        'manager': '📋 Manager',
+        'member': '👤 Miembro',
+        'viewer': '👁️ Observador'
+      },
+      inputValue: currentRole,
+      showCancelButton: true,
+      confirmButtonText: 'Cambiar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (newRole && newRole !== currentRole) {
+      try {
+        await OrganizationService.updateMemberRole(parseInt(orgId), userId, newRole);
+        await Swal.fire({
+          title: '¡Actualizado!',
+          text: 'El rol se cambió correctamente',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        });
+        await cargarMiembros();
+      } catch (error) {
+        console.error('Error al cambiar rol:', error);
+        await Swal.fire({
+          title: 'Error',
+          text: 'No se pudo cambiar el rol',
+          icon: 'error'
+        });
+      }
+    }
+  }
+
+  async function eliminarMiembro(userId) {
+    const result = await Swal.fire({
+      title: '¿Eliminar miembro?',
+      text: 'Esta acción no se puede deshacer',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e74c3c',
+      cancelButtonColor: '#95a5a6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await OrganizationService.removeMember(parseInt(orgId), userId);
+        await Swal.fire({
+          title: 'Eliminado',
+          text: 'El miembro fue eliminado correctamente',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        });
+        await cargarMiembros();
+      } catch (error) {
+        console.error('Error al eliminar miembro:', error);
+        await Swal.fire({
+          title: 'Error',
+          text: 'No se pudo eliminar el miembro',
+          icon: 'error'
+        });
+      }
+    }
+  }
+
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
+    const filtered = members.filter((m) => 
+      m.nombre_usuario?.toLowerCase().includes(query) ||
+      m.email.toLowerCase().includes(query)
+    );
+    renderMiembros(filtered);
+  });
+
+  btnInvitar.addEventListener('click', () => {
+    if (modal) modal.classList.add('active');
+  });
+
+  modalClose.addEventListener('click', () => {
+    if (modal) modal.classList.remove('active');
+    formInvitar.reset();
+  });
+
+  btnCancelarInvite.addEventListener('click', () => {
+    if (modal) modal.classList.remove('active');
+    formInvitar.reset();
+  });
+
+  formInvitar.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById('invite-email').value;
+    const role = document.getElementById('invite-role').value;
+
+    try {
+      await OrganizationService.inviteMember(parseInt(orgId), email, role);
+      await Swal.fire({
+        title: '¡Invitación Enviada!',
+        text: `Se envió una invitación a ${email}`,
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
+      if (modal) modal.classList.remove('active');
+      formInvitar.reset();
+      await cargarMiembros();
+    } catch (error) {
+      console.error('Error al invitar:', error);
+      await Swal.fire({
+        title: 'Error',
+        text: error.message || 'No se pudo enviar la invitación',
+        icon: 'error'
+      });
+    }
+  });
+
+  btnVolver.addEventListener('click', () => {
+    window.location.href = '/organizaciones';
+  });
+
+  cargarMiembros();
+</script>

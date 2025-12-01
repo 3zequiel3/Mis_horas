@@ -14,8 +14,8 @@ const pageTitle = 'Proyectos';
     <div class="proyectos-view">
       <div class="view-header">
         <div>
-          <h1>Mis Proyectos</h1>
-          <p>Administra y visualiza todos tus proyectos</p>
+          <h1>Gestión de Proyectos</h1>
+          <p>Administra y visualiza todos tus proyectos empresariales</p>
         </div>
         <a href="/nuevo-proyecto" class="btn btn-primary btn-lg">
           + Nuevo Tablero
@@ -77,10 +77,21 @@ const pageTitle = 'Proyectos';
 <script>
   import { AuthService } from '../services/auth';
   import { proyectosHandlers } from '../handlers/proyectos';
+  import { getCurrentUserRole, canAccessFinancialData, currentUserHasPermission } from '../utils/permissions';
+  import { Permission } from '../types/approval';
 
   // Verificar autenticación primero
   if (!AuthService.isAuthenticated()) {
     window.location.href = '/login';
+  }
+
+  // FASE 2 PERMISOS: Verificar permisos del usuario
+  const userRole = getCurrentUserRole();
+  const canViewAll = userRole && ['owner', 'admin'].includes(userRole);
+  
+  if (!canViewAll) {
+    // Los miembros y viewers solo ven sus proyectos asignados
+    console.log('Usuario con acceso limitado a proyectos');
   }
 
   // Exposer handlers globalmente

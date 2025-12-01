@@ -1,0 +1,432 @@
+---
+/**
+ * Página de Listado de Organizaciones
+ * Muestra todas las organizaciones del usuario con tarjetas
+ * Permite cambio rápido de contexto y acceso a configuración
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import ProtectedRoute from '../components/ProtectedRoute.astro';
+import '../styles/organizaciones.css';
+import '../styles/organizaciones-btn.css';
+import '../styles/header.css';
+---
+
+<BaseLayout title="Mis Organizaciones">
+  <ProtectedRoute />
+  <Header />
+  
+  <main class="container">
+    <div class="page-header">
+      <h1>📊 Mis Organizaciones</h1>
+      <button id="btn-nueva-org" class="btn btn-primary">
+        <span>➕</span> Nueva Organización
+      </button>
+    </div>
+
+    <div id="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Cargando organizaciones...</p>
+    </div>
+
+    <div id="organizations-grid" class="organizations-grid" style="display: none;">
+      <!-- Las tarjetas se generarán dinámicamente -->
+    </div>
+
+    <div id="empty-state" class="empty-state" style="display: none;">
+      <div class="empty-icon">🏢</div>
+      <h2>No tienes organizaciones</h2>
+      <p>Crea tu primera organización para comenzar</p>
+      <button class="btn btn-primary" onclick="window.location.href='/organizaciones/nueva'">
+        Crear Organización
+      </button>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  .page-header h1 {
+    margin: 0;
+    font-size: 2rem;
+    color: #333;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  .loading-container {
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .organizations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .org-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .org-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .org-card.active {
+    border: 2px solid #667eea;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+  }
+
+  .org-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .org-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1rem;
+  }
+
+  .org-info h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    color: #333;
+  }
+
+  .org-type {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .org-type.personal { background: #e3f2fd; color: #1976d2; }
+  .org-type.empresa { background: #f3e5f5; color: #7b1fa2; }
+  .org-type.freelance { background: #fff3e0; color: #f57c00; }
+  .org-type.agencia { background: #e8f5e9; color: #388e3c; }
+
+  .org-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #ffd700;
+    color: #333;
+  }
+
+  .org-description {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    min-height: 40px;
+  }
+
+  .org-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #667eea;
+    margin: 0;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: #999;
+    margin: 0;
+  }
+
+  .org-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+  }
+
+  .btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    flex: 1;
+  }
+
+  .btn-secondary {
+    background: #f5f5f5;
+    color: #666;
+  }
+
+  .btn-secondary:hover {
+    background: #e0e0e0;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+
+  .empty-icon {
+    font-size: 5rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .empty-state h2 {
+    color: #666;
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-state p {
+    color: #999;
+    margin-bottom: 2rem;
+  }
+
+  @media (max-width: 768px) {
+    .organizations-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .page-header {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .page-header button {
+      width: 100%;
+    }
+  }
+</style>
+
+<script>
+  import { OrganizationService } from '../services/organization';
+  import type { Organization } from '../stores/organizationStore';
+  import { $currentOrganizationId, setCurrentOrganization } from '../stores/organizationStore';
+  import Swal from 'sweetalert2';
+
+  const loading = document.getElementById('loading')!;
+  const grid = document.getElementById('organizations-grid')!;
+  const emptyState = document.getElementById('empty-state')!;
+  const btnNuevaOrg = document.getElementById('btn-nueva-org')!;
+
+  // Mapeo de traducciones
+  const tipoLabels: Record<string, string> = {
+    'personal': 'Personal',
+    'empresa': 'Empresa',
+    'freelance': 'Freelance',
+    'agencia': 'Agencia'
+  };
+
+  const roleLabels: Record<string, string> = {
+    'owner': '👑 Propietario',
+    'admin': '⚙️ Administrador',
+    'manager': '📋 Manager',
+    'member': '👤 Miembro',
+    'viewer': '👁️ Observador'
+  };
+
+  async function cargarOrganizaciones() {
+    try {
+      const organizations = await OrganizationService.getUserOrganizations();
+      const currentOrgId = $currentOrganizationId.get();
+
+      if (organizations.length === 0) {
+        loading.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      renderOrganizaciones(organizations, currentOrgId);
+      loading.style.display = 'none';
+      grid.style.display = 'grid';
+    } catch (error) {
+      console.error('Error al cargar organizaciones:', error);
+      await Swal.fire({
+        title: 'Error',
+        text: 'No se pudieron cargar las organizaciones',
+        icon: 'error'
+      });
+    }
+  }
+
+  function renderOrganizaciones(organizations: Organization[], currentOrgId: number | null) {
+    grid.innerHTML = organizations.map(org => `
+      <div class="org-card ${org.id === currentOrgId ? 'active' : ''}" data-org-id="${org.id}">
+        <div class="org-card-header">
+          <div class="org-info">
+            <h3>${org.nombre}</h3>
+            <span class="org-type ${org.tipo_organizacion}">${tipoLabels[org.tipo_organizacion] || org.tipo_organizacion}</span>
+          </div>
+          ${org.id === currentOrgId ? '<div class="org-badge">✓ Activa</div>' : ''}
+        </div>
+
+        <p class="org-description">${org.descripcion || 'Sin descripción'}</p>
+
+        <div class="org-stats">
+          <div class="stat">
+            <p class="stat-value">${org.estadisticas?.total_proyectos || 0}</p>
+            <p class="stat-label">Proyectos</p>
+          </div>
+          <div class="stat">
+            <p class="stat-value">${org.estadisticas?.total_miembros || 0}</p>
+            <p class="stat-label">Miembros</p>
+          </div>
+          <div class="stat">
+            <p class="stat-value">${org.plan_type}</p>
+            <p class="stat-label">Plan</p>
+          </div>
+        </div>
+
+        <div class="org-actions">
+          <button class="btn btn-secondary btn-sm btn-config" data-org-id="${org.id}">
+            ⚙️ Configurar
+          </button>
+          <button class="btn btn-secondary btn-sm btn-members" data-org-id="${org.id}">
+            👥 Miembros
+          </button>
+          ${org.id !== currentOrgId ? `
+            <button class="btn btn-primary btn-sm btn-switch" data-org-id="${org.id}">
+              🔄 Cambiar
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    // Agregar event listeners
+    document.querySelectorAll('.btn-config').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const orgId = (e.target as HTMLElement).dataset.orgId;
+        window.location.href = `/organizaciones/${orgId}/settings`;
+      });
+    });
+
+    document.querySelectorAll('.btn-members').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const orgId = (e.target as HTMLElement).dataset.orgId;
+        window.location.href = `/organizaciones/${orgId}/miembros`;
+      });
+    });
+
+    document.querySelectorAll('.btn-switch').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const orgId = parseInt((e.target as HTMLElement).dataset.orgId!);
+        await cambiarOrganizacion(orgId, organizations);
+      });
+    });
+  }
+
+  async function cambiarOrganizacion(orgId: number, organizations: Organization[]) {
+    const org = organizations.find(o => o.id === orgId);
+    if (!org) return;
+
+    try {
+      setCurrentOrganization(org);
+      await Swal.fire({
+        title: '¡Cambiado!',
+        text: `Ahora estás trabajando en: ${org.nombre}`,
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      });
+      window.location.reload();
+    } catch (error) {
+      console.error('Error al cambiar organización:', error);
+      await Swal.fire({
+        title: 'Error',
+        text: 'No se pudo cambiar de organización',
+        icon: 'error'
+      });
+    }
+  }
+
+  btnNuevaOrg.addEventListener('click', () => {
+    window.location.href = '/organizaciones/nueva';
+  });
+
+  // Cargar al iniciar
+  cargarOrganizaciones();
+</script>
+</BaseLayout>

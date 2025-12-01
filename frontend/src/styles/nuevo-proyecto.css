@@ -591,3 +591,247 @@
     padding: 1rem;
   }
 }
+
+/* ===========================
+   COLOR PICKER
+   =========================== */
+
+.color-picker-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.color-presets {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.color-preset {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.color-preset:hover {
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.color-preset.selected {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.color-custom {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.color-custom input[type="color"] {
+  width: 60px;
+  height: 40px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  cursor: pointer;
+}
+
+.color-custom input[type="text"] {
+  flex: 1;
+  padding: 0.65rem 1rem;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  text-transform: uppercase;
+}
+
+/* ===========================
+   MODULES GRID
+   =========================== */
+
+.step-description {
+  text-align: center;
+  color: var(--text-secondary);
+  margin: -0.5rem 0 1.5rem;
+  font-size: 0.95rem;
+}
+
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.module-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 140px;
+}
+
+.module-card:hover {
+  border-color: rgba(103, 126, 234, 0.4);
+  background: rgba(103, 126, 234, 0.08);
+  transform: translateY(-2px);
+}
+
+.module-card.active {
+  border-color: #667eea;
+  background: rgba(103, 126, 234, 0.12);
+}
+
+.module-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.module-card h4 {
+  color: var(--text-primary);
+  font-size: 1rem;
+  margin: 0 0 0.35rem 0;
+  font-weight: 600;
+}
+
+.module-card p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.module-toggle {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: transparent;
+  transition: all 0.2s ease;
+}
+
+.module-card.active .module-toggle {
+  background: #667eea;
+  border-color: #667eea;
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .modules-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .color-presets {
+    justify-content: center;
+  }
+}
+
+/* ===========================
+   BUDGET TYPES
+   =========================== */
+
+.budget-types-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.budget-type-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 160px;
+}
+
+.budget-type-card:hover {
+  border-color: rgba(103, 126, 234, 0.4);
+  background: rgba(103, 126, 234, 0.08);
+  transform: translateY(-2px);
+}
+
+.budget-type-card.selected {
+  border-color: #667eea;
+  background: rgba(103, 126, 234, 0.12);
+}
+
+.budget-type-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.budget-type-card h4 {
+  color: var(--text-primary);
+  font-size: 1rem;
+  margin: 0 0 0.35rem 0;
+  font-weight: 600;
+}
+
+.budget-type-card p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.budget-type-check {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: transparent;
+  transition: all 0.2s ease;
+}
+
+.budget-type-card.selected .budget-type-check {
+  background: #667eea;
+  border-color: #667eea;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .budget-types-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

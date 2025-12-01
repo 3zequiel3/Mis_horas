@@ -1,0 +1,505 @@
+---
+/**
+ * ProjectSettingsDrawer Component
+ * Drawer lateral para configuración del proyecto
+ * Fase 4: UX Unificada & Gestión Financiera
+ * 
+ * Uso Astro puro + Alpine.js para interactividad
+ */
+
+import { API_BASE_URL } from '../utils/api';
+
+interface Props {
+  projectId: number;
+  projectName: string;
+  isOpen?: boolean;
+}
+
+const { projectId, projectName, isOpen = false } = Astro.props;
+---
+
+<script define:vars={{ API_BASE_URL }}>
+  // Hacer disponible API_BASE_URL globalmente para Alpine.js
+  window.API_BASE_URL = API_BASE_URL;
+  
+  // Helper para obtener headers de autenticación
+  window.getAuthHeaders = function() {
+    const token = localStorage.getItem('token');
+    const orgId = localStorage.getItem('currentOrganizationId');
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (orgId) headers['X-Organization-ID'] = orgId;
+    return headers;
+  };
+</script>
+
+<!-- Overlay -->
+<div 
+  x-data="{ 
+    open: false,
+    currentTab: 'general',
+    projectData: {},
+    addons: [],
+    loading: false,
+    
+    async init() {
+      // Escuchar evento de apertura
+      window.addEventListener('openProjectSettings', (e) => {
+        this.open = true;
+        this.loadProjectData();
+      });
+    },
+    
+    async loadProjectData() {
+      this.loading = true;
+      try {
+        const response = await fetch(`${window.API_BASE_URL}/api/proyectos/${projectId}`, {
+          headers: window.getAuthHeaders()
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          this.projectData = data.data || data;
+        }
+        
+        // Si el tab es finanzas, cargar adicionales
+        if (this.currentTab === 'finanzas') {
+          await this.loadAddons();
+        }
+      } catch (error) {
+        console.error('Error loading project:', error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    async loadAddons() {
+      try {
+        const response = await fetch(`${window.API_BASE_URL}/api/proyectos/${projectId}`, {
+          headers: window.getAuthHeaders()
+        });currentTab = tab;
+      if (tab === 'finanzas') {
+        this.loadAddons();
+      }
+    },
+    
+    close() {
+      this.open = false;
+    },
+    
+    async saveGeneral() {
+      this.loading = true;
+      try {
+        const response = await fetch(`${window.API_BASE_URL}/api/proyectos/${projectId}`, {
+          method: 'PUT',
+          headers: window.getAuthHeaders(),
+          body: JSON.stringify({
+            nombre: this.projectData.nombre,
+            descripcion: this.projectData.descripcion,
+            client_name: this.projectData.client_name,
+            brand_color: this.projectData.brand_color
+          })
+        });
+        
+        if (response.ok) {
+          alert('Configuración guardada exitosamente');
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error('Error saving:', error);
+        alert('Error al guardar la configuración');
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    async toggleModule(moduleName) {
+      const modules = this.projectData.modules_config || {};
+      modules[moduleName] = !modules[moduleName];
+      this.projectData.modules_config = modules;
+      
+      // Guardar inmediatamente
+      const token = localStorage.getItem('token');
+      const orgId = localStorage.getItem('currentOrganizationId');
+      
+      await fetch(`${window.API_BASE_URL}/api/proyectos/${projectId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-Organization-ID': orgId,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          modules_config: modules
+        })
+      });
+    },
+    
+    async addBudgetAddon() {
+      const name = prompt('Nombre del adicional:');
+      if (!name) return;
+      
+      const amount = parseFloat(prompt('Monto:'));
+      if (isNaN(amount)) return;
+      
+      const description = prompt('Descripción (opcional):') || '';
+      
+      try {
+        const response = await fetch(`${window.API_BASE_URL}/api/projects/${projectId}/budget-addons`, {
+          method: 'POST',
+          headers: window.getAuthHeaders(),
+          body: JSON.stringify({ name, amount, description })
+        });
+        
+        if (response.ok) {
+          await this.loadAddons();
+          await this.loadProjectData();
+        }
+      } catch (error) {
+        console.error('Error adding addon:', error);
+      }
+    },
+    
+    async deleteAddon(addonId) {
+      if (!confirm('¿Eliminar este adicional?')) return;
+      
+      try {
+        const response = await fetch(`${window.API_BASE_URL}/api/projects/${projectId}/budget-addons/${addonId}`, {
+          method: 'DELETE',
+          headers: window.getAuthHeaders()
+        });
+        
+        if (response.ok) {
+          await this.loadAddons();
+          await this.loadProjectData();
+        }
+      } catch (error) {
+        console.error('Error deleting addon:', error);
+      }
+    }
+  }"
+  x-init="init()"
+  x-show="open"
+  @keydown.escape.window="close()"
+  class="fixed inset-0 z-50 overflow-hidden"
+  style="display: none;"
+>
+  <!-- Backdrop -->
+  <div 
+    x-show="open"
+    x-transition:enter="transition-opacity ease-linear duration-300"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition-opacity ease-linear duration-300"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    class="fixed inset-0 bg-gray-500 bg-opacity-75"
+    @click="close()"
+  ></div>
+
+  <!-- Drawer -->
+  <div class="fixed inset-y-0 right-0 flex max-w-full pl-10">
+    <div
+      x-show="open"
+      x-transition:enter="transform transition ease-in-out duration-300"
+      x-transition:enter-start="translate-x-full"
+      x-transition:enter-end="translate-x-0"
+      x-transition:leave="transform transition ease-in-out duration-300"
+      x-transition:leave-start="translate-x-0"
+      x-transition:leave-end="translate-x-full"
+      class="w-screen max-w-2xl"
+    >
+      <div class="flex h-full flex-col overflow-y-scroll bg-white shadow-xl">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-6">
+          <div class="flex items-start justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-white">
+                Configuración del Proyecto
+              </h2>
+              <p class="mt-1 text-sm text-indigo-100">
+                {projectName}
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="close()"
+              class="rounded-md text-indigo-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"
+            >
+              <span class="sr-only">Cerrar</span>
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Tabs -->
+          <div class="mt-6 flex space-x-4 border-b border-indigo-400">
+            <button
+              @click="switchTab('general')"
+              :class="currentTab === 'general' ? 'border-white text-white' : 'border-transparent text-indigo-200 hover:text-white'"
+              class="border-b-2 px-3 py-2 text-sm font-medium transition-colors"
+            >
+              General
+            </button>
+            <button
+              @click="switchTab('modulos')"
+              :class="currentTab === 'modulos' ? 'border-white text-white' : 'border-transparent text-indigo-200 hover:text-white'"
+              class="border-b-2 px-3 py-2 text-sm font-medium transition-colors"
+            >
+              Módulos
+            </button>
+            <button
+              @click="switchTab('finanzas')"
+              :class="currentTab === 'finanzas' ? 'border-white text-white' : 'border-transparent text-indigo-200 hover:text-white'"
+              class="border-b-2 px-3 py-2 text-sm font-medium transition-colors"
+            >
+              Finanzas
+            </button>
+            <button
+              @click="switchTab('auditoria')"
+              :class="currentTab === 'auditoria' ? 'border-white text-white' : 'border-transparent text-indigo-200 hover:text-white'"
+              class="border-b-2 px-3 py-2 text-sm font-medium transition-colors"
+            >
+              Auditoría
+            </button>
+          </div>
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 overflow-y-auto px-6 py-6">
+          <!-- Loading -->
+          <div x-show="loading" class="flex justify-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          </div>
+
+          <!-- Tab: General -->
+          <div x-show="currentTab === 'general' && !loading" class="space-y-6">
+            <!-- Nombre -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Nombre del proyecto</label>
+              <input
+                type="text"
+                x-model="projectData.nombre"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              />
+            </div>
+
+            <!-- Descripción -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Descripción</label>
+              <textarea
+                x-model="projectData.descripcion"
+                rows="3"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              ></textarea>
+            </div>
+
+            <!-- Cliente -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Nombre del cliente</label>
+              <input
+                type="text"
+                x-model="projectData.client_name"
+                placeholder="Opcional"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              />
+            </div>
+
+            <!-- Color de marca -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Color de marca</label>
+              <div class="flex items-center space-x-3">
+                <input
+                  type="color"
+                  x-model="projectData.brand_color"
+                  class="h-10 w-20 rounded border border-gray-300"
+                />
+                <input
+                  type="text"
+                  x-model="projectData.brand_color"
+                  placeholder="#3B82F6"
+                  class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+
+            <!-- Botón guardar -->
+            <div class="pt-4 border-t">
+              <button
+                @click="saveGeneral()"
+                class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 font-medium transition-colors"
+              >
+                Guardar cambios
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab: Módulos -->
+          <div x-show="currentTab === 'modulos' && !loading" class="space-y-4">
+            <p class="text-sm text-gray-600 mb-4">
+              Activa o desactiva funcionalidades del proyecto
+            </p>
+
+            <!-- Toggle Presupuesto -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <h4 class="font-medium text-gray-900">💰 Gestión de Presupuesto</h4>
+                <p class="text-sm text-gray-500">Tracking de costos y burn rate</p>
+              </div>
+              <button
+                @click="toggleModule('budget')"
+                :class="projectData.modules_config?.budget ? 'bg-indigo-600' : 'bg-gray-200'"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              >
+                <span
+                  :class="projectData.modules_config?.budget ? 'translate-x-5' : 'translate-x-0'"
+                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                ></span>
+              </button>
+            </div>
+
+            <!-- Toggle Time Tracking -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <h4 class="font-medium text-gray-900">⏱️ Tracking de Tiempo</h4>
+                <p class="text-sm text-gray-500">Registro de horas trabajadas</p>
+              </div>
+              <button
+                @click="toggleModule('time_tracking')"
+                :class="projectData.modules_config?.time_tracking ? 'bg-indigo-600' : 'bg-gray-200'"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
+              >
+                <span
+                  :class="projectData.modules_config?.time_tracking ? 'translate-x-5' : 'translate-x-0'"
+                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                ></span>
+              </button>
+            </div>
+
+            <!-- Toggle Auditoría -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <h4 class="font-medium text-gray-900">📋 Auditoría</h4>
+                <p class="text-sm text-gray-500">Registro de cambios y acciones</p>
+              </div>
+              <button
+                @click="toggleModule('audit')"
+                :class="projectData.modules_config?.audit ? 'bg-indigo-600' : 'bg-gray-200'"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
+              >
+                <span
+                  :class="projectData.modules_config?.audit ? 'translate-x-5' : 'translate-x-0'"
+                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                ></span>
+              </button>
+            </div>
+
+            <!-- Toggle Vista Pública -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <h4 class="font-medium text-gray-900">🌐 Vista Pública</h4>
+                <p class="text-sm text-gray-500">Compartir progreso con el cliente</p>
+              </div>
+              <button
+                @click="toggleModule('public_view')"
+                :class="projectData.modules_config?.public_view ? 'bg-indigo-600' : 'bg-gray-200'"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out"
+              >
+                <span
+                  :class="projectData.modules_config?.public_view ? 'translate-x-5' : 'translate-x-0'"
+                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                ></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab: Finanzas -->
+          <div x-show="currentTab === 'finanzas' && !loading" class="space-y-6">
+            <!-- Presupuesto Base -->
+            <div class="bg-indigo-50 rounded-lg p-4">
+              <div class="flex justify-between items-center">
+                <div>
+                  <h4 class="font-medium text-gray-900">Presupuesto Base</h4>
+                  <p class="text-sm text-gray-500" x-text="projectData.budget_type"></p>
+                </div>
+                <div class="text-right">
+                  <div class="text-2xl font-bold text-indigo-600" x-text="projectData.currency + ' ' + (projectData.budget_base_amount || 0).toLocaleString()"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Adicionales -->
+            <div>
+              <div class="flex justify-between items-center mb-4">
+                <h4 class="font-medium text-gray-900">Adicionales de Presupuesto</h4>
+                <button
+                  @click="addBudgetAddon()"
+                  class="px-3 py-1 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700"
+                >
+                  + Agregar
+                </button>
+              </div>
+
+              <!-- Lista de adicionales -->
+              <div class="space-y-2">
+                <template x-for="addon in addons" :key="addon.id">
+                  <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div class="flex-1">
+                      <div class="font-medium text-gray-900" x-text="addon.name"></div>
+                      <div class="text-sm text-gray-500" x-text="addon.description"></div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                      <span class="font-semibold text-gray-900" x-text="projectData.currency + ' ' + addon.amount.toLocaleString()"></span>
+                      <button
+                        @click="deleteAddon(addon.id)"
+                        class="text-red-600 hover:text-red-800"
+                      >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Vacío -->
+                <div x-show="addons.length === 0" class="text-center py-8 text-gray-500">
+                  No hay adicionales de presupuesto
+                </div>
+              </div>
+
+              <!-- Total -->
+              <div class="mt-4 pt-4 border-t flex justify-between items-center">
+                <span class="font-semibold text-gray-900">Presupuesto Total</span>
+                <span class="text-2xl font-bold text-indigo-600" x-text="projectData.currency + ' ' + ((projectData.budget_base_amount || 0) + addons.reduce((sum, a) => sum + a.amount, 0)).toLocaleString()"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Auditoría -->
+          <div x-show="currentTab === 'auditoria' && !loading" class="space-y-4">
+            <p class="text-sm text-gray-600">
+              Registro de cambios y acciones importantes del proyecto
+            </p>
+            <div class="text-center py-12 text-gray-500">
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <p class="mt-2">Timeline de auditoría próximamente</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Script para disparar evento desde botón externo
+  document.getElementById('openSettingsBtn')?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('openProjectSettings'));
+  });
+</script>

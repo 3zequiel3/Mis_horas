@@ -1,0 +1,564 @@
+---
+/**
+ * Página de Auditoría y Trazabilidad del Proyecto
+ * Sistema de Gobierno y Seguridad - Fase 2
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Header from '../../../components/Header.astro';
+import ProtectedRoute from '../../../components/ProtectedRoute.astro';
+import '../../../styles/auditoria.css';
+
+const { id } = Astro.params;
+const proyectoId = parseInt(id || '0');
+
+const title = `Auditoría - Proyecto ${proyectoId}`;
+---
+
+<BaseLayout title={title}>
+  <ProtectedRoute />
+  <Header />
+
+  <main class="auditoria-container">
+    <!-- Mensajes -->
+    <div id="message-container"></div>
+
+    <!-- Header -->
+    <div class="auditoria-header">
+      <div class="auditoria-header-info">
+        <h1>Auditoría y Trazabilidad</h1>
+        <p>Registro completo de actividades y cambios del proyecto</p>
+      </div>
+      <div class="auditoria-header-actions">
+        <button id="btn-stats" class="btn btn-secondary">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+          Estadísticas
+        </button>
+        <button id="btn-export" class="btn btn-primary">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Exportar
+        </button>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="auditoria-filtros">
+      <div class="auditoria-filtros-header">
+        <h2>Filtros</h2>
+        <button id="btn-clear-filters" class="btn-clear-filters">Limpiar filtros</button>
+      </div>
+
+      <form id="filter-form" class="filtros-grid">
+        <div class="filtro-group">
+          <label for="filter-start-date">Fecha inicio</label>
+          <input type="date" id="filter-start-date">
+        </div>
+
+        <div class="filtro-group">
+          <label for="filter-end-date">Fecha fin</label>
+          <input type="date" id="filter-end-date">
+        </div>
+
+        <div class="filtro-group">
+          <label for="filter-category">Categoría</label>
+          <select id="filter-category">
+            <option value="">Todas</option>
+            <option value="organization">Organización</option>
+            <option value="user">Usuario</option>
+            <option value="project">Proyecto</option>
+            <option value="time">Tiempo</option>
+            <option value="task">Tarea</option>
+            <option value="employee">Personal</option>
+            <option value="financial">Financiero</option>
+            <option value="security">Seguridad</option>
+            <option value="system">Sistema</option>
+          </select>
+        </div>
+
+        <div class="filtro-group">
+          <label for="filter-severity">Severidad</label>
+          <select id="filter-severity">
+            <option value="">Todas</option>
+            <option value="info">Info</option>
+            <option value="warning">Advertencia</option>
+            <option value="error">Error</option>
+            <option value="critical">Crítico</option>
+          </select>
+        </div>
+
+        <div class="filtro-group" style="grid-column: 1 / -1;">
+          <button type="submit" class="btn btn-primary">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            Aplicar filtros
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading-state" class="auditoria-loading hidden">
+      <div class="spinner"></div>
+      <p>Cargando registros de auditoría...</p>
+    </div>
+
+    <!-- Tabla de logs -->
+    <div id="logs-container" class="auditoria-tabla-container hidden">
+      <table class="auditoria-tabla">
+        <thead>
+          <tr>
+            <th>Fecha/Hora</th>
+            <th>Usuario</th>
+            <th>Acción</th>
+            <th>Categoría</th>
+            <th>Recurso</th>
+            <th>Severidad</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="logs-tbody">
+          <!-- Se llenará dinámicamente -->
+        </tbody>
+      </table>
+
+      <!-- Paginación -->
+      <div class="auditoria-pagination">
+        <div class="pagination-info">
+          Mostrando <span id="page-info-start">0</span> a <span id="page-info-end">0</span> de <span id="page-info-total">0</span> registros
+        </div>
+        <div class="pagination-buttons">
+          <button id="btn-prev-page" class="btn btn-secondary">Anterior</button>
+          <button id="btn-next-page" class="btn btn-secondary">Siguiente</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado vacío -->
+    <div id="empty-state" class="auditoria-empty hidden">
+      <div class="auditoria-empty-icon">📋</div>
+      <h3>No hay registros</h3>
+      <p>No se encontraron registros de auditoría con los filtros aplicados.</p>
+    </div>
+  </main>
+
+  <!-- Modal: Detalles -->
+  <div id="modal-details" class="modal-timeflow">
+    <div class="modal-timeflow-content">
+      <div class="modal-timeflow-header">
+        <h3>Detalles del Registro de Auditoría</h3>
+        <button id="btn-close-details" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-timeflow-body">
+        <div id="details-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Estadísticas -->
+  <div id="modal-stats" class="modal-timeflow">
+    <div class="modal-timeflow-content">
+      <div class="modal-timeflow-header">
+        <h3>Estadísticas de Auditoría</h3>
+        <button id="btn-close-stats" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-timeflow-body">
+        <div id="stats-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Exportar -->
+  <div id="modal-export" class="modal-timeflow">
+    <div class="modal-timeflow-content">
+      <div class="modal-timeflow-header">
+        <h3>Exportar Registros</h3>
+        <button id="btn-cancel-export" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-timeflow-body">
+        <form id="form-export" class="filtros-grid">
+          <div class="filtro-group">
+            <label for="export-format">Formato</label>
+            <select id="export-format">
+              <option value="json">JSON</option>
+              <option value="csv">CSV</option>
+            </select>
+          </div>
+          <div class="filtro-group" style="grid-column: 1 / -1;">
+            <button type="submit" class="btn btn-primary">Exportar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { auditService } from '../../../services/auditService';
+    import type { AuditLog, AuditLogFilters } from '../../../types/audit';
+    import { AuthService } from '../../../services/auth';
+
+    // Obtener proyectoId de la URL
+    const urlParts = window.location.pathname.split('/');
+    const proyectoId = parseInt(urlParts[urlParts.indexOf('proyecto') + 1] || '0');
+
+    // Estado
+    let currentFilters: AuditLogFilters = {
+      proyecto_id: proyectoId,
+      page: 1,
+      per_page: 50,
+    };
+    let currentPage = 1;
+    let totalPages = 1;
+
+    // Cargar logs
+    // Variable para prevenir llamadas concurrentes
+    let isLoading = false;
+
+    async function loadLogs() {
+      console.log('🔵 loadLogs() llamado - isLoading:', isLoading);
+      
+      // Prevenir llamadas concurrentes
+      if (isLoading) {
+        console.log('⚠️ Ya hay una carga en progreso, ignorando...');
+        return;
+      }
+
+      const loading = document.getElementById('loading-state');
+      const container = document.getElementById('logs-container');
+      const empty = document.getElementById('empty-state');
+      
+      console.log('🔍 Estado inicial - loading:', loading?.classList.contains('hidden'), 'empty:', empty?.classList.contains('hidden'));
+
+      try {
+        isLoading = true;
+        
+        // Debug
+        const token = AuthService.getToken();
+        const orgId = localStorage.getItem('currentOrganizationId');
+        console.log('🔄 Cargando logs - Token:', !!token, 'OrgId:', orgId, 'ProyectoId:', proyectoId);
+        
+        // Verificaciones previas
+        if (!token) {
+          console.error('❌ No hay token disponible');
+          showMessage('No hay sesión activa. Por favor inicia sesión.', 'error');
+          if (loading) loading.classList.add('hidden');
+          if (empty) empty.classList.remove('hidden');
+          return;
+        }
+        
+        if (!orgId) {
+          console.error('❌ No hay organización seleccionada');
+          showMessage('No se ha seleccionado una organización', 'error');
+          if (loading) loading.classList.add('hidden');
+          if (empty) empty.classList.remove('hidden');
+          return;
+        }
+        
+        if (loading) loading.classList.remove('hidden');
+        if (container) container.classList.add('hidden');
+        if (empty) empty.classList.add('hidden');
+
+        console.log('📡 Haciendo petición a la API...');
+        const response = await auditService.getLogs(currentFilters);
+        console.log('✅ Logs cargados:', response.logs.length);
+        
+        if (loading) loading.classList.add('hidden');
+
+        if (response.logs.length === 0) {
+          console.log('ℹ️ No hay logs para mostrar');
+          if (empty) empty.classList.remove('hidden');
+        } else {
+          if (container) container.classList.remove('hidden');
+          renderLogs(response.logs);
+          updatePagination(response.pagination);
+        }
+      } catch (error) {
+        console.error('❌ Error al cargar logs:', error);
+        showMessage(`Error al cargar registros: ${error instanceof Error ? error.message : 'Error desconocido'}`, 'error');
+        if (loading) loading.classList.add('hidden');
+        if (container) container.classList.add('hidden');
+        if (empty) empty.classList.add('hidden');
+      } finally {
+        isLoading = false;
+      }
+    }
+
+    // Renderizar logs
+    function renderLogs(logs: AuditLog[]) {
+      const tbody = document.getElementById('logs-tbody');
+      if (!tbody) return;
+
+      tbody.innerHTML = logs.map(log => {
+        const severityColors: Record<string, string> = {
+          info: 'info',
+          warning: 'warning',
+          error: 'error',
+          critical: 'critical'
+        };
+
+        return `
+          <tr>
+            <td>
+              ${new Date(log.created_at).toLocaleString('es-ES')}
+              <small>${log.ip_address || 'N/A'}</small>
+            </td>
+            <td>
+              ${log.user_email || 'Sistema'}
+              <small>${log.user_role || ''}</small>
+            </td>
+            <td>${log.action}</td>
+            <td><span class="category-badge">${log.action_category}</span></td>
+            <td>
+              ${log.resource_type || 'N/A'}
+              <small>${log.resource_name || ''}</small>
+            </td>
+            <td>
+              <span class="severity-badge ${severityColors[log.severity] || 'info'}">
+                ${log.severity}
+              </span>
+            </td>
+            <td>
+              <button class="btn-ver-detalles" data-log-id="${log.id}">Ver detalles</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Event listeners para ver detalles
+      tbody.querySelectorAll('.btn-ver-detalles').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const logId = (e.target as HTMLElement).getAttribute('data-log-id');
+          const log = logs.find(l => l.id?.toString() === logId);
+          if (log) showLogDetails(log);
+        });
+      });
+    }
+
+    // Actualizar paginación
+    function updatePagination(pagination: any) {
+      currentPage = pagination.page;
+      totalPages = pagination.total_pages;
+
+      const start = ((pagination.page - 1) * pagination.per_page) + 1;
+      const end = Math.min(pagination.page * pagination.per_page, pagination.total);
+
+      document.getElementById('page-info-start')!.textContent = start.toString();
+      document.getElementById('page-info-end')!.textContent = end.toString();
+      document.getElementById('page-info-total')!.textContent = pagination.total.toString();
+
+      const btnPrev = document.getElementById('btn-prev-page') as HTMLButtonElement;
+      const btnNext = document.getElementById('btn-next-page') as HTMLButtonElement;
+
+      if (btnPrev) btnPrev.disabled = currentPage <= 1;
+      if (btnNext) btnNext.disabled = currentPage >= totalPages;
+    }
+
+    // Mostrar detalles del log
+    function showLogDetails(log: AuditLog) {
+      const modal = document.getElementById('modal-details');
+      const content = document.getElementById('details-content');
+      if (!modal || !content) return;
+
+      content.innerHTML = `
+        <div style="display: grid; gap: 1rem;">
+          <div>
+            <strong>ID:</strong> ${log.id}
+          </div>
+          <div>
+            <strong>Fecha/Hora:</strong> ${new Date(log.created_at).toLocaleString('es-ES')}
+          </div>
+          <div>
+            <strong>Usuario:</strong> ${log.user_email || 'Sistema'} (${log.user_role || 'N/A'})
+          </div>
+          <div>
+            <strong>Acción:</strong> ${log.action}
+          </div>
+          <div>
+            <strong>Categoría:</strong> ${log.action_category}
+          </div>
+          <div>
+            <strong>Descripción:</strong> ${log.description || 'N/A'}
+          </div>
+          <div>
+            <strong>Recurso:</strong> ${log.resource_type || 'N/A'} - ${log.resource_name || 'N/A'}
+          </div>
+          <div>
+            <strong>Severidad:</strong> <span class="severity-badge ${log.severity}">${log.severity}</span>
+          </div>
+          <div>
+            <strong>IP Address:</strong> ${log.ip_address || 'N/A'}
+          </div>
+          ${log.old_value ? `
+            <div>
+              <strong>Valor Anterior:</strong>
+              <pre style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; overflow: auto;">${JSON.stringify(log.old_value, null, 2)}</pre>
+            </div>
+          ` : ''}
+          ${log.new_value ? `
+            <div>
+              <strong>Valor Nuevo:</strong>
+              <pre style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; overflow: auto;">${JSON.stringify(log.new_value, null, 2)}</pre>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      modal.classList.add('active');
+    }
+
+    // Event Listeners
+    document.getElementById('filter-form')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const startDate = (document.getElementById('filter-start-date') as HTMLInputElement).value;
+      const endDate = (document.getElementById('filter-end-date') as HTMLInputElement).value;
+      const category = (document.getElementById('filter-category') as HTMLSelectElement).value;
+      const severity = (document.getElementById('filter-severity') as HTMLSelectElement).value;
+
+      currentFilters = {
+        proyecto_id: proyectoId,
+        page: 1,
+        per_page: 50,
+        ...(startDate && { start_date: startDate }),
+        ...(endDate && { end_date: endDate }),
+        ...(category && { category }),
+        ...(severity && { severity }),
+      };
+
+      loadLogs();
+    });
+
+    document.getElementById('btn-clear-filters')?.addEventListener('click', () => {
+      (document.getElementById('filter-form') as HTMLFormElement).reset();
+      currentFilters = {
+        proyecto_id: proyectoId,
+        page: 1,
+        per_page: 50,
+      };
+      loadLogs();
+    });
+
+    document.getElementById('btn-prev-page')?.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentFilters.page = currentPage - 1;
+        loadLogs();
+      }
+    });
+
+    document.getElementById('btn-next-page')?.addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentFilters.page = currentPage + 1;
+        loadLogs();
+      }
+    });
+
+    // Cerrar modales
+    document.getElementById('btn-close-details')?.addEventListener('click', () => {
+      document.getElementById('modal-details')?.classList.remove('active');
+    });
+
+    document.getElementById('btn-close-stats')?.addEventListener('click', () => {
+      document.getElementById('modal-stats')?.classList.remove('active');
+    });
+
+    document.getElementById('btn-cancel-export')?.addEventListener('click', () => {
+      document.getElementById('modal-export')?.classList.remove('active');
+    });
+
+    // Cerrar modales al hacer click fuera
+    document.querySelectorAll('.modal-timeflow').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+        }
+      });
+    });
+
+    // Mostrar mensaje
+    function showMessage(message: string, type: 'success' | 'error') {
+      const container = document.getElementById('message-container');
+      if (!container) return;
+
+      const bgColor = type === 'success' ? 'background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);' : 'background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);';
+      
+      container.innerHTML = `
+        <div style="${bgColor} padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+          <p style="margin: 0; font-weight: 500;">${message}</p>
+        </div>
+      `;
+
+      setTimeout(() => {
+        container.innerHTML = '';
+      }, 5000);
+    }
+
+    // Verificar autenticación y cargar datos
+    function init() {
+      const loading = document.getElementById('loading-state');
+      const empty = document.getElementById('empty-state');
+      
+      const isAuth = typeof AuthService !== 'undefined' && AuthService.isAuthenticated();
+      const token = typeof AuthService !== 'undefined' ? AuthService.getToken() : null;
+      let orgId = localStorage.getItem('currentOrganizationId');
+      
+      // SINCRONIZACIÓN: Si no hay orgId pero sí hay organización en el store, sincronizar
+      if (!orgId) {
+        const storedOrg = localStorage.getItem('timeflow_current_organization');
+        if (storedOrg) {
+          try {
+            const org = JSON.parse(storedOrg);
+            if (org && org.id) {
+              localStorage.setItem('currentOrganizationId', org.id.toString());
+              orgId = org.id.toString();
+              console.log('✅ OrgId sincronizado desde store:', orgId);
+            }
+          } catch (e) {
+            console.error('Error al parsear organización del store:', e);
+          }
+        }
+      }
+      
+      console.log('Init - ProyectoId:', proyectoId, 'Token:', !!token, 'Autenticado:', isAuth, 'OrgId:', orgId);
+      
+      if (!isAuth) {
+        console.warn('No hay token - esperando autenticación...');
+        if (loading) loading.classList.add('hidden');
+        if (empty) empty.classList.remove('hidden');
+        // Esperar evento de autenticación
+        window.addEventListener('auth-verified', () => {
+          if (empty) empty.classList.add('hidden');
+          loadLogs();
+        }, { once: true });
+        return;
+      }
+      
+      if (!orgId) {
+        showMessage('No se ha seleccionado una organización. Por favor seleccione una en el selector.', 'error');
+        console.error('currentOrganizationId no está establecido');
+        if (loading) loading.classList.add('hidden');
+        if (empty) empty.classList.remove('hidden');
+        return;
+      }
+      
+      if (proyectoId === 0) {
+        showMessage('ID de proyecto inválido', 'error');
+        if (loading) loading.classList.add('hidden');
+        if (empty) empty.classList.remove('hidden');
+        return;
+      }
+      
+      // Token y orgId presentes, cargar datos
+      loadLogs();
+    }
+
+    // Inicializar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</BaseLayout>

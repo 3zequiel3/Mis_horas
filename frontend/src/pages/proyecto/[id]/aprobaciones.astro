@@ -1,0 +1,491 @@
+---
+/**
+ * Página de Aprobación de Períodos de Tiempo del Proyecto
+ * Sistema de Gobierno y Seguridad - Fase 2
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Header from '../../../components/Header.astro';
+import ProtectedRoute from '../../../components/ProtectedRoute.astro';
+import '../../../styles/aprobaciones.css';
+
+const { id } = Astro.params;
+const proyectoId = parseInt(id || '0');
+
+const title = `Aprobaciones - Proyecto ${proyectoId}`;
+---
+
+<BaseLayout title={title}>
+  <ProtectedRoute />
+  <Header />
+
+  <main class="aprobaciones-container">
+    <!-- Mensajes -->
+    <div id="message-container"></div>
+
+    <!-- Header -->
+    <div class="aprobaciones-header">
+      <h1>Aprobación de Hojas de Tiempo</h1>
+      <p>Revisión y aprobación de períodos trabajados</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="aprobaciones-tabs">
+      <button data-tab="pending" class="aprobaciones-tab active">
+        Pendientes
+        <span id="badge-pending" class="tab-badge">0</span>
+      </button>
+      <button data-tab="approved" class="aprobaciones-tab">
+        Aprobados
+      </button>
+      <button data-tab="rejected" class="aprobaciones-tab">
+        Rechazados
+      </button>
+      <button data-tab="locked" class="aprobaciones-tab">
+        Bloqueados
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading-state" class="aprobaciones-loading hidden">
+      <div class="spinner"></div>
+      <p>Cargando períodos...</p>
+    </div>
+
+    <!-- Lista de períodos -->
+    <div id="periods-container" class="periodos-lista hidden"></div>
+
+    <!-- Estado vacío -->
+    <div id="empty-state" class="aprobaciones-empty hidden">
+      <div class="aprobaciones-empty-icon">📋</div>
+      <h3>No hay períodos</h3>
+      <p>No se encontraron períodos en este estado.</p>
+    </div>
+  </main>
+
+  <!-- Modal: Aprobar Período -->
+  <div id="modal-approve" class="modal-aprobaciones">
+    <div class="modal-aprobaciones-content">
+      <div class="modal-aprobaciones-header">
+        <div class="modal-icon approve">
+          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+        <div class="modal-header-text">
+          <h3>Aprobar Período</h3>
+          <p>¿Está seguro que desea aprobar este período?</p>
+        </div>
+      </div>
+      <form id="form-approve" class="modal-aprobaciones-body">
+        <div class="form-group">
+          <label for="approve-comments">Comentarios (opcional)</label>
+          <textarea id="approve-comments" placeholder="Agregar comentarios sobre la aprobación..."></textarea>
+        </div>
+        <div class="modal-aprobaciones-footer">
+          <button type="button" id="btn-cancel-approve" class="btn btn-secondary-outline">Cancelar</button>
+          <button type="submit" class="btn btn-aprobar">Aprobar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Rechazar Período -->
+  <div id="modal-reject" class="modal-aprobaciones">
+    <div class="modal-aprobaciones-content">
+      <div class="modal-aprobaciones-header">
+        <div class="modal-icon reject">
+          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </div>
+        <div class="modal-header-text">
+          <h3>Rechazar Período</h3>
+          <p>Por favor indique el motivo del rechazo</p>
+        </div>
+      </div>
+      <form id="form-reject" class="modal-aprobaciones-body">
+        <div class="form-group">
+          <label for="reject-reason">Motivo del rechazo *</label>
+          <textarea id="reject-reason" required placeholder="Especifique las razones del rechazo..."></textarea>
+        </div>
+        <div class="modal-aprobaciones-footer">
+          <button type="button" id="btn-cancel-reject" class="btn btn-secondary-outline">Cancelar</button>
+          <button type="submit" class="btn btn-rechazar">Rechazar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    import { approvalService } from '../../../services/approvalService';
+    import type { TimePeriod } from '../../../types/approval';
+    import { AlertUtils } from '../../../utils/swal';
+    import { AuthService } from '../../../services/auth';
+
+    // Obtener proyectoId de la URL
+    const urlParts = window.location.pathname.split('/');
+    const proyectoId = parseInt(urlParts[urlParts.indexOf('proyecto') + 1] || '0');
+
+    // Estado
+    let currentTab: 'pending' | 'approved' | 'rejected' | 'locked' = 'pending';
+    let periods: TimePeriod[] = [];
+    let selectedPeriodId: number | null = null;
+
+    const statusFilters: Record<string, string[]> = {
+      pending: ['pending'],
+      approved: ['approved'],
+      rejected: ['rejected'],
+      locked: ['locked'],
+    };
+
+    // Variable para prevenir llamadas concurrentes
+    let isLoading = false;
+
+    // Cargar períodos
+    async function loadPeriods() {
+      console.log('🔵 loadPeriods() llamado - isLoading:', isLoading);
+      
+      // Prevenir llamadas concurrentes
+      if (isLoading) {
+        console.log('⚠️ Ya hay una carga en progreso, ignorando...');
+        return;
+      }
+
+      const loading = document.getElementById('loading-state');
+      const container = document.getElementById('periods-container');
+      const empty = document.getElementById('empty-state');
+      
+      console.log('🔍 Estado inicial - loading:', loading?.classList.contains('hidden'), 'empty:', empty?.classList.contains('hidden'));
+
+      try {
+        isLoading = true;
+        
+        // Debug
+        const token = AuthService.getToken();
+        const orgId = localStorage.getItem('currentOrganizationId');
+        console.log('🔄 Cargando períodos - Token:', !!token, 'OrgId:', orgId, 'ProyectoId:', proyectoId, 'Tab:', currentTab);
+        
+        // Verificaciones previas
+        if (!token) {
+          console.error('❌ No hay token disponible');
+          showMessage('No hay sesión activa. Por favor inicia sesión.', 'error');
+          if (loading) loading.classList.add('hidden');
+          if (empty) empty.classList.remove('hidden');
+          return;
+        }
+        
+        if (!orgId) {
+          console.error('❌ No hay organización seleccionada');
+          showMessage('No se ha seleccionado una organización', 'error');
+          if (loading) loading.classList.add('hidden');
+          if (empty) empty.classList.remove('hidden');
+          return;
+        }
+        
+        if (loading) loading.classList.remove('hidden');
+        if (container) container.classList.add('hidden');
+        if (empty) empty.classList.add('hidden');
+
+        console.log('📡 Haciendo petición a la API...');
+        
+        if (currentTab === 'pending') {
+          periods = await approvalService.getPendingPeriods(proyectoId);
+        } else {
+          // Obtener todos los períodos del proyecto
+          periods = await approvalService.getProjectPeriods(proyectoId);
+        }
+        
+        console.log('✅ Períodos cargados:', periods.length);
+        
+        if (loading) loading.classList.add('hidden');
+
+        // Actualizar badge de pendientes
+        const badge = document.getElementById('badge-pending');
+        if (badge && currentTab === 'pending') {
+          badge.textContent = periods.length.toString();
+        }
+
+        if (periods.length === 0) {
+          console.log('ℹ️ No hay períodos para mostrar');
+          if (empty) empty.classList.remove('hidden');
+        } else {
+          if (container) {
+            container.classList.remove('hidden');
+            renderPeriods();
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error al cargar períodos:', error);
+        showMessage(`Error al cargar períodos: ${error instanceof Error ? error.message : 'Error desconocido'}`, 'error');
+        if (loading) loading.classList.add('hidden');
+        if (container) container.classList.add('hidden');
+        if (empty) empty.classList.add('hidden');
+      } finally {
+        isLoading = false;
+      }
+    }
+
+    // Renderizar períodos
+    function renderPeriods() {
+      const container = document.getElementById('periods-container');
+      if (!container) return;
+
+      // Filtrar por tab actual
+      const filteredPeriods = periods.filter(p => statusFilters[currentTab].includes(p.status));
+
+      container.innerHTML = filteredPeriods.map(period => {
+        const statusClass = period.status;
+        const statusText: Record<string, string> = {
+          pending: 'Pendiente',
+          approved: 'Aprobado',
+          rejected: 'Rechazado',
+          locked: 'Bloqueado'
+        };
+
+        return `
+          <div class="periodo-card">
+            <div class="periodo-card-header">
+              <div class="periodo-info">
+                <h3>${period.empleado_nombre || 'N/A'}</h3>
+                <p><strong>Período:</strong> ${period.mes}/${period.anio}</p>
+                <p><strong>Proyecto:</strong> ${period.proyecto_nombre || 'N/A'}</p>
+              </div>
+              <span class="periodo-status ${statusClass}">${statusText[period.status]}</span>
+            </div>
+
+            <div class="periodo-card-body">
+              <div class="periodo-stat">
+                <span class="periodo-stat-label">Horas Totales</span>
+                <span class="periodo-stat-value">${period.total_hours || 0}h</span>
+              </div>
+              <div class="periodo-stat">
+                <span class="periodo-stat-label">Días Trabajados</span>
+                <span class="periodo-stat-value">${period.days_count || 0}</span>
+              </div>
+              <div class="periodo-stat">
+                <span class="periodo-stat-label">Tareas</span>
+                <span class="periodo-stat-value">${period.tasks_count || 0}</span>
+              </div>
+            </div>
+
+            ${period.status === 'pending' ? `
+              <div class="periodo-card-actions">
+                <button class="btn btn-secondary" onclick="window.viewPeriodDetails(${period.id})">Ver Detalles</button>
+                <button class="btn btn-rechazar" onclick="window.openRejectModal(${period.id})">Rechazar</button>
+                <button class="btn btn-aprobar" onclick="window.openApproveModal(${period.id})">Aprobar</button>
+              </div>
+            ` : `
+              <div class="periodo-card-actions">
+                <button class="btn btn-secondary" onclick="window.viewPeriodDetails(${period.id})">Ver Detalles</button>
+              </div>
+            `}
+          </div>
+        `;
+      }).join('');
+
+      // Actualizar badge
+      const badge = document.getElementById('badge-pending');
+      if (badge && currentTab === 'pending') {
+        badge.textContent = filteredPeriods.length.toString();
+      }
+    }
+
+    // Abrir modal de aprobación
+    (window as any).openApproveModal = (periodId: number) => {
+      selectedPeriodId = periodId;
+      document.getElementById('modal-approve')?.classList.add('active');
+    };
+
+    // Abrir modal de rechazo
+    (window as any).openRejectModal = (periodId: number) => {
+      selectedPeriodId = periodId;
+      document.getElementById('modal-reject')?.classList.add('active');
+    };
+
+    // Ver detalles del período
+    (window as any).viewPeriodDetails = async (periodId: number) => {
+      try {
+        const period = periods.find(p => p.id === periodId);
+        if (!period) return;
+
+        await AlertUtils.info(
+          'Detalles del Período',
+          `<div style="text-align: left;">
+            <p><strong>Empleado:</strong> ${period.empleado_nombre}</p>
+            <p><strong>Período:</strong> ${period.mes}/${period.anio}</p>
+            <p><strong>Estado:</strong> ${period.status}</p>
+            <p><strong>Horas Totales:</strong> ${period.total_hours || 0}h</p>
+            <p><strong>Días Trabajados:</strong> ${period.days_count || 0}</p>
+            <p><strong>Tareas:</strong> ${period.tasks_count || 0}</p>
+            ${period.approved_by ? `<p><strong>Aprobado por:</strong> ${period.approved_by}</p>` : ''}
+            ${period.approval_date ? `<p><strong>Fecha de aprobación:</strong> ${new Date(period.approval_date).toLocaleDateString()}</p>` : ''}
+            ${period.rejection_reason ? `<p><strong>Motivo de rechazo:</strong> ${period.rejection_reason}</p>` : ''}
+          </div>`
+        );
+      } catch (error) {
+        console.error('Error al ver detalles:', error);
+      }
+    };
+
+    // Manejar aprobación
+    document.getElementById('form-approve')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!selectedPeriodId) return;
+
+      const comments = (document.getElementById('approve-comments') as HTMLTextAreaElement).value;
+
+      try {
+        await approvalService.approvePeriod(selectedPeriodId, { notes: comments });
+        await AlertUtils.success('Período aprobado correctamente');
+        document.getElementById('modal-approve')?.classList.remove('active');
+        (document.getElementById('form-approve') as HTMLFormElement).reset();
+        await loadPeriods();
+      } catch (error) {
+        console.error('Error al aprobar:', error);
+        await AlertUtils.error('Error al aprobar el período');
+      }
+    });
+
+    // Manejar rechazo
+    document.getElementById('form-reject')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!selectedPeriodId) return;
+
+      const reason = (document.getElementById('reject-reason') as HTMLTextAreaElement).value;
+      if (!reason.trim()) {
+        await AlertUtils.warning('Por favor indique el motivo del rechazo');
+        return;
+      }
+
+      try {
+        await approvalService.rejectPeriod(selectedPeriodId, { notes: reason });
+        await AlertUtils.success('Período rechazado');
+        document.getElementById('modal-reject')?.classList.remove('active');
+        (document.getElementById('form-reject') as HTMLFormElement).reset();
+        await loadPeriods();
+      } catch (error) {
+        console.error('Error al rechazar:', error);
+        await AlertUtils.error('Error al rechazar el período');
+      }
+    });
+
+    // Event listeners para tabs
+    document.querySelectorAll('.aprobaciones-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const tabName = target.getAttribute('data-tab') as typeof currentTab;
+        
+        // Actualizar tabs activos
+        document.querySelectorAll('.aprobaciones-tab').forEach(t => t.classList.remove('active'));
+        target.classList.add('active');
+        
+        currentTab = tabName;
+        loadPeriods();
+      });
+    });
+
+    // Cerrar modales
+    document.getElementById('btn-cancel-approve')?.addEventListener('click', () => {
+      document.getElementById('modal-approve')?.classList.remove('active');
+      (document.getElementById('form-approve') as HTMLFormElement).reset();
+    });
+
+    document.getElementById('btn-cancel-reject')?.addEventListener('click', () => {
+      document.getElementById('modal-reject')?.classList.remove('active');
+      (document.getElementById('form-reject') as HTMLFormElement).reset();
+    });
+
+    // Cerrar modales al hacer click fuera
+    document.querySelectorAll('.modal-aprobaciones').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+        }
+      });
+    });
+
+    // Mostrar mensaje
+    function showMessage(message: string, type: 'success' | 'error') {
+      const container = document.getElementById('message-container');
+      if (!container) return;
+
+      const bgColor = type === 'success' ? 'background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);' : 'background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);';
+      
+      container.innerHTML = `
+        <div style="${bgColor} padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+          <p style="margin: 0; font-weight: 500;">${message}</p>
+        </div>
+      `;
+
+      setTimeout(() => {
+        container.innerHTML = '';
+      }, 5000);
+    }
+
+    // Verificar autenticación y cargar datos
+    function init() {
+      const loading = document.getElementById('loading-state');
+      const empty = document.getElementById('empty-state');
+      
+      const isAuth = typeof AuthService !== 'undefined' && AuthService.isAuthenticated();
+      const token = typeof AuthService !== 'undefined' ? AuthService.getToken() : null;
+      let orgId = localStorage.getItem('currentOrganizationId');
+      
+      // SINCRONIZACIÓN: Si no hay orgId pero sí hay organización en el store, sincronizar
+      if (!orgId) {
+        const storedOrg = localStorage.getItem('timeflow_current_organization');
+        if (storedOrg) {
+          try {
+            const org = JSON.parse(storedOrg);
+            if (org && org.id) {
+              localStorage.setItem('currentOrganizationId', org.id.toString());
+              orgId = org.id.toString();
+              console.log('✅ OrgId sincronizado desde store:', orgId);
+            }
+          } catch (e) {
+            console.error('Error al parsear organización del store:', e);
+          }
+        }
+      }
+      
+      console.log('Init - ProyectoId:', proyectoId, 'Token:', !!token, 'Autenticado:', isAuth, 'OrgId:', orgId);
+      
+      if (!isAuth) {
+        console.warn('No hay token - esperando autenticación...');
+        if (loading) loading.classList.add('hidden');
+        if (empty) empty.classList.remove('hidden');
+        // Esperar evento de autenticación
+        window.addEventListener('auth-verified', () => {
+          if (empty) empty.classList.add('hidden');
+          loadPeriods();
+        }, { once: true });
+        return;
+      }
+      
+      if (!orgId) {
+        showMessage('No se ha seleccionado una organización. Por favor seleccione una en el selector.', 'error');
+        console.error('currentOrganizationId no está establecido');
+        if (loading) loading.classList.add('hidden');
+        if (empty) empty.classList.remove('hidden');
+        return;
+      }
+      
+      if (proyectoId === 0) {
+        showMessage('ID de proyecto inválido', 'error');
+        if (loading) loading.classList.add('hidden');
+        if (empty) empty.classList.remove('hidden');
+        return;
+      }
+      
+      // Token y orgId presentes, cargar datos
+      loadPeriods();
+    }
+
+    // Inicializar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</BaseLayout>

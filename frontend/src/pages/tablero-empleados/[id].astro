@@ -7,6 +7,8 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import ProtectedRoute from "../../components/ProtectedRoute.astro";
+import ConfigDrawer from "../../components/ConfigDrawer.astro";
+import ProjectSidebar from "../../components/ProjectSidebar.astro";
 import TurnosModal from "../../components/TurnosModal.astro";
 import InvitacionesModal from "../../components/InvitacionesModal.astro";
 import "../../styles/tabla.css";
@@ -15,6 +17,7 @@ import "../../styles/sidebar-meses.css";
 import "../../styles/empleados-btn.css";
 import "../../styles/tablero-empleados.css";
 import "../../styles/modales.css";
+import "../../styles/project-views.css";
 
 const pageTitle = "Tablero de Empleados";
 ---
@@ -22,8 +25,15 @@ const pageTitle = "Tablero de Empleados";
 <BaseLayout title={pageTitle}>
   <ProtectedRoute>
     <Header />
-    <div class="container">
-      <div class="proyecto-view">
+    <ConfigDrawer />
+    <ProjectSidebar />
+    
+    <div class="proyecto-layout-with-sidebar" id="proyecto-layout">
+      <div class="project-views-container">
+        <!-- Vista Dashboard (actual tablero empleados) -->
+        <div id="view-dashboard" class="project-view active">
+          <div class="container">
+            <div class="proyecto-view">
         <!-- Header del Proyecto -->
         <div class="proyecto-header">
           <div>
@@ -412,6 +422,53 @@ const pageTitle = "Tablero de Empleados";
   const diasSelect = document.getElementById(
     "dias-select",
   ) as HTMLSelectElement;
+
+  // ========== BOTONES DEL HEADER ==========
+  
+  // Botón de Configuración - Abrir drawer
+  document.getElementById('config-btn')?.addEventListener('click', async () => {
+    const proyecto = TableroEmpleadosHandler.state.proyectoActual;
+    if (proyecto) {
+      const { ConfigDrawerHandler } = await import('../../handlers/config-drawer');
+      const drawer = new ConfigDrawerHandler(proyecto.id);
+      await drawer.open();
+    }
+  });
+
+  // Finalizar o Reactivar proyecto
+  document.getElementById('finalizar-btn')?.addEventListener('click', async () => {
+    const proyecto = TableroEmpleadosHandler.state.proyectoActual;
+    if (!proyecto) return;
+
+    const isActive = proyecto.activo;
+    const action = isActive ? 'Finalizar' : 'Reactivar';
+
+    const result = await AlertUtils.confirm(
+      `¿${action} proyecto?`,
+      isActive
+        ? 'Esto marcará el proyecto como inactivo'
+        : 'Esto reactivará el proyecto',
+      `Sí, ${action.toLowerCase()}`,
+      'Cancelar'
+    );
+
+    if (result.isConfirmed) {
+      try {
+        await ProyectosService.updateProyecto(proyecto.id, {
+          activo: !isActive
+        });
+
+        await AlertUtils.success(
+          `Proyecto ${isActive ? 'finalizado' : 'reactivado'}`,
+          ''
+        );
+
+        window.location.reload();
+      } catch (error: any) {
+        await AlertUtils.error('Error', error.message || 'No se pudo actualizar el proyecto');
+      }
+    }
+  });
 
   // ========== GESTIÓN DE MESES ==========
 
@@ -872,6 +929,45 @@ const pageTitle = "Tablero de Empleados";
     }
   });
 
+  // Inicializar handler de vistas
+  const { ProjectViewHandler } = await import('../../handlers/project-view');
+  const viewHandler = new ProjectViewHandler(proyectoId);
+  (window as any).viewHandler = viewHandler;
+
+  // Sincronizar colapso del sidebar con el layout
+  const sidebar = document.getElementById('project-sidebar');
+  const layout = document.getElementById('proyecto-layout');
+  
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.attributeName === 'class') {
+        const isCollapsed = sidebar?.classList.contains('collapsed');
+        if (isCollapsed) {
+          layout?.classList.add('sidebar-collapsed');
+        } else {
+          layout?.classList.remove('sidebar-collapsed');
+        }
+      }
+    });
+  });
+
+  if (sidebar) {
+    observer.observe(sidebar, { attributes: true });
+  }
+
 </script>
+
+        </div>
+        <!-- Fin Vista Dashboard -->
+
+        <!-- Otras vistas -->
+        <div id="view-time-tracking" class="project-view"></div>
+        <div id="view-reports" class="project-view"></div>
+        <div id="view-approvals" class="project-view"></div>
+        <div id="view-audit" class="project-view"></div>
+        <div id="view-budget" class="project-view"></div>
+        <div id="view-settings" class="project-view"></div>
+      </div>
+    </div>
 
 <InvitacionesModal />

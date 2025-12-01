@@ -5,7 +5,10 @@ from datetime import datetime
 class AuthService:
     @staticmethod
     def crear_usuario(username: str, email: str, password: str, nombre_completo: str = None):
-        """Crea un nuevo usuario"""
+        """
+        Crea un nuevo usuario Y su organización personal automáticamente
+        FASE 1 MULTI-TENANT: Cada usuario inicia con su propio espacio
+        """
         # Verificar si ya existe
         existing = Usuario.query.filter(
             (Usuario.username == username) | (Usuario.email == email)
@@ -28,9 +31,19 @@ class AuthService:
         )
         
         db.session.add(usuario)
-        db.session.commit()
+        db.session.flush()  # Obtener ID sin commitear aún
         
-        return usuario, "Usuario creado exitosamente"
+        # FASE 1: Crear automáticamente la organización personal del usuario
+        try:
+            from app.services.organization_service import OrganizationService
+            org = OrganizationService.crear_organizacion_personal_usuario(usuario.id)
+            db.session.commit()
+            
+            return usuario, "Usuario creado exitosamente"
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error al crear organización personal: {e}")
+            return None, f"Error al crear usuario: {str(e)}"
     
     @staticmethod
     def autenticar_usuario(username_or_email: str, password: str):

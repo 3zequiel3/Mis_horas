@@ -63,6 +63,13 @@ export class ProyectosService extends ApiService {
   }
 
   /**
+   * Actualiza un proyecto con nuevos datos
+   */
+  static async updateProyecto(proyectoId: number, data: Partial<Proyecto>): Promise<Proyecto> {
+    return this.put(`/api/proyectos/${proyectoId}`, data);
+  }
+
+  /**
    * Actualiza la configuración de horarios de un proyecto
    */
   static async updateConfiguracion(proyectoId: number, data: {

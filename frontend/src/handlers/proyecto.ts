@@ -18,6 +18,7 @@ import {
   calcularTotalHoras
 } from '../utils/hours';
 import { MultiSelectTable } from '../utils/multiselect';
+import { initializeOrganizationContext } from '../utils/organizationContext';
 import Swal from 'sweetalert2';
 
 export interface ProyectoDetailState {
@@ -132,6 +133,9 @@ export async function loadCurrentUser(): Promise<void> {
  */
 export async function loadProyecto(): Promise<void> {
   try {
+    // FASE 1 MULTI-TENANT: Inicializar contexto organizacional primero
+    await initializeOrganizationContext();
+    
     await loadCurrentUser();
 
     const path = window.location.pathname;

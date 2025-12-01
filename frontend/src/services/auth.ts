@@ -222,6 +222,28 @@ export class AuthService {
     this.setToken(data.access_token, rememberMe);
     setStorageItem(this.USER_STORAGE, JSON.stringify(data.usuario));
 
+    // Obtener y establecer la primera organización del usuario
+    try {
+      const orgsResponse = await fetch(`${API_URL}/api/organizations`, {
+        headers: {
+          'Authorization': `Bearer ${data.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (orgsResponse.ok) {
+        const organizations = await orgsResponse.json();
+        if (organizations && organizations.length > 0) {
+          // Establecer la primera organización como actual
+          localStorage.setItem('currentOrganizationId', organizations[0].id.toString());
+          console.log('Organización establecida:', organizations[0].id);
+        }
+      }
+    } catch (error) {
+      console.warn('No se pudo obtener organizaciones:', error);
+      // No fallar el login si no se pueden obtener las organizaciones
+    }
+
     return data;
   }
 

@@ -1,0 +1,835 @@
+---
+/**
+ * Página para Crear Nueva Organización - Wizard de 2 Pasos
+ * Paso 1: Nombre y Descripción
+ * Paso 2: Tipo de Organización y Zona Horaria
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Header from '../../components/Header.astro';
+import ProtectedRoute from '../../components/ProtectedRoute.astro';
+import type { CreateOrganizationRequest } from '../../types/organization';
+---
+
+<BaseLayout title="Nueva Organización">
+  <ProtectedRoute />
+  <Header />
+  
+  <main class="container">
+    <!-- Progress Indicator -->
+    <div class="wizard-progress">
+      <div class="progress-step active" data-step="1">
+        <div class="step-circle">1</div>
+        <span class="step-label">Información Básica</span>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step" data-step="2">
+        <div class="step-circle">2</div>
+        <span class="step-label">Tipo de Organización</span>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step" data-step="3">
+        <div class="step-circle">3</div>
+        <span class="step-label">Configuración Regional</span>
+      </div>
+    </div>
+
+    <div class="form-container">
+      <form id="form-nueva-org" class="org-form">
+        <!-- PASO 1: Nombre y Descripción -->
+        <div class="wizard-step active" data-step="1">
+          <div class="step-header">
+            <div class="step-icon">📝</div>
+            <h2>Cuéntanos sobre tu organización</h2>
+            <p class="step-description">Dale un nombre y describe brevemente su propósito</p>
+          </div>
+
+          <div class="form-group">
+            <label for="nombre" class="required">Nombre de la Organización</label>
+            <input 
+              type="text" 
+              id="nombre" 
+              name="nombre" 
+              class="form-control"
+              placeholder="Ej: Mi Empresa S.A."
+              minlength="3"
+              maxlength="100"
+            />
+            <small class="form-hint">Mínimo 3 caracteres, máximo 100</small>
+          </div>
+
+          <div class="form-group">
+            <label for="descripcion">Descripción</label>
+            <textarea 
+              id="descripcion" 
+              name="descripcion" 
+              class="form-control"
+              rows="4"
+              placeholder="Describe el propósito de esta organización..."
+              maxlength="500"
+            ></textarea>
+            <small class="form-hint">Opcional - Máximo 500 caracteres</small>
+          </div>
+
+          <div class="step-actions">
+            <button type="button" id="btn-cancelar-1" class="btn btn-secondary">
+              Cancelar
+            </button>
+            <button type="button" id="btn-siguiente-1" class="btn btn-primary">
+              Siguiente <span class="btn-icon">→</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- PASO 2: Tipo de Organización -->
+        <div class="wizard-step" data-step="2">
+          <div class="step-header">
+            <div class="step-icon">🎯</div>
+            <h2>¿Qué tipo de organización es?</h2>
+            <p class="step-description">Selecciona el que mejor se adapte a tu caso</p>
+          </div>
+
+          <div class="form-group">
+            <div class="tipo-grid">
+              <div class="tipo-card" data-tipo="personal">
+                <div class="tipo-icon">🙋</div>
+                <h4>Personal</h4>
+                <p>Para uso individual</p>
+                <ul class="tipo-features">
+                  <li>✓ Proyectos personales</li>
+                  <li>✓ Control total</li>
+                  <li>✓ Gestión simple</li>
+                </ul>
+                <div class="tipo-check">✓</div>
+              </div>
+
+              <div class="tipo-card" data-tipo="freelance">
+                <div class="tipo-icon">💼</div>
+                <h4>Freelance</h4>
+                <p>Trabajador independiente</p>
+                <ul class="tipo-features">
+                  <li>✓ Múltiples clientes</li>
+                  <li>✓ Facturación</li>
+                  <li>✓ Gestión de tiempo</li>
+                </ul>
+                <div class="tipo-check">✓</div>
+              </div>
+
+              <div class="tipo-card" data-tipo="empresa">
+                <div class="tipo-icon">🏢</div>
+                <h4>Empresa</h4>
+                <p>Compañía establecida</p>
+                <ul class="tipo-features">
+                  <li>✓ Equipos grandes</li>
+                  <li>✓ Múltiples proyectos</li>
+                  <li>✓ Reportes avanzados</li>
+                </ul>
+                <div class="tipo-check">✓</div>
+              </div>
+
+              <div class="tipo-card" data-tipo="agencia">
+                <div class="tipo-icon">🎯</div>
+                <h4>Agencia</h4>
+                <p>Agencia de servicios</p>
+                <ul class="tipo-features">
+                  <li>✓ Clientes externos</li>
+                  <li>✓ Facturación por proyecto</li>
+                  <li>✓ Rentabilidad</li>
+                </ul>
+                <div class="tipo-check">✓</div>
+              </div>
+            </div>
+            <input type="hidden" id="tipo_organizacion" name="tipo_organizacion" />
+          </div>
+
+          <div class="step-actions">
+            <button type="button" id="btn-atras-2" class="btn btn-secondary">
+              <span class="btn-icon">←</span> Atrás
+            </button>
+            <button type="button" id="btn-siguiente-2" class="btn btn-primary">
+              Siguiente <span class="btn-icon">→</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- PASO 3: Configuración Regional -->
+        <div class="wizard-step" data-step="3">
+          <div class="step-header">
+            <div class="step-icon">🌍</div>
+            <h2>Configuración regional</h2>
+            <p class="step-description">Define tu zona horaria y moneda predeterminada</p>
+          </div>
+
+          <div class="form-group">
+            <label for="zona_horaria">Zona Horaria</label>
+            <select id="zona_horaria" name="zona_horaria" class="form-control">
+              <option value="America/Argentina/Buenos_Aires">🇦🇷 Argentina (Buenos Aires)</option>
+              <option value="America/Mexico_City">🇲🇽 México (CDMX)</option>
+              <option value="America/New_York">🇺🇸 USA (Nueva York)</option>
+              <option value="America/Los_Angeles">🇺🇸 USA (Los Ángeles)</option>
+              <option value="Europe/Madrid">🇪🇸 España (Madrid)</option>
+              <option value="Europe/London">🇬🇧 Reino Unido (Londres)</option>
+              <option value="UTC">🌍 UTC (Universal)</option>
+            </select>
+            <small class="form-hint">Se usará para todos los registros de tiempo</small>
+          </div>
+
+          <div class="form-group">
+            <label for="moneda">Moneda</label>
+            <select id="moneda" name="moneda" class="form-control">
+              <option value="USD">💵 USD - Dólar Estadounidense</option>
+              <option value="EUR">💶 EUR - Euro</option>
+              <option value="ARS">🇦🇷 ARS - Peso Argentino</option>
+              <option value="MXN">🇲🇽 MXN - Peso Mexicano</option>
+              <option value="GBP">💷 GBP - Libra Esterlina</option>
+              <option value="BRL">🇧🇷 BRL - Real Brasileño</option>
+            </select>
+            <small class="form-hint">Se usará para presupuestos y reportes financieros</small>
+          </div>
+
+          <div class="step-actions">
+            <button type="button" id="btn-atras-3" class="btn btn-secondary">
+              <span class="btn-icon">←</span> Atrás
+            </button>
+            <button type="submit" class="btn btn-primary" id="btn-crear">
+              <span id="btn-text">✓ Crear Organización</span>
+              <span id="btn-loader" class="spinner-small" style="display: none;"></span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-icon {
+    font-size: 1.2rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--primary-color);
+  }
+
+  /* Wizard Progress */
+  .wizard-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 2rem 0 3rem 0;
+    padding: 0 2rem;
+    flex-shrink: 0;
+  }
+
+  .progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+  }
+
+  .progress-step.active .step-circle {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  .progress-step.completed .step-circle {
+    background: #4caf50;
+    border-color: #4caf50;
+    color: white;
+  }
+
+  .step-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .progress-step.active .step-label {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .progress-line {
+    flex: 1;
+    height: 2px;
+    background: var(--border-color);
+    margin: 0 1rem;
+    max-width: 150px;
+  }
+
+  /* Form Container */
+  .form-container {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2.5rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .org-form {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Wizard Steps */
+  .wizard-step {
+    display: none;
+    animation: fadeIn 0.3s ease;
+    flex: 1;
+  }
+
+  .wizard-step.active {
+    display: flex;
+    flex-direction: column;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .step-header {
+    text-align: center;
+    margin-bottom: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .step-icon {
+    font-size: 2rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .step-header h2 {
+    margin: 0 0 0.4rem 0;
+    font-size: 1.35rem;
+    color: var(--text-primary);
+  }
+
+  .step-description {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  label {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+  }
+
+  label.required::after {
+    content: ' *';
+    color: #ff5757;
+  }
+
+  .form-control {
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    background: var(--input-bg);
+    color: var(--text-primary);
+  }
+
+  .form-control::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .form-control:invalid:not(:placeholder-shown) {
+    border-color: #ff5757;
+  }
+
+  .form-hint {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+  }
+
+  textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  /* Tipo de Organización Cards */
+  .tipo-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+  }
+
+  .tipo-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1.25rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .tipo-card:hover {
+    transform: translateY(-4px);
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .tipo-card.selected {
+    background: rgba(102, 126, 234, 0.15);
+    border-color: #667eea;
+    border-width: 3px;
+  }
+
+  .tipo-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .tipo-card h4 {
+    margin: 0 0 0.4rem 0;
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .tipo-card p {
+    margin: 0 0 1rem 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.3;
+  }
+
+  .tipo-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    width: 100%;
+  }
+
+  .tipo-features li {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0.35rem 0;
+    padding-left: 0;
+  }
+
+  .tipo-check {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #4caf50;
+    color: white;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+  }
+
+  .tipo-card.selected .tipo-check {
+    display: flex;
+  }
+
+  .step-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    padding-top: 1.25rem;
+    margin-top: 1.25rem;
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+  }
+
+  .spinner-small {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 1024px) {
+    .container {
+      max-width: 900px;
+    }
+
+    .tipo-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .container {
+      padding: 1rem;
+      max-width: 100%;
+    }
+
+    .form-container {
+      padding: 1.5rem;
+    }
+
+    .wizard-progress {
+      padding: 0 0.5rem;
+      margin: 1rem 0 1.5rem 0;
+      gap: 0.25rem;
+    }
+
+    .progress-step {
+      font-size: 0.75rem;
+    }
+
+    .step-circle {
+      width: 35px;
+      height: 35px;
+      font-size: 0.9rem;
+    }
+
+    .step-label {
+      font-size: 0.65rem;
+    }
+
+    .progress-line {
+      max-width: 30px;
+      margin: 0 0.25rem;
+    }
+
+    .step-header {
+      margin-bottom: 1rem;
+    }
+
+    .step-header h2 {
+      font-size: 1.2rem;
+    }
+
+    .step-icon {
+      font-size: 1.75rem;
+    }
+
+    .tipo-grid {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    .tipo-card {
+      padding: 1rem;
+      flex-direction: row;
+      text-align: left;
+      gap: 1rem;
+    }
+
+    .tipo-icon {
+      font-size: 2rem;
+      margin-bottom: 0;
+    }
+
+    .tipo-card h4 {
+      font-size: 0.95rem;
+    }
+
+    .tipo-card p {
+      margin-bottom: 0.5rem;
+      font-size: 0.8rem;
+    }
+
+    .tipo-features li {
+      font-size: 0.75rem;
+    }
+
+    .step-actions {
+      flex-direction: row;
+      padding-top: 1rem;
+      margin-top: 1rem;
+    }
+
+    .step-actions button {
+      flex: 1;
+    }
+  }
+</style>
+
+<script>
+  import { OrganizationService } from '../../services/organization';
+  import { setCurrentOrganization } from '../../stores/organizationStore';
+  import Swal from 'sweetalert2';
+
+  const form = document.getElementById('form-nueva-org') as HTMLFormElement;
+  const btnCrear = document.getElementById('btn-crear') as HTMLButtonElement;
+  const btnText = document.getElementById('btn-text') as HTMLSpanElement;
+  const btnLoader = document.getElementById('btn-loader') as HTMLSpanElement;
+
+  // Elementos del wizard
+  const btnSiguiente1 = document.getElementById('btn-siguiente-1') as HTMLButtonElement;
+  const btnCancelar1 = document.getElementById('btn-cancelar-1') as HTMLButtonElement;
+  const btnSiguiente2 = document.getElementById('btn-siguiente-2') as HTMLButtonElement;
+  const btnAtras2 = document.getElementById('btn-atras-2') as HTMLButtonElement;
+  const btnAtras3 = document.getElementById('btn-atras-3') as HTMLButtonElement;
+
+  const progressSteps = document.querySelectorAll('.progress-step');
+  const wizardSteps = document.querySelectorAll('.wizard-step');
+
+  const nombreInput = document.getElementById('nombre') as HTMLInputElement;
+  const tipoInput = document.getElementById('tipo_organizacion') as HTMLInputElement;
+  const tipoCards = document.querySelectorAll('.tipo-card');
+
+  let currentStep = 1;
+
+  // Función para mostrar un paso específico
+  function showStep(step: number) {
+    currentStep = step;
+    
+    // Actualizar wizard steps
+    wizardSteps.forEach((el, idx) => {
+      if (idx + 1 === step) {
+        el.classList.add('active');
+      } else {
+        el.classList.remove('active');
+      }
+    });
+
+    // Actualizar progress indicator
+    progressSteps.forEach((el, idx) => {
+      const stepNum = idx + 1;
+      if (stepNum < step) {
+        el.classList.add('completed');
+        el.classList.remove('active');
+      } else if (stepNum === step) {
+        el.classList.add('active');
+        el.classList.remove('completed');
+      } else {
+        el.classList.remove('active', 'completed');
+      }
+    });
+  }
+
+  // Validación paso 1
+  function validateStep1(): boolean {
+    if (!nombreInput.value.trim() || nombreInput.value.length < 3) {
+      Swal.fire({
+        title: 'Campo requerido',
+        text: 'Por favor ingresa un nombre de al menos 3 caracteres',
+        icon: 'warning',
+        confirmButtonText: 'Entendido'
+      });
+      nombreInput.focus();
+      return false;
+    }
+    return true;
+  }
+
+  // Validación paso 2
+  function validateStep2(): boolean {
+    if (!tipoInput.value) {
+      Swal.fire({
+        title: 'Selección requerida',
+        text: 'Por favor selecciona un tipo de organización',
+        icon: 'warning',
+        confirmButtonText: 'Entendido'
+      });
+      return false;
+    }
+    return true;
+  }
+
+  // Navegación
+  btnSiguiente1.addEventListener('click', () => {
+    if (validateStep1()) {
+      showStep(2);
+    }
+  });
+
+  btnSiguiente2.addEventListener('click', () => {
+    if (validateStep2()) {
+      showStep(3);
+    }
+  });
+
+  btnAtras2.addEventListener('click', () => {
+    showStep(1);
+  });
+
+  btnAtras3.addEventListener('click', () => {
+    showStep(2);
+  });
+
+  btnCancelar1.addEventListener('click', () => {
+    window.location.href = '/organizaciones';
+  });
+
+  // Selección de tipo de organización
+  tipoCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const tipo = (card as HTMLElement).dataset.tipo;
+      if (!tipo) return;
+
+      // Actualizar selección visual
+      tipoCards.forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+
+      // Actualizar input hidden
+      tipoInput.value = tipo;
+    });
+  });
+
+  // Submit del formulario
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Deshabilitar botón y mostrar loader
+    btnCrear.disabled = true;
+    btnText.style.display = 'none';
+    btnLoader.style.display = 'inline-block';
+
+    const formData = new FormData(form);
+    const descripcionValue = (formData.get('descripcion') || '') as string;
+    const zonaHoraria = (formData.get('zona_horaria') || 'UTC') as string;
+    const moneda = (formData.get('moneda') || 'USD') as string;
+    
+    const data = {
+      nombre: nombreInput.value.trim(),
+      tipo_organizacion: tipoInput.value,
+      zona_horaria: zonaHoraria,
+      moneda: moneda,
+      ...(descripcionValue && { descripcion: descripcionValue })
+    };
+
+    try {
+      // @ts-ignore - FormData values are correctly typed at runtime
+      const nuevaOrg = await OrganizationService.createOrganization(data);
+      
+      // Cambiar a la nueva organización automáticamente
+      setCurrentOrganization(nuevaOrg);
+
+      await Swal.fire({
+        title: '¡Organización Creada!',
+        html: `
+          <p>Se ha creado exitosamente: <strong>${nuevaOrg.nombre}</strong></p>
+          <p class="text-muted">Ahora puedes comenzar a crear proyectos y agregar miembros.</p>
+        `,
+        icon: 'success',
+        confirmButtonText: 'Ir al Dashboard'
+      });
+
+      window.location.href = '/dashboard';
+    } catch (error: any) {
+      console.error('Error al crear organización:', error);
+      
+      await Swal.fire({
+        title: 'Error',
+        text: error.message || 'No se pudo crear la organización',
+        icon: 'error',
+        confirmButtonText: 'Reintentar'
+      });
+
+      // Rehabilitar botón
+      btnCrear.disabled = false;
+      btnText.style.display = 'inline';
+      btnLoader.style.display = 'none';
+    }
+  });
+</script>

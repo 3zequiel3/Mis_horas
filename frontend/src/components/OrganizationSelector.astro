@@ -1,0 +1,493 @@
+---
+/**
+ * Selector de Organizaciones - Dropdown para cambiar de contexto
+ * FASE 1 MULTI-TENANT
+ */
+---
+
+<div id="organization-selector" class="org-selector">
+  <button id="org-selector-btn" class="org-selector-btn" aria-label="Cambiar organización">
+    <div class="org-current">
+      <svg class="org-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+      </svg>
+      <div class="org-info">
+        <span id="org-current-name" class="org-name">Cargando...</span>
+        <span id="org-current-type" class="org-type"></span>
+      </div>
+      <svg class="org-arrow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+      </svg>
+    </div>
+  </button>
+
+  <div id="org-dropdown" class="org-dropdown" style="display: none;">
+    <div class="org-dropdown-header">
+      <span class="org-dropdown-title">Tus Espacios de Trabajo</span>
+    </div>
+    
+    <div id="org-list" class="org-list">
+      <!-- Se llenará dinámicamente con JavaScript -->
+    </div>
+
+    <div class="org-dropdown-footer">
+      <button id="create-org-btn" class="org-create-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Crear nueva organización
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .org-selector {
+    position: relative;
+    display: inline-block;
+  }
+
+  .org-selector-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .org-selector-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .org-current {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .org-icon {
+    width: 24px;
+    height: 24px;
+    color: #fff;
+  }
+
+  .org-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .org-name {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .org-type {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+
+  .org-arrow {
+    width: 16px;
+    height: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    transition: transform 0.2s;
+  }
+
+  .org-selector.open .org-arrow {
+    transform: rotate(180deg);
+  }
+
+  .org-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 320px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    overflow: hidden;
+  }
+
+  .org-dropdown-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .org-dropdown-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+
+  .org-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  /* Scrollbar personalizado */
+  .org-list::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .org-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .org-list::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.4);
+    border-radius: 3px;
+  }
+
+  .org-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.6);
+  }
+
+  .org-list :global(.org-item) {
+    padding: 12px !important;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: transparent !important;
+    margin: 4px 8px;
+    border-radius: 10px;
+    position: relative;
+    border: 1px solid transparent;
+  }
+
+  .org-list :global(.org-item:hover) {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.08);
+    transform: translateX(2px);
+  }
+
+  .org-list :global(.org-item.active) {
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.15) 0%, rgba(102, 126, 234, 0.05) 100%) !important;
+    border-color: rgba(102, 126, 234, 0.4);
+  }
+
+  .org-list :global(.org-item-icon) {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .org-list :global(.org-item.active .org-item-icon) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .org-list :global(.org-item-icon.personal) {
+    background: linear-gradient(135deg, rgba(240, 147, 251, 0.2) 0%, rgba(245, 87, 108, 0.2) 100%);
+    color: #f093fb;
+  }
+
+  .org-list :global(.org-item.active .org-item-icon.personal) {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: #fff;
+  }
+
+  .org-list :global(.org-item-icon.empresa) {
+    background: linear-gradient(135deg, rgba(79, 172, 254, 0.2) 0%, rgba(0, 242, 254, 0.2) 100%);
+    color: #4facfe;
+  }
+
+  .org-list :global(.org-item.active .org-item-icon.empresa) {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: #fff;
+  }
+
+  .org-list :global(.org-item-icon.freelance) {
+    background: linear-gradient(135deg, rgba(67, 233, 123, 0.2) 0%, rgba(56, 249, 215, 0.2) 100%);
+    color: #43e97b;
+  }
+
+  .org-list :global(.org-item.active .org-item-icon.freelance) {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: #fff;
+  }
+
+  .org-list :global(.org-item-icon.agencia) {
+    background: linear-gradient(135deg, rgba(250, 112, 154, 0.2) 0%, rgba(254, 225, 64, 0.2) 100%);
+    color: #fa709a;
+  }
+
+  .org-list :global(.org-item.active .org-item-icon.agencia) {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: #fff;
+  }
+
+  .org-list :global(.org-item-details) {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .org-list :global(.org-item-name) {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.3;
+  }
+
+  .org-list :global(.org-item.active .org-item-name) {
+    color: #fff !important;
+  }
+
+  .org-list :global(.org-item-meta) {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.45);
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.4;
+  }
+
+  .org-list :global(.org-item-badge) {
+    background: rgba(102, 126, 234, 0.2);
+    color: #667eea;
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    margin-left: auto;
+  }
+
+  .org-dropdown-footer {
+    padding: 8px;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .org-create-btn {
+    width: 100%;
+    padding: 10px 14px;
+    background: transparent;
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .org-create-btn:hover {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: #667eea;
+    color: #667eea;
+  }
+
+  .org-create-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Loading state */
+  .org-list-loading {
+    padding: 32px;
+    text-align: center;
+    color: var(--text-secondary);
+  }
+
+  .org-list-empty {
+    padding: 32px;
+    text-align: center;
+    color: var(--text-secondary);
+  }
+</style>
+
+<script>
+  import { $organizations, $currentOrganization, switchOrganization, initializeOrganizationStores } from '../stores/organizationStore';
+  import { OrganizationService } from '../services/organization';
+  import type { Organization } from '../stores/organizationStore';
+
+  // Inicializar stores
+  initializeOrganizationStores();
+
+  const selector = document.getElementById('organization-selector');
+  const selectorBtn = document.getElementById('org-selector-btn');
+  const dropdown = document.getElementById('org-dropdown');
+  const orgList = document.getElementById('org-list');
+  const currentName = document.getElementById('org-current-name');
+  const currentType = document.getElementById('org-current-type');
+  const createBtn = document.getElementById('create-org-btn');
+
+  let isOpen = false;
+  let organizations: Organization[] = [];
+
+  // Cargar organizaciones
+  async function loadOrganizations() {
+    try {
+      organizations = await OrganizationService.getUserOrganizations();
+      $organizations.set(organizations);
+      
+      // Si no hay organización actual, seleccionar la primera
+      const current = $currentOrganization.get();
+      if (!current && organizations.length > 0) {
+        $currentOrganization.set(organizations[0]);
+      }
+      
+      renderOrganizations();
+      updateCurrentDisplay();
+    } catch (error) {
+      console.error('Error al cargar organizaciones:', error);
+      if (orgList) {
+        orgList.innerHTML = '<div class="org-list-empty">Error al cargar organizaciones</div>';
+      }
+    }
+  }
+
+  // Renderizar lista de organizaciones
+  function renderOrganizations() {
+    if (!orgList) return;
+    
+    if (organizations.length === 0) {
+      orgList.innerHTML = '<div class="org-list-empty">No tienes organizaciones</div>';
+      return;
+    }
+
+    const current = $currentOrganization.get();
+    
+    orgList.innerHTML = organizations.map(org => {
+      const isActive = current?.id === org.id;
+      const initial = org.nombre.charAt(0).toUpperCase();
+      
+      return `
+        <div class="org-item ${isActive ? 'active' : ''}" data-org-id="${org.id}">
+          <div class="org-item-icon ${org.tipo_organizacion}">
+            ${initial}
+          </div>
+          <div class="org-item-details">
+            <div class="org-item-name">${org.nombre}</div>
+            <div class="org-item-meta">
+              🗂️ ${org.estadisticas?.total_proyectos || 0} · 
+              👤 ${org.estadisticas?.total_miembros || 0}
+            </div>
+          </div>
+          ${isActive ? '<span class="org-item-badge">Actual</span>' : ''}
+        </div>
+      `;
+    }).join('');
+
+    // Agregar event listeners
+    orgList.querySelectorAll('.org-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const orgId = parseInt(item.getAttribute('data-org-id') || '0');
+        const org = organizations.find(o => o.id === orgId);
+        if (org) {
+          handleOrganizationChange(org);
+        }
+      });
+    });
+  }
+
+  // Actualizar display de organización actual
+  function updateCurrentDisplay() {
+    const current = $currentOrganization.get();
+    if (current && currentName && currentType) {
+      currentName.textContent = current.nombre;
+      currentType.textContent = current.tipo_organizacion;
+    }
+  }
+
+  // Manejar cambio de organización
+  function handleOrganizationChange(org: Organization) {
+    if ($currentOrganization.get()?.id === org.id) {
+      closeDropdown();
+      return;
+    }
+
+    switchOrganization(org);
+    // switchOrganization ya recarga la página, no necesitamos hacer más
+  }
+
+  // Toggle dropdown
+  function toggleDropdown() {
+    isOpen = !isOpen;
+    if (dropdown) {
+      dropdown.style.display = isOpen ? 'block' : 'none';
+    }
+    if (selector) {
+      selector.classList.toggle('open', isOpen);
+    }
+  }
+
+  function closeDropdown() {
+    isOpen = false;
+    if (dropdown) {
+      dropdown.style.display = 'none';
+    }
+    if (selector) {
+      selector.classList.remove('open');
+    }
+  }
+
+  // Event listeners
+  if (selectorBtn) {
+    selectorBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDropdown();
+    });
+  }
+
+  if (createBtn) {
+    createBtn.addEventListener('click', () => {
+      window.location.href = '/organizaciones/nueva';
+    });
+  }
+
+  // Cerrar al hacer click fuera
+  document.addEventListener('click', (e) => {
+    if (selector && !selector.contains(e.target as Node)) {
+      closeDropdown();
+    }
+  });
+
+  // Cargar al inicio
+  loadOrganizations();
+
+  // Suscribirse a cambios en el store
+  $currentOrganization.subscribe(() => {
+    updateCurrentDisplay();
+  });
+</script>

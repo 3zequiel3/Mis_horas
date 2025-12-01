@@ -1,19 +1,30 @@
 /**
  * Base API Service - Gestiona autenticación, headers y peticiones HTTP
  * Centraliza la lógica común para evitar repetición en todos los servicios
+ * FASE 1 MULTI-TENANT: Incluye automáticamente el header X-Organization-ID
  */
 
 import { getAuthHeaders } from '../utils/auth';
 import { ENV } from '../utils/env';
+import { $currentOrganizationId } from '../stores/organizationStore';
 
 const API_URL = ENV.VITE_API_URL;
 
 export class ApiService {
   /**
-   * Obtiene los headers con autenticación
+   * Obtiene los headers con autenticación y contexto organizacional
+   * FASE 1 MULTI-TENANT: Agrega X-Organization-ID automáticamente
    */
   protected static getHeaders(): Record<string, string> {
-    return getAuthHeaders();
+    const headers = getAuthHeaders();
+    
+    // Agregar contexto organizacional si existe
+    const orgId = $currentOrganizationId.get();
+    if (orgId) {
+      headers['X-Organization-ID'] = orgId.toString();
+    }
+    
+    return headers;
   }
 
   /**

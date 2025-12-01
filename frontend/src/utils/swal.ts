@@ -26,6 +26,9 @@ export const AlertUtils = {
       ...DARK_THEME_CONFIG,
       iconColor: '#10b981',
       confirmButtonColor: '#10b981',
+      customClass: {
+        container: 'swal-high-z-index'
+      }
     });
   },
 
@@ -40,6 +43,9 @@ export const AlertUtils = {
       ...DARK_THEME_CONFIG,
       iconColor: '#ef4444',
       confirmButtonColor: '#ef4444',
+      customClass: {
+        container: 'swal-high-z-index'
+      }
     });
   },
 
@@ -53,6 +59,9 @@ export const AlertUtils = {
       icon: 'warning',
       ...DARK_THEME_CONFIG,
       iconColor: '#f59e0b',
+      customClass: {
+        container: 'swal-high-z-index'
+      }
     });
   },
 
@@ -67,6 +76,9 @@ export const AlertUtils = {
       ...DARK_THEME_CONFIG,
       iconColor: '#3b82f6',
       confirmButtonColor: '#3b82f6',
+      customClass: {
+        container: 'swal-high-z-index'
+      }
     });
   },
 
@@ -82,6 +94,9 @@ export const AlertUtils = {
       ...DARK_THEME_CONFIG,
       confirmButtonText: 'Sí',
       cancelButtonText: 'Cancelar',
+      customClass: {
+        container: 'swal-high-z-index'
+      }
     });
   },
 

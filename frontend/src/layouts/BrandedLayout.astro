@@ -1,0 +1,72 @@
+---
+/**
+ * Layout con soporte para branding dinámico
+ * Inicializa CSS Variables basado en project brand_color
+ */
+
+interface Props {
+  title: string;
+  projectId?: number;
+}
+
+const { title, projectId } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    
+    <!-- CSS Variables por defecto -->
+    <style is:inline>
+      :root {
+        /* Colores por defecto (Indigo) */
+        --color-primary: #3b82f6;
+        --color-primary-dark: #2563eb;
+        --color-primary-light: #60a5fa;
+        --color-accent: #8b5cf6;
+        --color-primary-rgb: 59, 130, 246;
+        
+        /* Background & Text */
+        --color-background: #ffffff;
+        --color-text: #1f2937;
+        --color-border: #e5e7eb;
+      }
+      
+      .dark {
+        --color-background: #111827;
+        --color-text: #f9fafb;
+        --color-border: #374151;
+      }
+      
+      body {
+        background-color: var(--color-background);
+        color: var(--color-text);
+      }
+    </style>
+  </head>
+  <body data-project-id={projectId}>
+    <slot />
+    
+    <!-- Branding Loader -->
+    {projectId && (
+      <script>
+        import { loadProjectBranding, restoreProjectBranding } from '../utils/brandingLoader';
+        
+        const projectId = parseInt(document.body.getAttribute('data-project-id') || '0', 10);
+        
+        if (projectId > 0) {
+          // Intentar restaurar desde cache primero (más rápido)
+          restoreProjectBranding(projectId);
+          
+          // Luego cargar desde API por si cambió
+          loadProjectBranding(projectId).catch(err => {
+            console.warn('Failed to load project branding:', err);
+          });
+        }
+      </script>
+    )}
+  </body>
+</html>

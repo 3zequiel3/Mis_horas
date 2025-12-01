@@ -1,0 +1,811 @@
+---
+/**
+ * Página de Configuración de Organización
+ * Permite editar detalles, plan y eliminar organización
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Header from '../../../components/Header.astro';
+import ProtectedRoute from '../../../components/ProtectedRoute.astro';
+
+const { id } = Astro.params;
+---
+
+<BaseLayout title="Configuración de Organización">
+  <ProtectedRoute />
+  <Header />
+  
+  <main class="container">
+    <div class="page-header">
+      <h1>⚙️ Configuración de Organización</h1>
+      <button id="btn-volver" class="btn btn-secondary">
+        ← Volver
+      </button>
+    </div>
+
+    <div id="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Cargando configuración...</p>
+    </div>
+
+    <div id="content" style="display: none;">
+      <!-- Tabs Navigation -->
+      <div class="tabs-nav">
+        <button class="tab-btn active" data-tab="general">
+          📋 General
+        </button>
+        <button class="tab-btn" data-tab="plan">
+          📊 Plan y Facturación
+        </button>
+        <button class="tab-btn" data-tab="danger">
+          ⚠️ Avanzado
+        </button>
+      </div>
+
+      <div class="settings-grid">
+        <!-- TAB: Información General -->
+        <div class="tab-content active" data-tab="general">
+          <div class="settings-section">
+            <h2>📋 Información General</h2>
+            <form id="form-general" class="settings-form">
+              <div class="form-group">
+                <label for="nombre" class="required">Nombre</label>
+                <input type="text" id="nombre" class="form-control" required minlength="3" maxlength="100" />
+              </div>
+
+              <div class="form-group">
+                <label for="tipo_organizacion">Tipo de Organización</label>
+                <select id="tipo_organizacion" class="form-control">
+                  <option value="personal">🙋 Personal</option>
+                  <option value="empresa">🏢 Empresa</option>
+                  <option value="freelance">💼 Freelance</option>
+                  <option value="agencia">🎯 Agencia</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="descripcion">Descripción</label>
+                <textarea id="descripcion" class="form-control" rows="4" maxlength="500"></textarea>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="zona_horaria">Zona Horaria</label>
+                  <select id="zona_horaria" class="form-control">
+                    <option value="America/Argentina/Buenos_Aires">🇦🇷 Argentina (Buenos Aires)</option>
+                    <option value="America/Mexico_City">🇲🇽 México (CDMX)</option>
+                    <option value="America/New_York">🇺🇸 USA (Nueva York)</option>
+                    <option value="America/Los_Angeles">🇺🇸 USA (Los Ángeles)</option>
+                    <option value="Europe/Madrid">🇪🇸 España (Madrid)</option>
+                    <option value="Europe/London">🇬🇧 Reino Unido (Londres)</option>
+                    <option value="UTC">🌍 UTC (Universal)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="moneda">Moneda</label>
+                  <select id="moneda" class="form-control">
+                    <option value="USD">💵 USD - Dólar</option>
+                    <option value="EUR">💶 EUR - Euro</option>
+                    <option value="ARS">🇦🇷 ARS - Peso Argentino</option>
+                    <option value="MXN">🇲🇽 MXN - Peso Mexicano</option>
+                    <option value="GBP">💷 GBP - Libra</option>
+                    <option value="BRL">🇧🇷 BRL - Real Brasileño</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                  💾 Guardar Cambios
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- TAB: Plan y Facturación -->
+        <div class="tab-content" data-tab="plan">
+          <div class="settings-section">
+            <h2>📊 Plan Actual</h2>
+            <div class="plan-info">
+              <div class="plan-header">
+                <div>
+                  <h3 id="plan-name">Plan Free</h3>
+                  <p class="plan-description">Perfecto para comenzar y probar la plataforma</p>
+                </div>
+                <span class="plan-badge" id="plan-badge">Actual</span>
+              </div>
+              
+              <div class="plan-features">
+                <h4>✨ Características incluidas:</h4>
+                <ul>
+                  <li>✅ Hasta 5 proyectos activos</li>
+                  <li>✅ Hasta 10 miembros</li>
+                  <li>✅ Almacenamiento de 1GB</li>
+                  <li>✅ Soporte por correo</li>
+                  <li>✅ Reportes básicos</li>
+                </ul>
+              </div>
+
+              <div class="limits-list">
+                <h4>📈 Uso actual:</h4>
+                
+                <div class="limit-item">
+                  <span class="limit-label">Proyectos Activos</span>
+                  <span class="limit-value">
+                    <span id="proyectos-actuales">0</span> / <span id="proyectos-max">5</span>
+                  </span>
+                  <div class="progress-bar">
+                    <div class="progress-fill" id="progress-proyectos"></div>
+                  </div>
+                </div>
+
+                <div class="limit-item">
+                  <span class="limit-label">Miembros</span>
+                  <span class="limit-value">
+                    <span id="miembros-actuales">0</span> / <span id="miembros-max">10</span>
+                  </span>
+                  <div class="progress-bar">
+                    <div class="progress-fill" id="progress-miembros"></div>
+                  </div>
+                </div>
+
+                <div class="limit-item">
+                  <span class="limit-label">Almacenamiento</span>
+                  <span class="limit-value">
+                    <span id="storage-usado">0 MB</span> / <span id="storage-max">1 GB</span>
+                  </span>
+                  <div class="progress-bar">
+                    <div class="progress-fill" id="progress-storage"></div>
+                  </div>
+                </div>
+              </div>
+
+              <button class="btn btn-upgrade">
+                🚀 Actualizar a Plan Pro
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h2>💳 Facturación</h2>
+            <div class="billing-info">
+              <p class="info-message">
+                ℹ️ Actualmente estás en el plan gratuito. No hay cargos asociados.
+              </p>
+              <div class="billing-detail">
+                <span class="billing-label">Próximo cobro:</span>
+                <span class="billing-value">—</span>
+              </div>
+              <div class="billing-detail">
+                <span class="billing-label">Método de pago:</span>
+                <span class="billing-value">No configurado</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Zona de Peligro -->
+        <div class="tab-content" data-tab="danger">
+          <div class="settings-section danger-section">
+            <h2>⚠️ Zona de Peligro</h2>
+            <div class="danger-content">
+              <div class="danger-item">
+                <div>
+                  <h3>Eliminar Organización</h3>
+                  <p>Esta acción eliminará permanentemente todos los datos asociados a esta organización.</p>
+                  <ul class="danger-list">
+                    <li>❌ Todos los proyectos y tableros</li>
+                    <li>❌ Todas las tareas y registros</li>
+                    <li>❌ Todos los miembros y permisos</li>
+                    <li>❌ Todo el historial de tiempo</li>
+                  </ul>
+                  <p class="danger-warning">⚠️ Esta acción NO SE PUEDE DESHACER</p>
+                </div>
+                <button id="btn-eliminar" class="btn btn-danger">
+                  🗑️ Eliminar Organización
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  .page-header h1 {
+    margin: 0;
+    font-size: 2rem;
+    color: var(--text-primary);
+  }
+
+  /* Tabs Navigation */
+  .tabs-nav {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0;
+  }
+
+  .tab-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+  }
+
+  .tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .tab-btn.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+    font-weight: 600;
+  }
+
+  .tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-secondary {
+    background: #f5f5f5;
+    color: #666;
+  }
+
+  .btn-secondary:hover {
+    background: #e0e0e0;
+  }
+
+  .btn-danger {
+    background: #e74c3c;
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+  }
+
+  .btn-upgrade {
+    width: 100%;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    margin-top: 1rem;
+  }
+
+  .loading-container {
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .settings-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .settings-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    margin-bottom: 1.5rem;
+  }
+
+  .settings-section h2 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+  }
+
+  .settings-section h4 {
+    margin: 1.5rem 0 1rem 0;
+    font-size: 1rem;
+    color: var(--text-primary);
+  }
+
+  .settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  label {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+  }
+
+  label.required::after {
+    content: ' *';
+    color: #e74c3c;
+  }
+
+  .form-control {
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    background: var(--input-bg);
+    color: var(--text-primary);
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  textarea.form-control {
+    resize: vertical;
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+  }
+
+  .plan-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .plan-header h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.5rem;
+    color: #667eea;
+  }
+
+  .plan-description {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+
+  .plan-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #4caf50;
+    color: white;
+  }
+
+  .plan-features {
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .plan-features ul {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0 0;
+  }
+
+  .plan-features li {
+    padding: 0.5rem 0;
+    color: var(--text-secondary);
+  }
+
+  .limits-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .limit-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .limit-label {
+    font-weight: 600;
+    color: #666;
+  }
+
+  .limit-value {
+    font-size: 0.9rem;
+    color: #999;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease;
+  }
+
+  .danger-section {
+    border: 2px solid #ffe0e0;
+  }
+
+  .danger-section h2 {
+    color: #e74c3c;
+  }
+
+  .danger-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .danger-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .danger-item h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    color: #333;
+  }
+
+  .danger-item p {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .danger-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+  }
+
+  .danger-list li {
+    padding: 0.5rem 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .danger-warning {
+    font-weight: 600;
+    color: #e74c3c;
+    margin-top: 1rem;
+  }
+
+  .billing-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .info-message {
+    background: rgba(102, 126, 234, 0.1);
+    border-left: 4px solid #667eea;
+    padding: 1rem;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .billing-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .billing-detail:last-child {
+    border-bottom: none;
+  }
+
+  .billing-label {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .billing-value {
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 768px) {
+    .tabs-nav {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-btn {
+      white-space: nowrap;
+      font-size: 0.9rem;
+      padding: 0.75rem 1rem;
+    }
+
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+
+    .danger-item {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .danger-item button {
+      width: 100%;
+    }
+  }
+</style>
+
+<script define:vars={{ orgId: id }}>
+  import { OrganizationService } from '../../../services/organization';
+  import Swal from 'sweetalert2';
+
+  const loading = document.getElementById('loading');
+  const content = document.getElementById('content');
+  const formGeneral = document.getElementById('form-general');
+  const btnVolver = document.getElementById('btn-volver');
+  const btnEliminar = document.getElementById('btn-eliminar');
+
+  // Tabs
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  let organizacion = null;
+
+  // Manejo de tabs
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabName = btn.dataset.tab;
+      
+      // Actualizar botones
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      // Actualizar contenido
+      tabContents.forEach(content => {
+        if (content.dataset.tab === tabName) {
+          content.classList.add('active');
+        } else {
+          content.classList.remove('active');
+        }
+      });
+    });
+  });
+
+  async function cargarOrganizacion() {
+    try {
+      organizacion = await OrganizationService.getOrganization(parseInt(orgId));
+      
+      // Llenar formulario
+      document.getElementById('nombre').value = organizacion.nombre;
+      document.getElementById('tipo_organizacion').value = organizacion.tipo_organizacion;
+      document.getElementById('descripcion').value = organizacion.descripcion || '';
+      document.getElementById('zona_horaria').value = organizacion.zona_horaria || 'UTC';
+      document.getElementById('moneda').value = organizacion.moneda || 'USD';
+
+      // Plan info
+      const planNameEl = document.getElementById('plan-name');
+      if (planNameEl) planNameEl.textContent = `Plan ${organizacion.plan_type}`;
+      
+      // Límites
+      const stats = organizacion.estadisticas || {};
+      const totalProyectos = stats.total_proyectos || 0;
+      const totalMiembros = stats.total_miembros || 0;
+
+      const proyActEl = document.getElementById('proyectos-actuales');
+      const proyMaxEl = document.getElementById('proyectos-max');
+      const miemActEl = document.getElementById('miembros-actuales');
+      const miemMaxEl = document.getElementById('miembros-max');
+      
+      if (proyActEl) proyActEl.textContent = totalProyectos.toString();
+      if (proyMaxEl) proyMaxEl.textContent = organizacion.plan_limite_proyectos?.toString() || '5';
+      if (miemActEl) miemActEl.textContent = totalMiembros.toString();
+      if (miemMaxEl) miemMaxEl.textContent = organizacion.plan_limite_usuarios?.toString() || '10';
+
+      // Progress bars
+      const progressProyectos = (totalProyectos / (organizacion.plan_limite_proyectos || 5)) * 100;
+      const progressMiembros = (totalMiembros / (organizacion.plan_limite_usuarios || 10)) * 100;
+      
+      const progProyEl = document.getElementById('progress-proyectos');
+      const progMiemEl = document.getElementById('progress-miembros');
+      if (progProyEl) progProyEl.style.width = `${Math.min(progressProyectos, 100)}%`;
+      if (progMiemEl) progMiemEl.style.width = `${Math.min(progressMiembros, 100)}%`;
+
+      loading.style.display = 'none';
+      content.style.display = 'block';
+    } catch (error) {
+      console.error('Error al cargar organización:', error);
+      await Swal.fire({
+        title: 'Error',
+        text: 'No se pudo cargar la organización',
+        icon: 'error'
+      });
+      window.location.href = '/organizaciones';
+    }
+  }
+
+  formGeneral.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const data = {
+      nombre: document.getElementById('nombre').value,
+      tipo_organizacion: document.getElementById('tipo_organizacion').value,
+      descripcion: document.getElementById('descripcion').value || null,
+      zona_horaria: document.getElementById('zona_horaria').value,
+      moneda: document.getElementById('moneda').value
+    };
+
+    try {
+      await OrganizationService.updateOrganization(parseInt(orgId), data);
+      await Swal.fire({
+        title: '¡Guardado!',
+        text: 'Los cambios se guardaron correctamente',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    } catch (error) {
+      console.error('Error al actualizar:', error);
+      await Swal.fire({
+        title: 'Error',
+        text: 'No se pudieron guardar los cambios',
+        icon: 'error'
+      });
+    }
+  });
+
+  btnEliminar.addEventListener('click', async () => {
+    const result = await Swal.fire({
+      title: '⚠️ ¿Eliminar Organización?',
+      html: `
+        <p>Esta acción <strong>NO SE PUEDE DESHACER</strong></p>
+        <p>Se eliminarán:</p>
+        <ul style="text-align: left; margin: 1rem auto; max-width: 300px;">
+          <li>Todos los proyectos</li>
+          <li>Todas las tareas</li>
+          <li>Todos los registros de tiempo</li>
+          <li>Todos los miembros</li>
+        </ul>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e74c3c',
+      cancelButtonColor: '#95a5a6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await OrganizationService.deleteOrganization(parseInt(orgId));
+        await Swal.fire({
+          title: 'Eliminada',
+          text: 'La organización se eliminó correctamente',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        });
+        window.location.href = '/organizaciones';
+      } catch (error) {
+        console.error('Error al eliminar:', error);
+        await Swal.fire({
+          title: 'Error',
+          text: 'No se pudo eliminar la organización',
+          icon: 'error'
+        });
+      }
+    }
+  });
+
+  btnVolver.addEventListener('click', () => {
+    window.location.href = '/organizaciones';
+  });
+
+  cargarOrganizacion();
+</script>

@@ -26,6 +26,39 @@ export interface Proyecto {
   turno_manana_fin?: string | null;     // Formato HH:MM
   turno_tarde_inicio?: string | null;   // Formato HH:MM
   turno_tarde_fin?: string | null;      // Formato HH:MM
+  
+  // Configuración adicional (Fase 4)
+  client_name?: string | null;
+  brand_color?: string;
+  modules_config?: ModulesConfig;
+  budget_type?: 'none' | 'hourly_retainer' | 'time_and_materials' | 'fixed_price';
+  budget_base_amount?: number | null;
+  currency?: string;
+  configuracion_asistencia?: ConfiguracionAsistenciaProyecto;
+}
+
+export interface ModulesConfig {
+  time_tracking: boolean;
+  budget: boolean;
+  audit: boolean;
+  approvals: boolean;
+  public_view: boolean;
+}
+
+export interface ConfiguracionAsistenciaProyecto {
+  modo_horarios: 'corrido' | 'turnos';
+  horario_inicio?: string | null;
+  horario_fin?: string | null;
+  turno_manana_inicio?: string | null;
+  turno_manana_fin?: string | null;
+  turno_tarde_inicio?: string | null;
+  turno_tarde_fin?: string | null;
+}
+
+export interface BudgetData {
+  budget_type: string;
+  budget_base_amount: number | null;
+  currency: string;
 }
 
 export interface CreateProyectoRequest {

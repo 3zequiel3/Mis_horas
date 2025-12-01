@@ -1,0 +1,159 @@
+---
+/**
+ * BurnBar Component
+ * Barra de progreso del burn rate con colores semánticos
+ * Fase 4: UX Unificada & Gestión Financiera
+ */
+
+interface Props {
+  burnRate: number;
+  consumed: number;
+  total: number;
+  remaining: number;
+  currency: string;
+  budgetType: 'fixed_price' | 'hourly_retainer' | 'time_and_materials' | 'none';
+  className?: string;
+}
+
+const { burnRate, consumed, total, remaining, currency, budgetType, className = '' } = Astro.props;
+
+// Determinar color según burn rate
+const getColorClass = (rate: number): string => {
+  if (rate < 50) return 'bg-green-500';
+  if (rate < 80) return 'bg-yellow-500';
+  if (rate < 100) return 'bg-orange-500';
+  return 'bg-red-500';
+};
+
+// Determinar si debe parpadear (excedido)
+const shouldBlink = burnRate >= 100;
+
+// Formatear monto según moneda
+const formatAmount = (amount: number): string => {
+  const symbols: Record<string, string> = {
+    'USD': '$',
+    'EUR': '€',
+    'ARS': '$',
+    'MXN': '$',
+    'BRL': 'R$'
+  };
+  
+  const symbol = symbols[currency] || currency;
+  return `${symbol}${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+// Label según tipo de presupuesto
+const getUnitLabel = (): string => {
+  return budgetType === 'hourly_retainer' ? 'horas' : '';
+};
+
+const colorClass = getColorClass(burnRate);
+const blinkClass = shouldBlink ? 'animate-pulse' : '';
+---
+
+<div class={`burn-bar-container ${className}`}>
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-2">
+    <div class="flex items-center gap-2">
+      <span class="text-sm font-medium text-gray-700">
+        Consumo del presupuesto
+      </span>
+      {burnRate >= 80 && burnRate < 100 && (
+        <span class="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full font-medium">
+          ⚠ Cerca del límite
+        </span>
+      )}
+      {burnRate >= 100 && (
+        <span class="text-xs px-2 py-0.5 bg-red-100 text-red-800 rounded-full font-medium">
+          ✕ Presupuesto excedido
+        </span>
+      )}
+    </div>
+    <span class="text-sm font-bold text-gray-900">
+      {burnRate.toFixed(1)}%
+    </span>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="relative w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+    <div
+      class={`h-full transition-all duration-500 ${colorClass} ${blinkClass}`}
+      style={`width: ${Math.min(burnRate, 100)}%`}
+    >
+    </div>
+    {burnRate > 100 && (
+      <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+    )}
+  </div>
+
+  <!-- Details -->
+  <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+    <span>
+      Consumido: 
+      {budgetType === 'hourly_retainer' 
+        ? `${consumed.toFixed(1)} ${getUnitLabel()}`
+        : formatAmount(consumed)
+      }
+    </span>
+    <span>
+      Total: 
+      {budgetType === 'hourly_retainer' 
+        ? `${total.toFixed(1)} ${getUnitLabel()}`
+        : formatAmount(total)
+      }
+    </span>
+  </div>
+
+  <!-- Remaining (Solo si no está excedido) -->
+  {remaining > 0 ? (
+    <div class="mt-1 text-xs text-gray-500 text-center">
+      Restante: 
+      {budgetType === 'hourly_retainer' 
+        ? `${remaining.toFixed(1)} ${getUnitLabel()}`
+        : formatAmount(remaining)
+      }
+    </div>
+  ) : (
+    <div class="mt-1 text-xs text-red-600 font-medium text-center">
+      Excedido por: 
+      {budgetType === 'hourly_retainer' 
+        ? `${Math.abs(remaining).toFixed(1)} ${getUnitLabel()}`
+        : formatAmount(Math.abs(remaining))
+      }
+    </div>
+  )}
+</div>
+
+<style>
+  .burn-bar-container {
+    @apply bg-white rounded-lg p-4 shadow-sm border border-gray-200;
+  }
+
+  /* Animación de shimmer para presupuesto excedido */
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+
+  /* Animación de pulso más suave */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+</style>

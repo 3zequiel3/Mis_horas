@@ -1,0 +1,153 @@
+---
+/**
+ * Página de Invitaciones a Organizaciones
+ * Sistema Multi-Tenant - Fase 1
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import ProtectedRoute from '../components/ProtectedRoute.astro';
+
+const title = 'Invitaciones';
+---
+
+<BaseLayout title={title}>
+  <ProtectedRoute />
+  <Header />
+
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Invitaciones Pendientes</h1>
+      <p class="mt-2 text-gray-600">Revisa y responde las invitaciones a organizaciones</p>
+    </div>
+
+    <div id="message-container"></div>
+    
+    <div id="loading-state" class="text-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+      <p class="mt-4 text-gray-600">Cargando invitaciones...</p>
+    </div>
+
+    <div id="invitations-container" class="hidden space-y-4"></div>
+
+    <div id="empty-state" class="hidden text-center py-12">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76"></path>
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">No hay invitaciones</h3>
+      <p class="mt-1 text-sm text-gray-500">No tienes invitaciones pendientes en este momento.</p>
+    </div>
+  </main>
+
+  <script>
+    import { organizationService } from '../services/organizationService';
+    import { getRoleLabel, getRoleColor } from '../utils/permissions';
+
+    async function loadInvitations() {
+      const loading = document.getElementById('loading-state');
+      const container = document.getElementById('invitations-container');
+      const empty = document.getElementById('empty-state');
+
+      try {
+        const invitations = await organizationService.getMyInvitations();
+        
+        if (loading) loading.classList.add('hidden');
+
+        if (invitations.length === 0) {
+          if (empty) empty.classList.remove('hidden');
+          if (container) container.classList.add('hidden');
+        } else {
+          if (empty) empty.classList.add('hidden');
+          if (container) {
+            container.classList.remove('hidden');
+            container.innerHTML = invitations.map(inv => `
+              <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <h3 class="text-lg font-semibold text-gray-900">${inv.organization?.nombre || 'Organización'}</h3>
+                    <p class="mt-1 text-sm text-gray-600">
+                      Te han invitado como <span class="font-medium ${getRoleColor(inv.role)} px-2 py-0.5 rounded">${getRoleLabel(inv.role)}</span>
+                    </p>
+                    ${inv.inviter ? `
+                      <p class="mt-2 text-sm text-gray-500">
+                        Invitado por: <span class="font-medium">${inv.inviter.nombre}</span> (${inv.inviter.email})
+                      </p>
+                    ` : ''}
+                    <p class="mt-1 text-xs text-gray-400">
+                      Expira: ${new Date(inv.expires_at).toLocaleDateString('es-ES')}
+                    </p>
+                  </div>
+                </div>
+                
+                <div class="mt-4 flex gap-3">
+                  <button
+                    onclick="acceptInvitation(${inv.id})"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                  >
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Aceptar
+                  </button>
+                  <button
+                    onclick="rejectInvitation(${inv.id})"
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Rechazar
+                  </button>
+                </div>
+              </div>
+            `).join('');
+          }
+        }
+      } catch (error) {
+        console.error('Error al cargar invitaciones:', error);
+        showMessage('Error al cargar invitaciones', 'error');
+        if (loading) loading.classList.add('hidden');
+      }
+    }
+
+    (window as any).acceptInvitation = async (invitationId: number) => {
+      try {
+        await organizationService.acceptInvitation(invitationId);
+        showMessage('Invitación aceptada exitosamente', 'success');
+        await loadInvitations();
+      } catch (error: any) {
+        showMessage(error.message || 'Error al aceptar invitación', 'error');
+      }
+    };
+
+    (window as any).rejectInvitation = async (invitationId: number) => {
+      if (!confirm('¿Estás seguro de que deseas rechazar esta invitación?')) return;
+
+      try {
+        await organizationService.rejectInvitation(invitationId);
+        showMessage('Invitación rechazada', 'success');
+        await loadInvitations();
+      } catch (error: any) {
+        showMessage(error.message || 'Error al rechazar invitación', 'error');
+      }
+    };
+
+    function showMessage(message: string, type: 'success' | 'error') {
+      const container = document.getElementById('message-container');
+      if (!container) return;
+
+      const bgColor = type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800';
+      
+      container.innerHTML = `
+        <div class="${bgColor} border px-4 py-3 rounded-md mb-4">
+          <p class="text-sm font-medium">${message}</p>
+        </div>
+      `;
+
+      setTimeout(() => {
+        container.innerHTML = '';
+      }, 5000);
+    }
+
+    loadInvitations();
+  </script>
+</BaseLayout>

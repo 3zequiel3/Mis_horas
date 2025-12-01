@@ -35,7 +35,7 @@ const pageTitle = 'Dashboard';
 
         <div class="mt-4">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h2>📋 Mis Proyectos</h2>
+            <h2>📋 Proyectos Recientes</h2>
             <a href="/proyectos" style="color: #667eea; text-decoration: none; font-weight: 600;">Ver todos →</a>
           </div>
           <div id="proyectos-container" class="projects-grid grid grid-cols-3">
@@ -54,6 +54,14 @@ const pageTitle = 'Dashboard';
 
 <script>
   import { DashboardHandler } from '../handlers/dashboard';
+  import { getCurrentUserRole, canAccessFinancialData } from '../utils/permissions';
+
+  // Verificar permisos y ajustar UI
+  const userRole = getCurrentUserRole();
+  if (userRole && !canAccessFinancialData(userRole)) {
+    // Ocultar datos financieros si el usuario no tiene permiso
+    console.log('Usuario sin permisos para datos financieros');
+  }
 
   // Cargar el dashboard al montar
   DashboardHandler.cargarDashboard();

@@ -19,27 +19,21 @@ const { children } = Astro.props;
 <script>
   import { AuthService } from '../services/auth';
 
-  // Esperar a que el DOM esté listo
-  document.addEventListener('DOMContentLoaded', () => {
-    // Verificar autenticación en el CLIENTE
+  // Verificar autenticación inmediatamente
+  function checkAuth() {
     if (!AuthService.isAuthenticated()) {
-      // Redirigir a login
+      console.warn('No autenticado - redirigiendo a login');
       window.location.href = '/login';
+      return false;
     }
-  });
+    return true;
+  }
 
-  // También verificar al cargar la página (por si el DOMContentLoaded ya pasó)
-  if (document.readyState === 'loading') {
-    // Aún cargando
-    document.addEventListener('DOMContentLoaded', () => {
-      if (!AuthService.isAuthenticated()) {
-        window.location.href = '/login';
-      }
-    });
-  } else {
-    // Ya está cargado
-    if (!AuthService.isAuthenticated()) {
-      window.location.href = '/login';
-    }
+  // Ejecutar inmediatamente
+  checkAuth();
+
+  // Disparar evento personalizado cuando la autenticación está verificada
+  if (AuthService.isAuthenticated()) {
+    window.dispatchEvent(new CustomEvent('auth-verified'));
   }
 </script>

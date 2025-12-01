@@ -13,12 +13,17 @@ from datetime import datetime as dt
 class ProyectoService:
     @staticmethod
     def crear_proyecto(nombre: str, descripcion: str, anio: int, mes: int, usuario_id: int, 
+                      organization_id: int,  # FASE 1 MULTI-TENANT: Nuevo parámetro obligatorio
                       tipo_proyecto: str = 'personal', empleados: list = None, 
-                      horas_reales_activas: bool = False, modo_horarios: str = 'corrido',
+                      horas_reales_activas: bool = False, modo_horarios: str = None,
                       horario_inicio: str = None, horario_fin: str = None,
                       turno_manana_inicio: str = None, turno_manana_fin: str = None,
-                      turno_tarde_inicio: str = None, turno_tarde_fin: str = None):
-        """Crea un nuevo proyecto"""
+                      turno_tarde_inicio: str = None, turno_tarde_fin: str = None,
+                      client_name: str = None, brand_color: str = None,  # FASE 4: Nuevos campos
+                      modules_config: dict = None,  # FASE 4: Configuración de módulos
+                      budget_type: str = 'none', budget_base_amount: float = None,  # FASE 4: Presupuesto
+                      currency: str = 'USD'):  # FASE 4: Moneda
+        """Crea un nuevo proyecto - FASE 1 MULTI-TENANT + FASE 4 UX"""
         from datetime import datetime
         
         # Convertir strings de tiempo a objetos time
@@ -30,12 +35,24 @@ class ProyectoService:
                     return None
             return None
         
+        # FASE 4: Configuración de módulos por defecto
+        if modules_config is None:
+            modules_config = {
+                'budget': False,
+                'time_tracking': True,
+                'audit': False,
+                'public_view': False
+            }
+        
+        # FASE 1 MULTI-TENANT: Incluir organization_id
+        # FASE 4: Incluir client_name, brand_color, modules_config, budget
         proyecto = Proyecto(
             nombre=nombre,
             descripcion=descripcion,
             anio=anio,
             mes=mes,
             usuario_id=usuario_id,
+            organization_id=organization_id,
             activo=True,
             tipo_proyecto=tipo_proyecto,
             horas_reales_activas=horas_reales_activas,
@@ -45,7 +62,13 @@ class ProyectoService:
             turno_manana_inicio=parse_time(turno_manana_inicio),
             turno_manana_fin=parse_time(turno_manana_fin),
             turno_tarde_inicio=parse_time(turno_tarde_inicio),
-            turno_tarde_fin=parse_time(turno_tarde_fin)
+            turno_tarde_fin=parse_time(turno_tarde_fin),
+            client_name=client_name,
+            brand_color=brand_color,
+            modules_config=modules_config,
+            budget_type=budget_type,
+            budget_base_amount=budget_base_amount,
+            currency=currency
         )
         
         db.session.add(proyecto)
@@ -113,20 +136,23 @@ class ProyectoService:
         db.session.commit()
     
     @staticmethod
-    def obtener_proyectos_usuario(usuario_id: int):
-        """Obtiene proyectos del usuario (como admin o como empleado)"""
+    def obtener_proyectos_usuario(usuario_id: int, organization_id: int):
+        """Obtiene proyectos del usuario en una organización específica - FASE 1 MULTI-TENANT"""
         from app.models.empleado import Empleado
         
+        # FASE 1 MULTI-TENANT: Filtrar por organization_id
         # Proyectos donde el usuario es el admin
         proyectos_admin = Proyecto.query.filter(
-            Proyecto.usuario_id == usuario_id
+            Proyecto.usuario_id == usuario_id,
+            Proyecto.organization_id == organization_id
         ).all()
         
         # Proyectos donde el usuario es empleado
         proyectos_empleado = Proyecto.query.join(
             Empleado, Empleado.proyecto_id == Proyecto.id
         ).filter(
-            Empleado.usuario_id == usuario_id
+            Empleado.usuario_id == usuario_id,
+            Proyecto.organization_id == organization_id
         ).all()
         
         # Combinar y eliminar duplicados
@@ -233,21 +259,26 @@ class ProyectoService:
         return False
     
     @staticmethod
-    def obtener_estadisticas_usuario(user_id: int) -> dict:
+    def obtener_estadisticas_usuario(user_id: int, organization_id: int) -> dict:
         """
-        Obtiene estadísticas del usuario.
+        Obtiene estadísticas del usuario en una organización específica - FASE 1 MULTI-TENANT
         Suma horas según la configuración de cada proyecto:
         - Si proyecto.horas_reales_activas: suma horas_reales
         - Si no: suma horas_trabajadas
         """
+        # FASE 1 MULTI-TENANT: Filtrar por organization_id
         # Proyectos activos
         proyectos_activos = Proyecto.query.filter(
             Proyecto.usuario_id == user_id,
+            Proyecto.organization_id == organization_id,
             Proyecto.activo == True
         ).count()
         
-        # Obtener todos los proyectos del usuario
-        proyectos = Proyecto.query.filter(Proyecto.usuario_id == user_id).all()
+        # Obtener todos los proyectos del usuario en la organización
+        proyectos = Proyecto.query.filter(
+            Proyecto.usuario_id == user_id,
+            Proyecto.organization_id == organization_id
+        ).all()
         
         total_horas = 0
         horas_semana = 0

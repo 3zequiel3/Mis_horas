@@ -15,7 +15,10 @@ export type {
 export type {
   Proyecto,
   CreateProyectoRequest,
-  ProyectoView
+  ProyectoView,
+  ModulesConfig,
+  ConfiguracionAsistenciaProyecto,
+  BudgetData
 } from './Proyecto';
 
 // Empleado

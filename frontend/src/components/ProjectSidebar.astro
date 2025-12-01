@@ -1,0 +1,349 @@
+---
+/**
+ * Sidebar de Navegación del Proyecto
+ * Estilo FoodStore: simple, oscuro, funcional
+ * Muestra opciones según módulos activados en modules_config
+ * Los módulos se cargan dinámicamente desde el script
+ */
+---
+
+<!-- Botón toggle fuera del sidebar -->
+<button id="sidebar-toggle" class="sidebar-toggle" style="display: none;">
+  <span id="sidebar-toggle-icon-hamburguesa">☰</span>
+  <span id="sidebar-toggle-icon-x" style="display: none;">✕</span>
+</button>
+
+<!-- Sidebar -->
+<aside id="project-sidebar" class="project-sidebar project-sidebar--hidden">
+  <div class="sidebar-title">Administración</div>
+  <div class="sidebar-subtitle">Panel de Control</div>
+  
+  <ul class="sidebar-menu">
+    <li class="menu-item active" data-view="dashboard">
+      <a href="#" class="menu-link">
+        <span class="menu-icon">📊</span>
+        <p class="menu-text">Gestión</p>
+      </a>
+    </li>
+    
+    <!-- Auditoría - se muestra si modules_config.audit === true -->
+    <li class="menu-item" data-view="audit" data-module="audit" style="display: none;">
+      <a href="/auditoria" class="menu-link">
+        <span class="menu-icon">📋</span>
+        <p class="menu-text">Auditoría</p>
+      </a>
+    </li>
+    
+    <!-- Aprobaciones - se muestra si modules_config tiene aprobaciones activadas -->
+    <li class="menu-item" data-view="approvals" data-module="approvals" style="display: none;">
+      <a href="/aprobaciones" class="menu-link">
+        <span class="menu-icon">✓</span>
+        <p class="menu-text">Aprobaciones</p>
+      </a>
+    </li>
+  </ul>
+</aside>
+
+<style>
+  /* --- Botón toggle sidebar --- */
+  .sidebar-toggle {
+    position: fixed;
+    top: 90px;
+    left: 10px;
+    z-index: 1001;
+    background: #667eea;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, left 0.3s, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-toggle span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    width: 100%;
+    height: 100%;
+  }
+
+  .sidebar-toggle.bounce {
+    animation: bounceSidebarBtn 0.35s;
+  }
+
+  @keyframes bounceSidebarBtn {
+    0%, 100% { opacity: 1; }
+    30% { opacity: 0.8; }
+    60% { opacity: 0.9; }
+  }
+
+  @media (max-width: 800px) {
+    .sidebar-toggle {
+      display: none !important;
+    }
+  }
+
+  /* --- Sidebar principal --- */
+  @media (min-width: 801px) {
+    .project-sidebar {
+      position: fixed;
+      top: 90px;
+      left: 0;
+      width: 260px;
+      background: #1e1e1e;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+      padding: 3rem 0 1.5rem 0;
+      z-index: 900;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin-left: 0.5rem;
+      border-radius: 2rem;
+      overflow: hidden;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s, box-shadow 0.2s;
+      will-change: transform, opacity;
+      transform-origin: 0 0;
+    }
+
+    .project-sidebar.project-sidebar--hidden {
+      transform: translate(-100%, 0);
+      opacity: 0;
+      pointer-events: none;
+      box-shadow: none;
+    }
+
+    .sidebar-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 0.25rem;
+      letter-spacing: 0.3px;
+      padding: 0 1.5rem;
+      line-height: 1.3;
+    }
+
+    .sidebar-subtitle {
+      font-size: 0.8rem;
+      color: #999;
+      margin-bottom: 1.25rem;
+      padding: 0 1.5rem;
+      line-height: 1.2;
+    }
+
+    .sidebar-menu {
+      width: 100%;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      transition: background 0.2s, color 0.2s, border-left 0.2s;
+    }
+
+    .menu-link {
+      text-decoration: none;
+      color: #d1d5db;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      height: 100%;
+      padding: 0.75rem 1.5rem 0.75rem 1.8rem;
+      font-size: 1rem;
+      border-left: 3.5px solid transparent;
+      background: none;
+      transition: all 0.2s;
+    }
+
+    .menu-item.active .menu-link,
+    .menu-item:hover .menu-link {
+      color: #667eea;
+      border-left-color: #667eea;
+    }
+
+    .menu-icon {
+      font-size: 1.3rem;
+      min-width: 1.7em;
+      text-align: center;
+      margin-right: 0.1em;
+    }
+
+    .menu-text {
+      display: flex;
+      margin: 0;
+    }
+  }
+
+  @media (max-width: 800px) {
+    .project-sidebar {
+      display: none !important;
+    }
+  }
+
+  /* Responsive breakpoints */
+  @media (max-width: 1024px) {
+    .project-sidebar {
+      width: 220px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .project-sidebar {
+      width: 200px;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * Inicialización del sidebar estilo FoodStore
+   * Muestra/oculta el sidebar basado en módulos activos del proyecto
+   */
+  
+  // Función para actualizar los módulos visibles basados en la configuración del proyecto
+  function updateSidebarModules(modulesConfig: any, proyectoId?: number) {
+    const sidebar = document.getElementById('project-sidebar');
+    if (!sidebar) return;
+
+    // Si no se pasa proyectoId, intentar obtenerlo de la URL
+    if (!proyectoId) {
+      const pathParts = window.location.pathname.split('/');
+      if (pathParts[1] === 'proyecto' && pathParts[2]) {
+        proyectoId = parseInt(pathParts[2]);
+      }
+    }
+
+    // Obtener todos los items con data-module
+    const moduleItems = sidebar.querySelectorAll('[data-module]');
+    
+    let visibleModules = 0;
+    
+    moduleItems.forEach((item) => {
+      const module = (item as HTMLElement).dataset.module;
+      const shouldShow = modulesConfig && module && (modulesConfig as any)[module] === true;
+      
+      if (shouldShow) {
+        (item as HTMLElement).style.display = '';
+        visibleModules++;
+
+        // Actualizar href dinámicamente con el proyecto_id
+        if (proyectoId && module) {
+          const link = item.querySelector('a') as HTMLAnchorElement;
+          if (link && module !== 'dashboard') {
+            link.href = `/proyecto/${proyectoId}/${module === 'audit' ? 'auditoria' : 'aprobaciones'}`;
+          }
+        }
+      } else {
+        (item as HTMLElement).style.display = 'none';
+      }
+    });
+
+    // Verificar si hay más de una opción de menú (dashboard siempre + módulos activos)
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const shouldShowSidebar = visibleModules > 0;
+    
+    // Si solo hay "Gestión" (dashboard), ocultar completamente el sidebar y el toggle
+    if (!shouldShowSidebar) {
+      if (sidebar) sidebar.style.display = 'none';
+      if (sidebarToggle) sidebarToggle.style.display = 'none';
+    } else {
+      // Mostrar sidebar y toggle si hay módulos adicionales
+      if (sidebar) sidebar.style.display = '';
+      if (sidebarToggle) sidebarToggle.style.display = 'flex';
+    }
+
+    return shouldShowSidebar;
+  }
+
+  function initProjectSidebar() {
+    const sidebar = document.getElementById('project-sidebar');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const iconHamburguesa = document.getElementById('sidebar-toggle-icon-hamburguesa');
+    const iconX = document.getElementById('sidebar-toggle-icon-x');
+
+    if (!sidebar) return;
+
+    const hiddenClass = 'project-sidebar--hidden';
+
+    // Actualizar iconos según estado
+    function updateSidebarToggleIcon() {
+      if (!sidebar || !sidebarToggle) return;
+      const isHidden = sidebar.classList.contains(hiddenClass);
+      if (iconHamburguesa && iconX) {
+        if (isHidden) {
+          iconHamburguesa.style.display = '';
+          iconX.style.display = 'none';
+          sidebarToggle.style.background = '#667eea';
+        } else {
+          iconHamburguesa.style.display = 'none';
+          iconX.style.display = '';
+          sidebarToggle.style.background = '#1e1e1e';
+        }
+      }
+    }
+
+    // Toggle sidebar
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle(hiddenClass);
+        sidebarToggle.classList.add('bounce');
+        setTimeout(() => sidebarToggle.classList.remove('bounce'), 350);
+        updateSidebarToggleIcon();
+      });
+    }
+
+    // Cerrar con ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !sidebar.classList.contains(hiddenClass)) {
+        sidebar.classList.add(hiddenClass);
+        if (sidebarToggle) {
+          sidebarToggle.classList.add('bounce');
+          setTimeout(() => sidebarToggle.classList.remove('bounce'), 350);
+        }
+        updateSidebarToggleIcon();
+      }
+    });
+
+    // Click en menu items - para items con href="#" (solo dashboard)
+    const menuItems = sidebar.querySelectorAll('.menu-item');
+    menuItems.forEach(item => {
+      const link = item.querySelector('a') as HTMLAnchorElement;
+      if (link && link.href.includes('#')) {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          
+          // Remover active de todos
+          menuItems.forEach(mi => mi.classList.remove('active'));
+          
+          // Agregar active al clickeado
+          item.classList.add('active');
+        });
+      }
+    });
+
+    // Inicializar icono
+    updateSidebarToggleIcon();
+  }
+
+  // Exponer función globalmente para que pueda ser llamada desde la página del proyecto
+  (window as any).updateSidebarModules = updateSidebarModules;
+  (window as any).initProjectSidebar = initProjectSidebar;
+
+  // Inicializar cuando el DOM esté listo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initProjectSidebar);
+  } else {
+    initProjectSidebar();
+  }
+</script>

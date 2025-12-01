@@ -34,6 +34,9 @@ export const LoginHandler = {
       // Hacer login
       await AuthService.login(username, password, rememberMe);
 
+      // FASE 1 MULTI-TENANT: Cargar organizaciones del usuario
+      await this.cargarOrganizaciones();
+
       // Mostrar éxito y redirigir
       this.mostrarMensajeExito();
       return true;
@@ -42,6 +45,25 @@ export const LoginHandler = {
       this.mostrarMensajeError((error as Error).message);
       await AlertUtils.error('Error', (error as Error).message);
       return false;
+    }
+  },
+
+  // FASE 1 MULTI-TENANT: Carga las organizaciones y establece la actual
+  async cargarOrganizaciones() {
+    try {
+      const { OrganizationService } = await import('../services/organization');
+      const { setOrganizations, setCurrentOrganization } = await import('../stores/organizationStore');
+      
+      const organizations = await OrganizationService.getUserOrganizations();
+      setOrganizations(organizations);
+      
+      // Establecer la primera organización como actual
+      if (organizations.length > 0) {
+        setCurrentOrganization(organizations[0]);
+      }
+    } catch (error) {
+      console.error('Error al cargar organizaciones:', error);
+      // No bloquear el login si falla la carga de organizaciones
     }
   },
 

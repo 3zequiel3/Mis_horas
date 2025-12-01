@@ -1,5 +1,6 @@
 ---
 import Notificaciones from './Notificaciones.astro';
+import OrganizationSelector from './OrganizationSelector.astro';
 
 interface Props {
   children?: string;
@@ -22,6 +23,7 @@ const { children } = Astro.props;
       </button>
 
       <div class="nav-menu">
+        <OrganizationSelector />
         <a href="/dashboard" class="nav-link">Dashboard</a>
         <a href="/proyectos" class="nav-link">Proyectos</a>
         <a href="/nuevo-proyecto" class="nav-link nav-link-primary">+ Nuevo</a>
@@ -232,9 +234,61 @@ const { children } = Astro.props;
   import { AlertUtils } from '../utils/swal';
   import { authHandlers } from '../handlers/auth';
   import { initHamburgerMenu } from '../utils/hamburger';
+  import { getCurrentUserRole, canApproveTimesheets, isPersonalMode } from '../utils/permissions';
+  import { organizationService } from '../services/organizationService';
 
   // Inicializar menú hamburguesa
   initHamburgerMenu();
+
+  // FASE 2 PERMISOS: Mostrar/ocultar enlaces según permisos y modo organizacional
+  async function adjustMenuByPermissions() {
+    try {
+      // Verificar si hay token de autenticación antes de hacer llamadas
+      const token = localStorage.getItem('token');
+      if (!token) {
+        // Sin token, ocultar todas las opciones de permisos avanzados
+        const aprobacionesLink = document.getElementById('nav-aprobaciones');
+        const auditoriaLink = document.getElementById('nav-auditoria');
+        if (aprobacionesLink) aprobacionesLink.style.display = 'none';
+        if (auditoriaLink) auditoriaLink.style.display = 'none';
+        return;
+      }
+
+      const userRole = getCurrentUserRole();
+      const organizations = await organizationService.getAll();
+      const currentOrgId = organizationService.getCurrentOrganizationId();
+      const currentOrg = organizations.find(o => o.id === currentOrgId);
+
+      // Ocultar "Aprobaciones" si no tiene permiso o está en modo personal
+      const aprobacionesLink = document.getElementById('nav-aprobaciones');
+      if (aprobacionesLink) {
+        const shouldShow = userRole && canApproveTimesheets(userRole) && currentOrg && !isPersonalMode(currentOrg);
+        aprobacionesLink.style.display = shouldShow ? 'block' : 'none';
+      }
+
+      // Ocultar "Auditoría" para viewers
+      const auditoriaLink = document.getElementById('nav-auditoria');
+      if (auditoriaLink) {
+        const shouldShow = userRole && ['owner', 'admin', 'manager'].includes(userRole);
+        auditoriaLink.style.display = shouldShow ? 'block' : 'none';
+      }
+    } catch (error) {
+      // Si hay error (401, etc), silenciosamente ocultar opciones de permisos
+      console.log('No se pudo ajustar menú por permisos (usuario no autenticado o sin permisos)');
+      const aprobacionesLink = document.getElementById('nav-aprobaciones');
+      const auditoriaLink = document.getElementById('nav-auditoria');
+      if (aprobacionesLink) aprobacionesLink.style.display = 'none';
+      if (auditoriaLink) auditoriaLink.style.display = 'none';
+    }
+  }
+
+  // Ejecutar al cargar solo si estamos autenticados y no en páginas públicas
+  const publicPages = ['/login', '/register', '/'];
+  const isPublicPage = publicPages.some(page => window.location.pathname === page || window.location.pathname.startsWith(page + '?'));
+  
+  if (localStorage.getItem('token') && !isPublicPage) {
+    adjustMenuByPermissions();
+  }
 
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
     const result = await AlertUtils.confirm(

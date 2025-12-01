@@ -1,9 +1,19 @@
 // Gestión de creación de proyectos: datos, años, meses
 
 import { ProyectosService } from '../services/proyectos';
+import { initializeOrganizationContext } from '../utils/organizationContext';
 import { AlertUtils } from '../utils/swal';
 
 export const ProyectoFormHandler = {
+  // FASE 1 MULTI-TENANT: Inicializa el contexto organizacional
+  async inicializar() {
+    try {
+      await initializeOrganizationContext();
+    } catch (error) {
+      console.error('Error inicializando contexto organizacional:', error);
+    }
+  },
+  
   // Llena el select de años con un rango de -5 a +5 desde actual
   inicializarAnios() {
     const anioSelect = document.getElementById('anio') as HTMLSelectElement;
@@ -50,33 +60,21 @@ export const ProyectoFormHandler = {
       const tipoProyecto = (document.getElementById('tipo_proyecto') as HTMLSelectElement)?.value || 'personal';
       const horasRealesActivas = false; // Por defecto false, se activa desde configuración
 
-      // Obtener configuración de turnos
-      const modoHorarios = (document.getElementById('modo_horarios') as HTMLSelectElement)?.value || 'corrido';
-      const horarioInicio = (document.getElementById('horario_inicio') as HTMLInputElement)?.value || undefined;
-      const horarioFin = (document.getElementById('horario_fin') as HTMLInputElement)?.value || undefined;
-      const turnoMananaInicio = (document.getElementById('turno_manana_inicio') as HTMLInputElement)?.value || undefined;
-      const turnoMananaFin = (document.getElementById('turno_manana_fin') as HTMLInputElement)?.value || undefined;
-      const turnoTardeInicio = (document.getElementById('turno_tarde_inicio') as HTMLInputElement)?.value || undefined;
-      const turnoTardeFin = (document.getElementById('turno_tarde_fin') as HTMLInputElement)?.value || undefined;
+      // FASE 4: Nuevos campos
+      const cliente = (document.getElementById('cliente') as HTMLInputElement)?.value || undefined;
+      const brandColor = (document.getElementById('brand_color') as HTMLInputElement)?.value || undefined;
+      const modulesConfigStr = (document.getElementById('modules_config') as HTMLInputElement)?.value || '{}';
+      const modulesConfig = JSON.parse(modulesConfigStr);
+
+      // FASE 4: Configuración financiera
+      const budgetType = (document.getElementById('budget_type') as HTMLInputElement)?.value || 'none';
+      const budgetBaseAmountStr = (document.getElementById('budget_base_amount') as HTMLInputElement)?.value;
+      const budgetBaseAmount = budgetBaseAmountStr ? parseFloat(budgetBaseAmountStr) : undefined;
+      const currency = (document.getElementById('currency') as HTMLSelectElement)?.value || 'USD';
 
       // Validar
       if (!this.validarFormulario(nombre, anio, mes)) {
         return false;
-      }
-
-      // Validar configuración de horarios según el modo seleccionado
-      if (tipoProyecto === 'empleados') {
-        if (modoHorarios === 'turnos') {
-          if (!turnoMananaInicio || !turnoMananaFin || !turnoTardeInicio || !turnoTardeFin) {
-            await AlertUtils.error('Error', 'Debes configurar los horarios de ambos turnos');
-            return false;
-          }
-        } else if (modoHorarios === 'corrido') {
-          if (!horarioInicio || !horarioFin) {
-            await AlertUtils.error('Error', 'Debes configurar el horario de entrada y salida');
-            return false;
-          }
-        }
       }
 
       // Obtener empleados si es proyecto con empleados
@@ -120,13 +118,14 @@ export const ProyectoFormHandler = {
         tipo_proyecto: tipoProyecto as 'personal' | 'empleados',
         empleados: empleados.length > 0 ? empleados : undefined,
         horas_reales_activas: horasRealesActivas,
-        modo_horarios: modoHorarios as 'corrido' | 'turnos',
-        horario_inicio: horarioInicio,
-        horario_fin: horarioFin,
-        turno_manana_inicio: turnoMananaInicio,
-        turno_manana_fin: turnoMananaFin,
-        turno_tarde_inicio: turnoTardeInicio,
-        turno_tarde_fin: turnoTardeFin,
+        // FASE 4: Nuevos campos
+        client_name: cliente,
+        brand_color: brandColor,
+        modules_config: modulesConfig,
+        budget_type: budgetType,
+        budget_base_amount: budgetBaseAmount,
+        currency: currency,
+        // Los horarios se configurarán opcionalmente después desde el drawer
       });
 
       // Mostrar éxito

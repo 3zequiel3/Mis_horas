@@ -67,6 +67,35 @@ const pageTitle = 'Nuevo Tablero';
                   rows="3"
                 ></textarea>
               </div>
+
+              <div class="form-group">
+                <label for="cliente">Cliente (Opcional)</label>
+                <input
+                  type="text"
+                  id="cliente"
+                  name="cliente"
+                  placeholder="Nombre del cliente o empresa"
+                  maxlength="255"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Color de Marca (Opcional)</label>
+                <div class="color-picker-section">
+                  <div class="color-presets">
+                    <button type="button" class="color-preset" data-color="#3B82F6" style="background: #3B82F6" title="Azul"></button>
+                    <button type="button" class="color-preset" data-color="#10B981" style="background: #10B981" title="Verde"></button>
+                    <button type="button" class="color-preset" data-color="#F59E0B" style="background: #F59E0B" title="Amarillo"></button>
+                    <button type="button" class="color-preset" data-color="#EF4444" style="background: #EF4444" title="Rojo"></button>
+                    <button type="button" class="color-preset" data-color="#8B5CF6" style="background: #8B5CF6" title="Púrpura"></button>
+                    <button type="button" class="color-preset" data-color="#EC4899" style="background: #EC4899" title="Rosa"></button>
+                  </div>
+                  <div class="color-custom">
+                    <input type="color" id="brand_color_picker" value="#3B82F6" />
+                    <input type="text" id="brand_color" name="brand_color" placeholder="#3B82F6" maxlength="7" pattern="^#[0-9A-Fa-f]{6}$" />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="step-actions">
@@ -77,8 +106,130 @@ const pageTitle = 'Nuevo Tablero';
             </div>
           </div>
 
-          <!-- PASO 2: Tipo de Tablero -->
+          <!-- PASO 2: Módulos del Proyecto -->
           <div class="wizard-step" data-step="2">
+            <div class="step-content">
+              <div class="step-icon">🧩</div>
+              <h3>Módulos del Proyecto</h3>
+              <p class="step-description">Selecciona las funcionalidades que necesitas</p>
+              
+              <div class="modules-grid">
+                <div class="module-card active" data-module="time_tracking">
+                  <div class="module-icon">⏱️</div>
+                  <h4>Tracking de Tiempo</h4>
+                  <p>Registro de horas trabajadas</p>
+                  <div class="module-toggle">✓</div>
+                </div>
+
+                <div class="module-card" data-module="budget">
+                  <div class="module-icon">💰</div>
+                  <h4>Gestión de Presupuesto</h4>
+                  <p>Control de costos y burn rate</p>
+                  <div class="module-toggle">✓</div>
+                </div>
+
+                <div class="module-card" data-module="audit">
+                  <div class="module-icon">📋</div>
+                  <h4>Auditoría</h4>
+                  <p>Timeline de cambios y acciones</p>
+                  <div class="module-toggle">✓</div>
+                </div>
+
+                <div class="module-card" data-module="public_view">
+                  <div class="module-icon">🌐</div>
+                  <h4>Vista Pública</h4>
+                  <p>Compartir progreso con cliente</p>
+                  <div class="module-toggle">✓</div>
+                </div>
+              </div>
+
+              <input type="hidden" id="modules_config" name="modules_config" />
+            </div>
+
+            <div class="step-actions">
+              <button type="button" class="btn btn-secondary" data-prev-step="1">
+                <span class="btn-icon">←</span> Atrás
+              </button>
+              <button type="button" class="btn btn-primary" data-next-step="3">
+                Siguiente <span class="btn-icon">→</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- PASO 3: Configuración Financiera (Condicional) -->
+          <div class="wizard-step" data-step="3" id="step-financiero" style="display: none;">
+            <div class="step-content">
+              <div class="step-icon">💰</div>
+              <h3>Configuración de Presupuesto</h3>
+              <p class="step-description">Define el tipo de presupuesto para este proyecto</p>
+              
+              <div class="budget-types-grid">
+                <div class="budget-type-card" data-budget-type="fixed_price">
+                  <div class="budget-type-icon">💵</div>
+                  <h4>Monto Fijo</h4>
+                  <p>Precio total acordado</p>
+                  <div class="budget-type-check">✓</div>
+                </div>
+
+                <div class="budget-type-card" data-budget-type="hourly_retainer">
+                  <div class="budget-type-icon">⏰</div>
+                  <h4>Bolsa de Horas</h4>
+                  <p>Cantidad de horas prepagadas</p>
+                  <div class="budget-type-check">✓</div>
+                </div>
+
+                <div class="budget-type-card" data-budget-type="time_and_materials">
+                  <div class="budget-type-icon">📊</div>
+                  <h4>Por Hora (T&M)</h4>
+                  <p>Cobro según horas trabajadas</p>
+                  <div class="budget-type-check">✓</div>
+                </div>
+              </div>
+
+              <div id="budget-amount-section" style="display: none; margin-top: 1.5rem;">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="currency">Moneda</label>
+                    <select id="currency" name="currency">
+                      <option value="USD">💵 USD - Dólar</option>
+                      <option value="EUR">💶 EUR - Euro</option>
+                      <option value="ARS">🇦🇷 ARS - Peso Argentino</option>
+                      <option value="MXN">🇲🇽 MXN - Peso Mexicano</option>
+                      <option value="CLP">🇨🇱 CLP - Peso Chileno</option>
+                      <option value="COP">🇨🇴 COP - Peso Colombiano</option>
+                      <option value="BRL">🇧🇷 BRL - Real Brasileño</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="budget_base_amount" id="budget-amount-label">Monto</label>
+                    <input
+                      type="number"
+                      id="budget_base_amount"
+                      name="budget_base_amount"
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <input type="hidden" id="budget_type" name="budget_type" value="none" />
+            </div>
+
+            <div class="step-actions">
+              <button type="button" class="btn btn-secondary" data-prev-step="2">
+                <span class="btn-icon">←</span> Atrás
+              </button>
+              <button type="button" class="btn btn-primary" id="btn-next-from-budget">
+                Siguiente <span class="btn-icon">→</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- PASO 4: Tipo de Tablero -->
+          <div class="wizard-step" data-step="4">
             <div class="step-content">
               <div class="step-icon">🎯</div>
               <h3>¿Cómo gestionarás este tablero?</h3>
@@ -93,7 +244,7 @@ const pageTitle = 'Nuevo Tablero';
 
                 <div class="tipo-card" data-tipo="empleados">
                   <div class="tipo-icon">👥</div>
-                  <h4>Con Empleados</h4>
+                  <h4>Con Equipo</h4>
                   <p>Gestiona tu equipo de trabajo</p>
                   <div class="tipo-check">✓</div>
                 </div>
@@ -103,22 +254,22 @@ const pageTitle = 'Nuevo Tablero';
             </div>
 
             <div class="step-actions">
-              <button type="button" class="btn btn-secondary" data-prev-step="1">
+              <button type="button" class="btn btn-secondary" id="btn-back-from-tipo">
                 <span class="btn-icon">←</span> Atrás
               </button>
             </div>
           </div>
 
-          <!-- PASO 3: Empleados -->
-          <div class="wizard-step" data-step="3">
+          <!-- PASO 5: Empleados -->
+          <div class="wizard-step" data-step="5">
             <div class="step-content">
               <div class="step-icon">👥</div>
-              <h3>Gestión de Empleados</h3>
+              <h3>Gestión del Equipo</h3>
 
               <div id="empleados-list" class="empleados-list">
                 <div class="empleado-item">
                   <div class="form-group">
-                    <label>Nombre del Empleado</label>
+                    <label>Nombre del Integrante</label>
                     <input type="text" class="empleado-nombre" placeholder="Juan Pérez" maxlength="100" />
                   </div>
                   <div class="form-group">
@@ -130,119 +281,13 @@ const pageTitle = 'Nuevo Tablero';
               </div>
 
               <button type="button" id="add-empleado-btn" class="btn btn-add-item">
-                <span>+</span> Agregar Empleado
+                <span>+</span> Agregar Integrante
               </button>
-            </div>
-
-            <div class="step-actions">
-              <button type="button" class="btn btn-secondary" data-prev-step="2">
-                <span class="btn-icon">←</span> Atrás
-              </button>
-              <button type="button" class="btn btn-primary" data-next-step="4">
-                Siguiente <span class="btn-icon">→</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- PASO 4: Selección Tipo de Horario -->
-          <div class="wizard-step" data-step="4">
-            <div class="step-content">
-              <div class="step-icon">⏰</div>
-              <h3>¿Cómo configurarás los horarios?</h3>
-              
-              <div class="tipo-tablero-grid">
-                <div class="tipo-card" data-modo="corrido">
-                  <div class="tipo-icon">⏱️</div>
-                  <h4>Horario Corrido</h4>
-                  <p>Entrada y salida simple</p>
-                  <div class="tipo-check">✓</div>
-                </div>
-
-                <div class="tipo-card" data-modo="turnos">
-                  <div class="tipo-icon">🔄</div>
-                  <h4>Por Turnos</h4>
-                  <p>Mañana y tarde separados</p>
-                  <div class="tipo-check">✓</div>
-                </div>
-              </div>
-
-              <input type="hidden" id="modo_horarios" name="modo_horarios" />
-            </div>
-
-            <div class="step-actions">
-              <button type="button" class="btn btn-secondary" data-prev-step="3">
-                <span class="btn-icon">←</span> Atrás
-              </button>
-            </div>
-          </div>
-
-          <!-- PASO 5A: Horario Corrido -->
-          <div class="wizard-step" data-step="5a">
-            <div class="step-content">
-              <div class="step-icon">⏱️</div>
-              <h3>Configura el Horario Laboral</h3>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="horario_inicio">Horario inicio *</label>
-                  <input type="time" id="horario_inicio" name="horario_inicio" required />
-                </div>
-                <div class="form-group">
-                  <label for="horario_fin">Horario fin *</label>
-                  <input type="time" id="horario_fin" name="horario_fin" required />
-                </div>
-              </div>
             </div>
 
             <div class="step-actions">
               <button type="button" class="btn btn-secondary" data-prev-step="4">
                 <span class="btn-icon">←</span> Atrás
-              </button>
-              <button type="submit" class="btn btn-primary btn-lg">
-                <span class="btn-icon">✓</span> Crear Tablero
-              </button>
-            </div>
-          </div>
-
-          <!-- PASO 5B: Configuración de Turnos -->
-          <div class="wizard-step" data-step="5b">
-            <div class="step-content">
-              <div class="step-icon">🔄</div>
-              <h3>Configura los Turnos</h3>
-
-              <div class="turno-section">
-                <h5>🌅 Turno Mañana</h5>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="turno_manana_inicio">Desde *</label>
-                    <input type="time" id="turno_manana_inicio" name="turno_manana_inicio" required />
-                  </div>
-                  <div class="form-group">
-                    <label for="turno_manana_fin">Hasta *</label>
-                    <input type="time" id="turno_manana_fin" name="turno_manana_fin" required />
-                  </div>
-                </div>
-              </div>
-
-              <div class="turno-section">
-                <h5>🌆 Turno Tarde</h5>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="turno_tarde_inicio">Desde *</label>
-                    <input type="time" id="turno_tarde_inicio" name="turno_tarde_inicio" required />
-                  </div>
-                  <div class="form-group">
-                    <label for="turno_tarde_fin">Hasta *</label>
-                    <input type="time" id="turno_tarde_fin" name="turno_tarde_fin" required />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="step-actions">
-              <button type="button" class="btn btn-secondary" data-prev-step="4">
-                <span class="btn-icon">←</span> Atrás
-              </button>
               <button type="submit" class="btn btn-primary btn-lg">
                 <span class="btn-icon">✓</span> Crear Tablero
               </button>
@@ -269,10 +314,12 @@ const pageTitle = 'Nuevo Tablero';
     window.location.href = '/login';
   }
 
+  // FASE 1 MULTI-TENANT: Inicializar contexto organizacional
+  await ProyectoFormHandler.inicializar();
+
   // Estado del wizard
   let currentStep = 1;
   let tipoSeleccionado: 'personal' | 'empleados' | null = null;
-  let modoHorarioSeleccionado: 'corrido' | 'turnos' | null = null;
 
   // Inicializar select de años y meses
   ProyectoFormHandler.inicializarAnios();
@@ -335,6 +382,134 @@ const pageTitle = 'Nuevo Tablero';
     });
   });
 
+  // Gestión del color picker
+  const colorPresets = document.querySelectorAll('.color-preset');
+  const colorPicker = document.getElementById('brand_color_picker') as HTMLInputElement;
+  const colorInput = document.getElementById('brand_color') as HTMLInputElement;
+
+  colorPresets.forEach(preset => {
+    preset.addEventListener('click', () => {
+      const color = (preset as HTMLElement).dataset.color || '#3B82F6';
+      colorPresets.forEach(p => p.classList.remove('selected'));
+      preset.classList.add('selected');
+      colorPicker.value = color;
+      colorInput.value = color;
+    });
+  });
+
+  colorPicker?.addEventListener('input', (e) => {
+    const color = (e.target as HTMLInputElement).value;
+    colorInput.value = color.toUpperCase();
+    colorPresets.forEach(p => p.classList.remove('selected'));
+  });
+
+  colorInput?.addEventListener('input', (e) => {
+    const color = (e.target as HTMLInputElement).value;
+    if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
+      colorPicker.value = color;
+      colorPresets.forEach(p => p.classList.remove('selected'));
+    }
+  });
+
+  // Gestión de módulos
+  const moduleCards = document.querySelectorAll('.module-card');
+  const modulesInput = document.getElementById('modules_config') as HTMLInputElement;
+  const stepFinanciero = document.getElementById('step-financiero') as HTMLElement;
+  
+  // Estado inicial de módulos (time_tracking activo por defecto)
+  const modulesState = {
+    time_tracking: true,
+    budget: false,
+    audit: false,
+    public_view: false
+  };
+
+  // Actualizar input hidden con estado de módulos
+  function updateModulesConfig() {
+    modulesInput.value = JSON.stringify(modulesState);
+    
+    // Mostrar/ocultar paso financiero según módulo budget
+    if (modulesState.budget) {
+      stepFinanciero.style.display = '';
+    } else {
+      stepFinanciero.style.display = 'none';
+    }
+  }
+  
+  updateModulesConfig();
+
+  moduleCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const module = (card as HTMLElement).dataset.module as keyof typeof modulesState;
+      
+      // Toggle estado
+      modulesState[module] = !modulesState[module];
+      
+      // Actualizar UI
+      if (modulesState[module]) {
+        card.classList.add('active');
+      } else {
+        card.classList.remove('active');
+      }
+      
+      updateModulesConfig();
+    });
+  });
+
+  // Botón siguiente desde módulos: ir a paso 3 (financiero) o 4 (tipo tablero)
+  document.querySelector('[data-next-step="3"]')?.addEventListener('click', () => {
+    if (modulesState.budget) {
+      showStep(3); // Ir a configuración financiera
+    } else {
+      showStep(4); // Saltar directo a tipo de tablero
+    }
+  });
+
+  // Gestión del paso financiero
+  const budgetTypeCards = document.querySelectorAll('.budget-type-card');
+  const budgetTypeInput = document.getElementById('budget_type') as HTMLInputElement;
+  const budgetAmountSection = document.getElementById('budget-amount-section') as HTMLElement;
+  const budgetAmountLabel = document.getElementById('budget-amount-label') as HTMLElement;
+  let budgetTypeSelected: string = 'none';
+
+  budgetTypeCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const type = (card as HTMLElement).dataset.budgetType || 'none';
+      budgetTypeSelected = type;
+      budgetTypeInput.value = type;
+      
+      // Actualizar UI
+      budgetTypeCards.forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      
+      // Mostrar sección de monto
+      if (type === 'fixed_price') {
+        budgetAmountLabel.textContent = 'Monto Total';
+        budgetAmountSection.style.display = 'block';
+      } else if (type === 'hourly_retainer') {
+        budgetAmountLabel.textContent = 'Cantidad de Horas';
+        budgetAmountSection.style.display = 'block';
+      } else {
+        // time_and_materials no requiere monto inicial
+        budgetAmountSection.style.display = 'none';
+      }
+    });
+  });
+
+  // Botón siguiente desde financiero
+  document.getElementById('btn-next-from-budget')?.addEventListener('click', () => {
+    showStep(4); // Ir a tipo de tablero
+  });
+
+  // Botón atrás desde tipo de tablero
+  document.getElementById('btn-back-from-tipo')?.addEventListener('click', () => {
+    if (modulesState.budget) {
+      showStep(3); // Volver a financiero si budget activo
+    } else {
+      showStep(2); // Volver a módulos
+    }
+  });
+
   // Selección de tipo de tablero
   const tipoCards = document.querySelectorAll('.tipo-card');
   const tipoInput = document.getElementById('tipo_proyecto') as HTMLInputElement;
@@ -351,44 +526,13 @@ const pageTitle = 'Nuevo Tablero';
       
       // Navegar según tipo
       if (tipo === 'personal') {
-        // Si es personal, ir directo a crear (mostrar botón de submit en paso 2)
-        setTimeout(() => {
-          const success = ProyectoFormHandler.crearProyecto();
+        // Si es personal, crear directamente
+        setTimeout(async () => {
+          await ProyectoFormHandler.crearProyecto();
         }, 300);
       } else {
-        // Si es con empleados, ir a paso 3
-        setTimeout(() => showStep(3), 300);
-      }
-    });
-  });
-
-  // Selección de modo de horario
-  const modoCards = document.querySelectorAll('[data-modo]');
-  const modoInput = document.getElementById('modo_horarios') as HTMLInputElement;
-
-  modoCards.forEach(card => {
-    card.addEventListener('click', () => {
-      const modo = (card as HTMLElement).dataset.modo as 'corrido' | 'turnos';
-      modoHorarioSeleccionado = modo;
-      modoInput.value = modo;
-      
-      // Actualizar UI
-      modoCards.forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      
-      // Limpiar campos según el modo seleccionado
-      if (modo === 'corrido') {
-        // Limpiar campos de turnos
-        (document.getElementById('turno_manana_inicio') as HTMLInputElement).value = '';
-        (document.getElementById('turno_manana_fin') as HTMLInputElement).value = '';
-        (document.getElementById('turno_tarde_inicio') as HTMLInputElement).value = '';
-        (document.getElementById('turno_tarde_fin') as HTMLInputElement).value = '';
-        setTimeout(() => showStep('5a'), 300);
-      } else {
-        // Limpiar campos de horario corrido
-        (document.getElementById('horario_inicio') as HTMLInputElement).value = '';
-        (document.getElementById('horario_fin') as HTMLInputElement).value = '';
-        setTimeout(() => showStep('5b'), 300);
+        // Si es con empleados, ir a paso 5
+        setTimeout(() => showStep(5), 300);
       }
     });
   });
@@ -433,9 +577,8 @@ const pageTitle = 'Nuevo Tablero';
   const form = document.getElementById('proyecto-form') as HTMLFormElement;
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const success = await ProyectoFormHandler.crearProyecto();
+    await ProyectoFormHandler.crearProyecto();
   });
 </script>
-    </div>
   </ProtectedRoute>
 </BaseLayout>

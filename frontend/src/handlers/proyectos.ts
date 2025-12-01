@@ -5,6 +5,7 @@
 import type { Proyecto } from '../types';
 import { ProyectosService } from '../services/proyectos';
 import { setHTML, setText, setVisible, querySelector, querySelectorAll } from '../utils/dom';
+import { initializeOrganizationContext } from '../utils/organizationContext';
 import Swal from 'sweetalert2';
 import { MESES_ES } from '../utils/formatters';
 import { formatearFechaSegura } from '../utils/date';
@@ -25,6 +26,9 @@ const state: ProyectosViewState = {
  */
 export async function loadProyectos(): Promise<void> {
   try {
+    // FASE 1 MULTI-TENANT: Inicializar contexto organizacional primero
+    await initializeOrganizationContext();
+    
     state.proyectos = await ProyectosService.getProyectos();
 
     if (state.proyectos.length === 0) {
