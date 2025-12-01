@@ -165,6 +165,7 @@ class ProyectoService:
         """Agrega un mes al proyecto"""
         proyecto = Proyecto.query.filter(Proyecto.id == proyecto_id).first()
         if not proyecto:
+            print(f"[AGREGAR_MES] Proyecto {proyecto_id} no encontrado")
             return False
         
         # Verificar si ya existe
@@ -175,7 +176,10 @@ class ProyectoService:
         ).first()
         
         if existing:
+            print(f"[AGREGAR_MES] El mes {mes}/{anio} ya existe para proyecto {proyecto_id}")
             return False
+        
+        print(f"[AGREGAR_MES] Creando {calendar.monthrange(anio, mes)[1]} días para mes {mes}/{anio}")
         
         # Crear días
         month_range = calendar.monthrange(anio, mes)[1]
@@ -195,9 +199,11 @@ class ProyectoService:
                     empleado_id=None
                 )
                 db.session.add(dia)
+            print(f"[AGREGAR_MES] {month_range} días creados para proyecto personal")
         else:
             # Proyecto con empleados
             empleados = Empleado.query.filter_by(proyecto_id=proyecto_id).all()
+            print(f"[AGREGAR_MES] Creando días para {len(empleados)} empleados")
             for empleado in empleados:
                 for day in range(1, month_range + 1):
                     fecha = dt(anio, mes, day).date()
@@ -228,40 +234,51 @@ class ProyectoService:
     
     @staticmethod
     def obtener_estadisticas_usuario(user_id: int) -> dict:
-        """Obtiene estadísticas del usuario"""
-        usuario = Usuario.query.filter(Usuario.id == user_id).first()
-        usar_horas_reales = usuario.usar_horas_reales if usuario else False
-        
+        """
+        Obtiene estadísticas del usuario.
+        Suma horas según la configuración de cada proyecto:
+        - Si proyecto.horas_reales_activas: suma horas_reales
+        - Si no: suma horas_trabajadas
+        """
         # Proyectos activos
         proyectos_activos = Proyecto.query.filter(
             Proyecto.usuario_id == user_id,
             Proyecto.activo == True
         ).count()
         
-        # Campo a usar
-        campo_horas = Dia.horas_reales if usar_horas_reales else Dia.horas_trabajadas
+        # Obtener todos los proyectos del usuario
+        proyectos = Proyecto.query.filter(Proyecto.usuario_id == user_id).all()
         
-        # Total horas
-        total_horas = db.session.query(func.sum(campo_horas)).join(
-            Proyecto, Dia.proyecto_id == Proyecto.id
-        ).filter(Proyecto.usuario_id == user_id).scalar() or 0
+        total_horas = 0
+        horas_semana = 0
+        total_dias = 0
         
-        # Horas semana
         inicio_semana = date.today() - timedelta(days=7)
-        horas_semana = db.session.query(func.sum(campo_horas)).join(
-            Proyecto, Dia.proyecto_id == Proyecto.id
-        ).filter(
-            Proyecto.usuario_id == user_id,
-            Dia.fecha >= inicio_semana
-        ).scalar() or 0
         
-        # Promedio diario
-        total_dias = db.session.query(func.count(Dia.id)).join(
-            Proyecto, Dia.proyecto_id == Proyecto.id
-        ).filter(
-            Proyecto.usuario_id == user_id,
-            campo_horas > 0
-        ).scalar() or 0
+        # Calcular horas según la configuración de cada proyecto
+        for proyecto in proyectos:
+            usar_horas_reales = proyecto.horas_reales_activas
+            campo_horas = Dia.horas_reales if usar_horas_reales else Dia.horas_trabajadas
+            
+            # Total horas del proyecto
+            horas_proyecto = db.session.query(func.sum(campo_horas)).filter(
+                Dia.proyecto_id == proyecto.id
+            ).scalar() or 0
+            total_horas += horas_proyecto
+            
+            # Horas semana del proyecto
+            horas_semana_proyecto = db.session.query(func.sum(campo_horas)).filter(
+                Dia.proyecto_id == proyecto.id,
+                Dia.fecha >= inicio_semana
+            ).scalar() or 0
+            horas_semana += horas_semana_proyecto
+            
+            # Días con horas del proyecto
+            dias_proyecto = db.session.query(func.count(Dia.id)).filter(
+                Dia.proyecto_id == proyecto.id,
+                campo_horas > 0
+            ).scalar() or 0
+            total_dias += dias_proyecto
         
         promedio_diario = total_horas / total_dias if total_dias > 0 else 0
         
@@ -269,8 +286,7 @@ class ProyectoService:
             'proyectos_activos': proyectos_activos,
             'total_horas': total_horas,
             'horas_semana': horas_semana,
-            'promedio_diario': promedio_diario,
-            'usando_horas_reales': usar_horas_reales
+            'promedio_diario': promedio_diario
         }
     
     @staticmethod

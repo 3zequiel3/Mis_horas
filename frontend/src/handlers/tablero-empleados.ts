@@ -81,6 +81,9 @@ export const TableroEmpleadosHandler = {
       this.state.mesActual = this.state.proyectoActual.mes;
       this.state.anioActual = this.state.proyectoActual.anio;
 
+      // Verificar y crear mes siguiente automáticamente si es necesario
+      await this.verificarYCrearMesSiguiente();
+
       // Cargar empleados
       await this.loadProyectoConEmpleados();
     } catch (error) {
@@ -104,7 +107,19 @@ export const TableroEmpleadosHandler = {
     if (nombreEl) nombreEl.textContent = this.state.proyectoActual.nombre;
     if (periodoEl) {
       const mes = MESES_ES[this.state.proyectoActual.mes as keyof typeof MESES_ES];
-      periodoEl.textContent = `${mes} ${this.state.proyectoActual.anio}`;
+      const hoy = new Date();
+      const mesActual = hoy.getMonth() + 1;
+      const anioActual = hoy.getFullYear();
+      
+      // Determinar si el mes es pasado
+      const esMesPasado = this.state.proyectoActual.anio < anioActual || 
+                          (this.state.proyectoActual.anio === anioActual && this.state.proyectoActual.mes < mesActual);
+      
+      if (esMesPasado) {
+        periodoEl.innerHTML = `${mes} ${this.state.proyectoActual.anio} <span style="margin-left: 8px; padding: 2px 8px; background: #555; border-radius: 4px; font-size: 0.75rem;">✓ Terminado</span>`;
+      } else {
+        periodoEl.textContent = `${mes} ${this.state.proyectoActual.anio}`;
+      }
     }
     if (statusEl) {
       statusEl.textContent = this.state.proyectoActual.activo ? '✓ Activo' : '✗ Inactivo';
@@ -202,6 +217,63 @@ export const TableroEmpleadosHandler = {
         }
       });
     });
+  },
+
+  /**
+   * Verifica y crea automáticamente el mes siguiente si estamos en un mes nuevo
+   */
+  async verificarYCrearMesSiguiente(): Promise<void> {
+    if (!this.state.proyectoActual) return;
+
+    const hoy = new Date();
+    const mesRealActual = hoy.getMonth() + 1; // 1-12
+    const anioRealActual = hoy.getFullYear();
+
+    // Si el mes actual del sistema es diferente al mes del proyecto
+    if (anioRealActual > this.state.anioActual || 
+        (anioRealActual === this.state.anioActual && mesRealActual > this.state.mesActual)) {
+      
+      console.log(`[AUTO-MES TABLERO] Detectado cambio de mes. Sistema: ${mesRealActual}/${anioRealActual}, Proyecto: ${this.state.mesActual}/${this.state.anioActual}`);
+      
+      // Importar el handler de meses
+      const { MesesHandler } = await import('./meses');
+      
+      // Cargar meses disponibles
+      await MesesHandler.loadMeses(this.state.proyectoActual.id);
+      
+      // Verificar si el mes actual del sistema ya existe
+      if (!MesesHandler.mesYaExiste(anioRealActual, mesRealActual)) {
+        console.log(`[AUTO-MES TABLERO] Creando automáticamente mes ${mesRealActual}/${anioRealActual}`);
+        
+        try {
+          const mesCreado = await MesesHandler.crearMesAutomatico(
+            this.state.proyectoActual.id,
+            anioRealActual,
+            mesRealActual
+          );
+          
+          if (mesCreado) {
+            console.log(`[AUTO-MES TABLERO] Mes ${mesRealActual}/${anioRealActual} creado exitosamente`);
+            
+            // Actualizar el estado para usar el nuevo mes
+            this.state.mesActual = mesRealActual;
+            this.state.anioActual = anioRealActual;
+            this.state.proyectoActual.mes = mesRealActual;
+            this.state.proyectoActual.anio = anioRealActual;
+          }
+        } catch (error) {
+          console.error('[AUTO-MES TABLERO] Error creando mes automático:', error);
+        }
+      } else {
+        console.log(`[AUTO-MES TABLERO] El mes ${mesRealActual}/${anioRealActual} ya existe`);
+        
+        // Solo actualizar al mes actual si ya existe
+        this.state.mesActual = mesRealActual;
+        this.state.anioActual = anioRealActual;
+        this.state.proyectoActual.mes = mesRealActual;
+        this.state.proyectoActual.anio = anioRealActual;
+      }
+    }
   },
 
   /**

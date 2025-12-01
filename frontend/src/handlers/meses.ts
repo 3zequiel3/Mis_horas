@@ -23,7 +23,8 @@ export const MesesHandler = {
   },
 
   // Renderiza lista de meses y agrega event listeners
-  renderMeses(mesActivo?: { anio: number; mes: number }) {
+  // mesSeleccionado: el mes que está viendo el usuario actualmente
+  renderMeses(mesSeleccionado?: { anio: number; mes: number }) {
     const mesesList = document.getElementById('meses-list');
     if (!mesesList) return;
 
@@ -35,7 +36,8 @@ export const MesesHandler = {
     mesesList.innerHTML = this.mesesDisponibles
       .map(([anio, mes]) => {
         const mesNombre = MESES_ES[mes as keyof typeof MESES_ES];
-        const isActive = mesActivo && mesActivo.anio === anio && mesActivo.mes === mes;
+        // El mes está seleccionado si coincide con mesSeleccionado
+        const isActive = mesSeleccionado && mesSeleccionado.anio === anio && mesSeleccionado.mes === mes;
 
         return `
           <div class="mes-item ${isActive ? 'active' : ''}" data-anio="${anio}" data-mes="${mes}">
@@ -60,15 +62,21 @@ export const MesesHandler = {
     });
   },
 
-  // Actualiza el texto mostrado del mes actual
-  updateMesInfo(mesActivo: { anio: number; mes: number }) {
+  // Actualiza el texto mostrado del mes actual (siempre muestra el mes real del sistema)
+  updateMesInfo(mesSeleccionado?: { anio: number; mes: number }) {
     const mesInfo = document.getElementById('mes-info');
     const mesInfoText = document.getElementById('mes-info-text');
 
-    const mesNombre = MESES_ES[mesActivo.mes as keyof typeof MESES_ES];
-    const text = `${mesNombre} ${mesActivo.anio}`;
-
-    if (mesInfoText) mesInfoText.textContent = text;
+    // Siempre mostrar el mes actual real del sistema
+    const hoy = new Date();
+    const mesActual = hoy.getMonth() + 1;
+    const anioActual = hoy.getFullYear();
+    
+    const mesNombre = MESES_ES[mesActual as keyof typeof MESES_ES];
+    
+    if (mesInfoText) {
+      mesInfoText.textContent = `${mesNombre} ${anioActual}`;
+    }
     if (mesInfo) mesInfo.style.display = 'block';
   },
 
@@ -127,11 +135,15 @@ export const MesesHandler = {
         return true;
       }
 
+      console.log(`Creando mes automáticamente: ${mes}/${anio} para proyecto ${proyectoId}`);
+      
       // Crear el mes automáticamente
       await ProyectosService.addMes(proyectoId, anio, mes);
 
       // Recargar la lista de meses
       await this.loadMeses(proyectoId);
+      
+      console.log(`Mes ${mes}/${anio} creado exitosamente`);
       return true;
     } catch (error) {
       console.error('Error creando mes automáticamente:', error);

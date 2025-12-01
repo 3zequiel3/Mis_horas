@@ -48,9 +48,10 @@ const state: ProyectoDetailState = {
 
 /**
  * Determina si debe mostrar horas reales o estimadas
+ * IMPORTANTE: Usa la configuración del PROYECTO, no del usuario
  */
 function useHorasReales(): boolean {
-  return debeUsarHorasReales(state.usuarioActual);
+  return state.proyectoActual?.horas_reales_activas ?? false;
 }
 
 /**
@@ -146,6 +147,10 @@ export async function loadProyecto(): Promise<void> {
     // Establecer mes y año
     state.mesActual = state.proyectoActual.mes;
     state.anioActual = state.proyectoActual.anio;
+
+    // Verificar si el mes actual del proyecto no coincide con el mes real
+    // y crear automáticamente el mes siguiente si es necesario
+    await verificarYCrearMesSiguiente();
 
     // Cargar datos para proyecto personal
     await loadDias();
@@ -381,6 +386,63 @@ async function exportarPDFEmpleado(empleadoId: number, empleadoNombre: string): 
 }
 
 /**
+ * Verifica y crea automáticamente el mes siguiente si estamos en un mes nuevo
+ */
+async function verificarYCrearMesSiguiente(): Promise<void> {
+  if (!state.proyectoActual) return;
+
+  const hoy = new Date();
+  const mesRealActual = hoy.getMonth() + 1; // 1-12
+  const anioRealActual = hoy.getFullYear();
+
+  // Si el mes actual del sistema es diferente al mes del proyecto
+  if (anioRealActual > state.anioActual || 
+      (anioRealActual === state.anioActual && mesRealActual > state.mesActual)) {
+    
+    console.log(`[AUTO-MES] Detectado cambio de mes. Sistema: ${mesRealActual}/${anioRealActual}, Proyecto: ${state.mesActual}/${state.anioActual}`);
+    
+    // Importar el handler de meses
+    const { MesesHandler } = await import('./meses');
+    
+    // Cargar meses disponibles
+    await MesesHandler.loadMeses(state.proyectoActual.id);
+    
+    // Verificar si el mes actual del sistema ya existe
+    if (!MesesHandler.mesYaExiste(anioRealActual, mesRealActual)) {
+      console.log(`[AUTO-MES] Creando automáticamente mes ${mesRealActual}/${anioRealActual}`);
+      
+      try {
+        const mesCreado = await MesesHandler.crearMesAutomatico(
+          state.proyectoActual.id,
+          anioRealActual,
+          mesRealActual
+        );
+        
+        if (mesCreado) {
+          console.log(`[AUTO-MES] Mes ${mesRealActual}/${anioRealActual} creado exitosamente`);
+          
+          // Actualizar el estado para usar el nuevo mes
+          state.mesActual = mesRealActual;
+          state.anioActual = anioRealActual;
+          state.proyectoActual.mes = mesRealActual;
+          state.proyectoActual.anio = anioRealActual;
+        }
+      } catch (error) {
+        console.error('[AUTO-MES] Error creando mes automático:', error);
+      }
+    } else {
+      console.log(`[AUTO-MES] El mes ${mesRealActual}/${anioRealActual} ya existe`);
+      
+      // Solo actualizar al mes actual si ya existe
+      state.mesActual = mesRealActual;
+      state.anioActual = anioRealActual;
+      state.proyectoActual.mes = mesRealActual;
+      state.proyectoActual.anio = anioRealActual;
+    }
+  }
+}
+
+/**
  * Verifica si un mes es válido para mostrar
  */
 function getMesStatus(): 'futuro' | 'activo' | 'pasado' {
@@ -420,20 +482,14 @@ export async function loadDias(): Promise<void> {
     const diasTbody = document.querySelector('#dias-tbody');
     const mesDiasTbody = document.querySelector('#mes-dias-tbody');
 
-    if (mesStatus !== 'activo') {
-      // Mostrar mensaje en lugar de tabla
-      const esFuturo = mesStatus === 'futuro';
-      const mensaje = esFuturo
-        ? 'Mes aún no iniciado'
-        : 'Mes terminado';
-      const icono = esFuturo ? '📅' : '✓';
-
+    if (mesStatus === 'futuro') {
+      // Solo bloquear meses futuros (no se pueden editar)
       const html = `
         <tr>
           <td colspan="4" class="mes-message-row">
             <div class="mes-message">
-              <span class="mes-icon">${icono}</span>
-              <span class="mes-text">${mensaje}</span>
+              <span class="mes-icon">📅</span>
+              <span class="mes-text">Mes aún no iniciado</span>
             </div>
           </td>
         </tr>
@@ -442,12 +498,12 @@ export async function loadDias(): Promise<void> {
       if (diasTbody) diasTbody.innerHTML = html;
       if (mesDiasTbody) mesDiasTbody.innerHTML = html;
 
-      // Ocultar totales cuando el mes no está activo
+      // Ocultar totales cuando el mes es futuro
       toggleTotalsRow(false);
       return;
     }
 
-    // Mostrar totales cuando el mes está activo
+    // Mostrar totales para meses actuales y pasados
     toggleTotalsRow(true);
 
     state.diasActuales = await DiaService.getDiasMes(
@@ -455,6 +511,25 @@ export async function loadDias(): Promise<void> {
       state.anioActual,
       state.mesActual
     );
+
+    // Si no hay días, mostrar mensaje informativo
+    if (state.diasActuales.length === 0) {
+      const html = `
+        <tr>
+          <td colspan="4" class="mes-message-row">
+            <div class="mes-message">
+              <span class="mes-icon">📭</span>
+              <span class="mes-text">No hay días registrados para este mes</span>
+            </div>
+          </td>
+        </tr>
+      `;
+
+      if (diasTbody) diasTbody.innerHTML = html;
+      if (mesDiasTbody) mesDiasTbody.innerHTML = html;
+      toggleTotalsRow(false);
+      return;
+    }
 
     // Obtener días de la semana actual
     const semanaFechas = getSemanActual();
@@ -543,9 +618,8 @@ function renderTablaDias(
   let totalReales = 0;
 
   dias.forEach((dia) => {
-    const horasAMostrar = getHorasAMostrar(dia);
     totalTrabajadas += dia.horas_trabajadas || 0;
-    totalReales += horasAMostrar;
+    totalReales += dia.horas_reales || 0;
 
     const row = document.createElement('tr');
 
@@ -560,7 +634,7 @@ function renderTablaDias(
     }
 
     const columnasExtras = useHorasReales()
-      ? `<td title="Horas Reales"><strong>${horasAFormato(horasAMostrar)}</strong></td>`
+      ? `<td title="Horas Reales"><strong>${horasAFormato(dia.horas_reales || 0)}</strong></td>`
       : '<td></td>';
 
     row.innerHTML = `
@@ -607,14 +681,30 @@ function renderTablaDias(
  * Actualiza la visibilidad de columnas de horas reales
  */
 function updateColumnVisibility(): void {
+  const usarHorasReales = useHorasReales();
+  
+  // Headers - Tabla semanal
   const thRealHeader = querySelector<HTMLElement>('#th-horas-reales');
-  const tdTotalRealFooter = querySelector<HTMLElement>('#td-total-reales');
-
   if (thRealHeader) {
-    thRealHeader.style.display = useHorasReales() ? '' : 'none';
+    thRealHeader.style.display = usarHorasReales ? '' : 'none';
   }
+  
+  // Footer - Tabla semanal
+  const tdTotalRealFooter = querySelector<HTMLElement>('#td-total-reales');
   if (tdTotalRealFooter) {
-    tdTotalRealFooter.style.display = useHorasReales() ? '' : 'none';
+    tdTotalRealFooter.style.display = usarHorasReales ? '' : 'none';
+  }
+  
+  // Headers - Modal de mes completo
+  const thMesRealHeader = querySelector<HTMLElement>('#th-mes-horas-reales');
+  if (thMesRealHeader) {
+    thMesRealHeader.style.display = usarHorasReales ? '' : 'none';
+  }
+  
+  // Footer - Modal de mes completo  
+  const tdMesTotalRealFooter = querySelector<HTMLElement>('#td-mes-total-reales');
+  if (tdMesTotalRealFooter) {
+    tdMesTotalRealFooter.style.display = usarHorasReales ? '' : 'none';
   }
 }
 
@@ -669,7 +759,17 @@ function updateProjectHeader(): void {
   if (nombreEl) nombreEl.textContent = state.proyectoActual.nombre;
 
   if (periodoEl) {
-    periodoEl.textContent = `${MESES_ES[state.proyectoActual.mes as keyof typeof MESES_ES]} ${state.proyectoActual.anio}`;
+    const hoy = new Date();
+    const mesActualReal = hoy.getMonth() + 1;
+    const anioActualReal = hoy.getFullYear();
+    const esMesPasado = state.proyectoActual.anio < anioActualReal || 
+                        (state.proyectoActual.anio === anioActualReal && state.proyectoActual.mes < mesActualReal);
+    
+    if (esMesPasado) {
+      periodoEl.innerHTML = `${MESES_ES[state.proyectoActual.mes as keyof typeof MESES_ES]} ${state.proyectoActual.anio} <span style="margin-left: 8px; padding: 2px 8px; background: #555; border-radius: 4px; font-size: 0.75rem;">✓ Terminado</span>`;
+    } else {
+      periodoEl.textContent = `${MESES_ES[state.proyectoActual.mes as keyof typeof MESES_ES]} ${state.proyectoActual.anio}`;
+    }
   }
 
   if (statusEl) {

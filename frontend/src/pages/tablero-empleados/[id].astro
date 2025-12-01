@@ -495,8 +495,10 @@ const pageTitle = "Tablero de Empleados";
         periodoEl.textContent = `${MESES_ES[mes as keyof typeof MESES_ES]} ${anio}`;
       }
 
+      // renderMeses recibe el mes seleccionado (para marcarlo con check)
       MesesHandler.renderMeses({ anio, mes });
-      MesesHandler.updateMesInfo({ anio, mes });
+      // updateMesInfo siempre muestra el mes actual real del sistema
+      MesesHandler.updateMesInfo();
     }
   });
 
@@ -742,7 +744,10 @@ const pageTitle = "Tablero de Empleados";
     if (proyecto) {
       // Cargar meses
       await MesesHandler.loadMeses(proyecto.id);
-      MesesHandler.updateMesInfo({ anio: proyecto.anio, mes: proyecto.mes });
+      // Renderizar meses marcando el mes del proyecto como seleccionado
+      MesesHandler.renderMeses({ anio: proyecto.anio, mes: proyecto.mes });
+      // updateMesInfo siempre muestra el mes actual real del sistema
+      MesesHandler.updateMesInfo();
 
       // Cargar tareas
       await TableroEmpleadosHandler.loadTareas();
