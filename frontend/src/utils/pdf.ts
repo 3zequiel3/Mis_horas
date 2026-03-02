@@ -33,15 +33,24 @@ export interface TableConfig {
 /**
  * Genera PDF desde una plantilla usando drawTable mejorado
  * Sin html2canvas - genera directamente con jsPDF para mejor control
+ * Soporta proyectos colaborativos: si es colaborativo, muestra secciones por colaborador
  */
 export async function generatePDFFromTemplate(
   projectName: string,
   month: string,
   year: number,
   tareas: Tarea[],
-  dias: Dia[]
+  dias: Dia[],
+  isColaborativo: boolean = false,
+  colaboradoresData?: any // Datos de colaboradores si es proyecto colaborativo
 ): Promise<void> {
   try {
+    // Si es colaborativo y tenemos datos, usar la nueva estructura
+    if (isColaborativo && colaboradoresData) {
+      return await generateColaborativoPDF(projectName, month, year, colaboradoresData);
+    }
+
+    // Lógica original para proyectos no colaborativos
     // Preparar datos de tareas con días asociados
     const tareasConDias = tareas.map((tarea) => {
       const diasTarea = tarea.dias || [];
@@ -160,6 +169,178 @@ export async function generatePDFFromTemplate(
     pdf.save(`${projectName}-${month}-${year}.pdf`);
   } catch (error) {
     console.error('Error generando PDF desde plantilla:', error);
+    throw error;
+  }
+}
+
+/**
+ * Genera PDF para proyectos colaborativos
+ * Muestra una sección por cada colaborador con su nombre, tabla y total
+ */
+async function generateColaborativoPDF(
+  projectName: string,
+  month: string,
+  year: number,
+  colaboradoresData: any
+): Promise<void> {
+  try {
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 20;
+    let currentY = margin;
+
+    // Fondo oscuro completo
+    pdf.setFillColor(17, 21, 29); // #11151D
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+
+    // ========== ENCABEZADO ÚNICO DEL PROYECTO ==========
+    // Título
+    pdf.setFontSize(20);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(217, 217, 217); // #D9D9D9
+    pdf.text(projectName, margin, currentY);
+    currentY += 8;
+
+    // Subtítulo (mes y año)
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(156, 163, 175); // #9CA3AF
+    pdf.text(`${month} ${year}`, margin, currentY);
+    currentY += 15;
+
+    // ========== SECCIONES POR COLABORADOR ==========
+    const colaboradores = colaboradoresData.colaboradores || [];
+    const headers = ['Tarea', 'Detalle', 'Horas', 'Días'];
+    const tableWidth = pageWidth - (2 * margin);
+    const columnWidths = [
+      tableWidth * 0.20,  // Tarea: 20%
+      tableWidth * 0.40,  // Detalle: 40%
+      tableWidth * 0.20,  // Horas: 20%
+      tableWidth * 0.20,  // Días: 20%
+    ];
+
+    for (let i = 0; i < colaboradores.length; i++) {
+      const colaborador = colaboradores[i];
+      const tareas = colaborador.tareas || [];
+
+      // Cada colaborador empieza en página nueva, excepto el primero
+      // que continúa en la misma página del encabezado del proyecto
+      if (i > 0) {
+        pdf.addPage();
+        pdf.setFillColor(17, 21, 29);
+        pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+        currentY = margin;
+      }
+
+      // ========== NOMBRE DEL COLABORADOR ==========
+      const drawColaboradorNombre = (yPos: number, nombre: string): number => {
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(96, 165, 250); // Azul claro #60A5FA
+        pdf.text(nombre, margin, yPos);
+        return yPos + 10;
+      };
+
+      currentY = drawColaboradorNombre(currentY, colaborador.nombre);
+
+      // Preparar datos de tareas del colaborador
+      const tareasConDias = tareas.map((tarea: any) => {
+        const diasTarea = tarea.dias || [];
+        // Parsear fecha directamente del string para evitar desfase de timezone (UTC vs local)
+        const diasAsociados = diasTarea.length > 0
+          ? diasTarea.map((d: any) => {
+              const fechaStr: string = d.fecha.split('T')[0]; // '2026-02-01'
+              return parseInt(fechaStr.split('-')[2], 10);    // 1
+            }).join(', ')
+          : '-';
+
+        return {
+          titulo: tarea.titulo || '-',
+          detalle: tarea.detalle || '-',
+          horas: tarea.horas || '00:00',
+          diasAsociados,
+        };
+      });
+
+      // Calcular total de horas del colaborador
+      const totalHoras = tareasConDias.reduce((sum: number, t: any) => {
+        const [horas, minutos] = t.horas.split(':').map(Number);
+        return sum + (horas || 0) + (minutos || 0) / 60;
+      }, 0);
+      const horasTotal = Math.floor(totalHoras);
+      const minutosTotal = Math.round((totalHoras - horasTotal) * 60);
+      const totalFormateado = `${horasTotal}:${minutosTotal.toString().padStart(2, '0')}`;
+
+      if (tareas.length === 0) {
+        // Si no tiene tareas, mostrar mensaje
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(156, 163, 175);
+        pdf.text('Sin tareas registradas', margin, currentY);
+        currentY += 10;
+      } else {
+        // Dibujar tabla del colaborador
+        const rows = tareasConDias.map((t: any) => [t.titulo, t.detalle, t.horas, t.diasAsociados]);
+        currentY = drawTableWithPagination(pdf, {
+          headers,
+          rows,
+          columnWidths,
+        }, margin, currentY);
+
+        // Dibujar fila de Total del colaborador
+        const totalHeight = 10;
+
+        // Verificar si cabe en la página actual
+        if (currentY + totalHeight > pageHeight - margin) {
+          pdf.addPage();
+          pdf.setFillColor(17, 21, 29);
+          pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+          currentY = margin;
+        }
+
+        // Primera celda combinada: "Total" (Tarea + Detalle)
+        const totalLabelWidth = columnWidths[0] + columnWidths[1];
+        pdf.setFillColor(5, 46, 22); // Verde oscuro
+        pdf.rect(margin, currentY, totalLabelWidth, totalHeight, 'F');
+        pdf.setDrawColor(34, 197, 94); // Verde claro para borde
+        pdf.setLineWidth(0.5);
+        pdf.rect(margin, currentY, totalLabelWidth, totalHeight);
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8);
+        pdf.setTextColor(34, 197, 94);
+        pdf.text('Total', margin + totalLabelWidth / 2, currentY + totalHeight / 2 + 1.5, {
+          align: 'center',
+        });
+
+        // Segunda celda combinada: Valor del total (Horas + Días)
+        const totalValueWidth = columnWidths[2] + columnWidths[3];
+        const totalValueX = margin + totalLabelWidth;
+        pdf.setFillColor(5, 46, 22);
+        pdf.rect(totalValueX, currentY, totalValueWidth, totalHeight, 'F');
+        pdf.setDrawColor(34, 197, 94);
+        pdf.rect(totalValueX, currentY, totalValueWidth, totalHeight);
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(34, 197, 94);
+        pdf.text(totalFormateado, totalValueX + totalValueWidth / 2, currentY + totalHeight / 2 + 1.5, {
+          align: 'center',
+        });
+
+        currentY += totalHeight;
+      }
+    }
+
+    // Guardar el PDF
+    pdf.save(`${projectName}-${month}-${year}.pdf`);
+  } catch (error) {
+    console.error('Error generando PDF colaborativo:', error);
     throw error;
   }
 }

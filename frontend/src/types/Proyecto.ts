@@ -12,7 +12,7 @@ export interface Proyecto {
   mes: number;
   usuario_id: number;
   activo: boolean;
-  tipo_proyecto: 'personal' | 'empleados';
+  tipo_proyecto: 'personal' | 'empleados' | 'colaborativo';
   horas_reales_activas: boolean;
   empleados?: Empleado[];
   fecha_creacion?: string;
@@ -66,7 +66,7 @@ export interface CreateProyectoRequest {
   descripcion?: string;
   anio: number;
   mes: number;
-  tipo_proyecto: 'personal' | 'empleados';
+  tipo_proyecto: 'personal' | 'empleados' | 'colaborativo';
   empleados?: string[];
   horas_reales_activas?: boolean;
   

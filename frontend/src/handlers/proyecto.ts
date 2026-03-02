@@ -52,6 +52,12 @@ const state: ProyectoDetailState = {
  * IMPORTANTE: Usa la configuración del PROYECTO, no del usuario
  */
 function useHorasReales(): boolean {
+  // Para proyectos colaborativos, el flag viene en cada día desde el backend
+  // (cada colaborador tiene su propia configuración)
+  if (state.proyectoActual?.tipo_proyecto === 'colaborativo') {
+    const primerDia = state.diasActuales[0] as any;
+    return primerDia?.horas_reales_activas ?? false;
+  }
   return state.proyectoActual?.horas_reales_activas ?? false;
 }
 
@@ -413,6 +419,7 @@ async function exportarPDFEmpleado(empleadoId: number, empleadoNombre: string): 
 
 /**
  * Verifica y crea automáticamente el mes siguiente si estamos en un mes nuevo
+ * NOTA: Solo crea el mes automáticamente, NO cambia el mes que el usuario tiene seleccionado
  */
 async function verificarYCrearMesSiguiente(): Promise<void> {
   if (!state.proyectoActual) return;
@@ -445,26 +452,16 @@ async function verificarYCrearMesSiguiente(): Promise<void> {
         );
         
         if (mesCreado) {
-          console.log(`[AUTO-MES] Mes ${mesRealActual}/${anioRealActual} creado exitosamente`);
-          
-          // Actualizar el estado para usar el nuevo mes
-          state.mesActual = mesRealActual;
-          state.anioActual = anioRealActual;
-          state.proyectoActual.mes = mesRealActual;
-          state.proyectoActual.anio = anioRealActual;
+          console.log(`[AUTO-MES] Mes ${mesRealActual}/${anioRealActual} creado exitosamente (disponible para seleccionar)`);
+          // NO actualizamos el estado - respetamos el mes que el usuario tiene seleccionado
         }
       } catch (error) {
         console.error('[AUTO-MES] Error creando mes automático:', error);
       }
     } else {
       console.log(`[AUTO-MES] El mes ${mesRealActual}/${anioRealActual} ya existe`);
-      
-      // Solo actualizar al mes actual si ya existe
-      state.mesActual = mesRealActual;
-      state.anioActual = anioRealActual;
-      state.proyectoActual.mes = mesRealActual;
-      state.proyectoActual.anio = anioRealActual;
     }
+    // NO actualizamos el estado - el usuario puede trabajar en cualquier mes que desee
   }
 }
 

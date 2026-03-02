@@ -2,6 +2,7 @@ from app.models.usuario import Usuario
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
 from app.models.proyecto import Proyecto
+from app.models.proyecto_colaborador import ProyectoColaborador
 from app.models.dia import Dia
 from app.models.tarea import Tarea
 from app.models.empleado import Empleado
@@ -20,6 +21,7 @@ __all__ = [
     'Organization',
     'OrganizationMember',
     'Proyecto', 
+    'ProyectoColaborador',
     'Dia', 
     'Tarea', 
     'Empleado',

@@ -87,15 +87,24 @@ function renderCardsView(): void {
         const url = p.tipo_proyecto === 'empleados' ? `/tablero-empleados/${p.id}` : `/proyecto/${p.id}`;
         const btnText = p.activo ? '⏸️ Desactivar' : '🗑️ Eliminar';
         const btnClass = p.activo ? 'btn-warning' : 'btn-danger';
+        
+        // Determinar el tipo de proyecto
+        let tipoProyectoLabel = '👤 Personal';
+        if (p.tipo_proyecto === 'empleados') {
+          tipoProyectoLabel = '👥 Empleados';
+        } else if (p.tipo_proyecto === 'colaborativo') {
+          tipoProyectoLabel = '🤝 Colaborativo';
+        }
+        
         return `
-    <div class="proyecto-card" onclick="if(window.innerWidth > 768) window.location.href='${url}'">
+    <div class="proyecto-card ${p.tipo_proyecto === 'colaborativo' ? 'proyecto-card-colaborativo' : ''}" onclick="if(window.innerWidth > 768) window.location.href='${url}'">
       <h3>${p.nombre}</h3>
       <p>${p.descripcion || 'Sin descripción'}</p>
       
       <div class="proyecto-card-info">
         <div class="proyecto-card-info-item">
           <span class="proyecto-card-info-label">Tipo</span>
-          <span class="proyecto-card-info-value">${p.tipo_proyecto === 'empleados' ? '👥 Empleados' : '👤 Personal'}</span>
+          <span class="proyecto-card-info-value">${tipoProyectoLabel}</span>
         </div>
         <div class="proyecto-card-info-item">
           <span class="proyecto-card-info-label">Período</span>

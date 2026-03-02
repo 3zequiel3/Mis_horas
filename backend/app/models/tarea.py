@@ -12,9 +12,11 @@ class Tarea(db.Model):
     proyecto_id = db.Column(db.Integer, db.ForeignKey("proyectos.id"), nullable=False)
     mes = db.Column(db.Integer, nullable=False)
     anio = db.Column(db.Integer, nullable=False)
+    usuario_colaborador_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)  # Para proyectos colaborativos
 
     proyecto = db.relationship("Proyecto", back_populates="tareas")
     dias = db.relationship("Dia", secondary=tarea_dia, back_populates="tareas")
+    usuario_colaborador = db.relationship("Usuario", foreign_keys=[usuario_colaborador_id])
 
     def to_dict(self, incluir_desglose_empleados=False):
         """Convierte la tarea a diccionario"""

@@ -31,8 +31,8 @@ def create_proyecto(context):
     
     # Validar tipo de proyecto
     tipo_proyecto = data.get('tipo_proyecto', 'personal')
-    if tipo_proyecto not in ['personal', 'empleados']:
-        return jsonify({'error': 'tipo_proyecto debe ser "personal" o "empleados"'}), 400
+    if tipo_proyecto not in ['personal', 'empleados', 'colaborativo']:
+        return jsonify({'error': 'tipo_proyecto debe ser "personal", "empleados" o "colaborativo"'}), 400
     
     # Si es proyecto con empleados, validar que se envíen empleados
     empleados = data.get('empleados', [])
@@ -76,32 +76,49 @@ def create_proyecto(context):
         currency=data.get('currency', 'USD')
     )
     
+    # Si se crea directamente como colaborativo, registrar al creador como owner
+    if tipo_proyecto == 'colaborativo':
+        from app.services.colaboradores_service import ColaboradoresService
+        ColaboradoresService.convertir_a_colaborativo(proyecto.id, context['user_id'])
+    
     return jsonify(proyecto.to_dict()), 201
 
 @proyecto_bp.route('/<int:proyecto_id>', methods=['GET'])
 @organization_required
 def get_proyecto(context, proyecto_id):
-    """Obtiene un proyecto específico - FASE 1 MULTI-TENANT"""
+    """Obtiene un proyecto específico - FASE 1 MULTI-TENANT + CROSS-ORG"""
     from app.models.empleado import Empleado
+    from app.models.proyecto_colaborador import ProyectoColaborador
     
     proyecto = ProyectoService.obtener_proyecto_por_id(proyecto_id)
     
     if not proyecto:
         return jsonify({'error': 'Proyecto no encontrado'}), 404
     
-    # FASE 1 MULTI-TENANT: Verificar que el proyecto pertenezca a la organización actual
-    if proyecto.organization_id != context['organization_id']:
-        return jsonify({'error': 'No tienes acceso a este proyecto'}), 403
-    
-    # Verificar que el usuario tenga acceso (admin o empleado)
+    # Verificar acceso: admin, empleado o colaborador
     es_admin = proyecto.usuario_id == context['user_id']
     es_empleado = Empleado.query.filter_by(
         proyecto_id=proyecto_id,
         usuario_id=context['user_id']
     ).first() is not None
     
-    if not (es_admin or es_empleado):
-        return jsonify({'error': 'No tienes acceso a este proyecto'}), 403
+    # CROSS-ORG: Verificar si es colaborador (permite acceso cross-organization)
+    es_colaborador = ProyectoColaborador.query.filter_by(
+        proyecto_id=proyecto_id,
+        usuario_id=context['user_id'],
+        estado='aceptado'
+    ).first() is not None
+    
+    # Si es de la misma organización, validar permisos normales
+    # Si es colaborador, permitir acceso cross-organization
+    if proyecto.organization_id == context['organization_id']:
+        # Misma organización: admin o empleado
+        if not (es_admin or es_empleado or es_colaborador):
+            return jsonify({'error': 'No tienes acceso a este proyecto'}), 403
+    else:
+        # Diferente organización: solo colaboradores
+        if not es_colaborador:
+            return jsonify({'error': 'No tienes acceso a este proyecto'}), 403
     
     return jsonify(proyecto.to_dict()), 200
 
@@ -172,7 +189,10 @@ def get_meses(context, proyecto_id):
 @proyecto_bp.route('/<int:proyecto_id>/meses', methods=['POST'])
 @organization_required
 def add_mes(context, proyecto_id):
-    """Agrega un mes al proyecto - FASE 1 MULTI-TENANT"""
+    """Agrega un mes al proyecto - FASE 1 MULTI-TENANT + COLABORATIVOS
+    
+    En proyectos colaborativos, los días son globales (compartidos por todos).
+    """
     data = request.get_json()
     
     if not data or not all(k in data for k in ['anio', 'mes']):

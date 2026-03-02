@@ -24,6 +24,8 @@ export class TareaService extends ApiService {
   static async createTarea(
     proyecto_id: number,
     titulo: string,
+    mes: number,
+    anio: number,
     detalle?: string,
     que_falta?: string,
     dias_ids?: number[]
@@ -31,6 +33,8 @@ export class TareaService extends ApiService {
     return this.post('/api/tareas', {
       proyecto_id,
       titulo,
+      mes,
+      anio,
       detalle,
       que_falta,
       dias_ids,

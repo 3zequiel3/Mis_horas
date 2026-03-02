@@ -137,8 +137,9 @@ class ProyectoService:
     
     @staticmethod
     def obtener_proyectos_usuario(usuario_id: int, organization_id: int):
-        """Obtiene proyectos del usuario en una organización específica - FASE 1 MULTI-TENANT"""
+        """Obtiene proyectos del usuario en una organización específica - FASE 1 MULTI-TENANT + CROSS-ORG"""
         from app.models.empleado import Empleado
+        from app.models.proyecto_colaborador import ProyectoColaborador
         
         # FASE 1 MULTI-TENANT: Filtrar por organization_id
         # Proyectos donde el usuario es el admin
@@ -155,11 +156,21 @@ class ProyectoService:
             Proyecto.organization_id == organization_id
         ).all()
         
+        # CROSS-ORG: Proyectos donde el usuario es colaborador (sin filtro de organization_id)
+        # Esto permite que usuarios de otras organizaciones trabajen como colaboradores
+        proyectos_colaborador = Proyecto.query.join(
+            ProyectoColaborador, ProyectoColaborador.proyecto_id == Proyecto.id
+        ).filter(
+            ProyectoColaborador.usuario_id == usuario_id,
+            ProyectoColaborador.estado == 'aceptado'
+            # NO filtrar por organization_id aquí - permite cross-org
+        ).all()
+        
         # Combinar y eliminar duplicados
         proyectos_ids = set()
         proyectos_unicos = []
         
-        for proyecto in proyectos_admin + proyectos_empleado:
+        for proyecto in proyectos_admin + proyectos_empleado + proyectos_colaborador:
             if proyecto.id not in proyectos_ids:
                 proyectos_ids.add(proyecto.id)
                 proyectos_unicos.append(proyecto)
@@ -187,14 +198,18 @@ class ProyectoService:
         return sorted(list(años_meses))
     
     @staticmethod
-    def agregar_mes_proyecto(proyecto_id: int, anio: int, mes: int):
-        """Agrega un mes al proyecto"""
+    def agregar_mes_proyecto(proyecto_id: int, anio: int, mes: int, usuario_colaborador_id: int = None):
+        """Agrega un mes al proyecto
+        
+        IMPORTANTE: En proyectos colaborativos, los días son GLOBALES (compartidos).
+        No se crean días por colaborador, se crea un único conjunto de días que todos comparten.
+        """
         proyecto = Proyecto.query.filter(Proyecto.id == proyecto_id).first()
         if not proyecto:
             print(f"[AGREGAR_MES] Proyecto {proyecto_id} no encontrado")
             return False
         
-        # Verificar si ya existe
+        # Verificar si ya existe el mes (para todos los tipos de proyecto)
         existing = Dia.query.filter(
             Dia.proyecto_id == proyecto_id,
             func.extract('year', Dia.fecha) == anio,
@@ -210,8 +225,8 @@ class ProyectoService:
         # Crear días
         month_range = calendar.monthrange(anio, mes)[1]
         
-        if proyecto.tipo_proyecto == 'personal':
-            # Proyecto personal
+        if proyecto.tipo_proyecto in ['personal', 'colaborativo']:
+            # Proyecto personal o colaborativo: días globales sin empleado ni colaborador
             for day in range(1, month_range + 1):
                 fecha = dt(anio, mes, day).date()
                 weekday = fecha.weekday()
@@ -222,12 +237,13 @@ class ProyectoService:
                     horas_trabajadas=0,
                     horas_reales=0,
                     proyecto_id=proyecto_id,
-                    empleado_id=None
+                    empleado_id=None,
+                    usuario_colaborador_id=None
                 )
                 db.session.add(dia)
-            print(f"[AGREGAR_MES] {month_range} días creados para proyecto personal")
+            print(f"[AGREGAR_MES] {month_range} días globales creados")
         else:
-            # Proyecto con empleados
+            # Proyecto con empleados: días por empleado
             empleados = Empleado.query.filter_by(proyecto_id=proyecto_id).all()
             print(f"[AGREGAR_MES] Creando días para {len(empleados)} empleados")
             for empleado in empleados:
@@ -241,7 +257,8 @@ class ProyectoService:
                         horas_trabajadas=0,
                         horas_reales=0,
                         proyecto_id=proyecto_id,
-                        empleado_id=empleado.id
+                        empleado_id=empleado.id,
+                        usuario_colaborador_id=None
                     )
                     db.session.add(dia)
         

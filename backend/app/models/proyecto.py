@@ -54,6 +54,7 @@ class Proyecto(db.Model):
     dias = db.relationship("Dia", back_populates="proyecto", cascade="all, delete-orphan")
     tareas = db.relationship("Tarea", back_populates="proyecto", cascade="all, delete-orphan")
     empleados = db.relationship("Empleado", back_populates="proyecto", cascade="all, delete-orphan")
+    colaboradores = db.relationship("ProyectoColaborador", back_populates="proyecto", cascade="all, delete-orphan")
 
     def to_dict(self):
         """Convierte el proyecto a diccionario"""

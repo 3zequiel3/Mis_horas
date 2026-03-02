@@ -253,6 +253,21 @@
   box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
 }
 
+/* Estilo especial para proyectos colaborativos */
+.proyecto-card-colaborativo::before {
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+
+.proyecto-card-colaborativo {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.proyecto-card-colaborativo:hover {
+  border-color: rgba(16, 185, 129, 0.6);
+  background: rgba(16, 185, 129, 0.05);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);
+}
+
 .proyecto-card h3 {
   margin: 0 0 0.5rem 0;
   color: var(--text-primary);

@@ -83,4 +83,17 @@ export class ProyectosService extends ApiService {
   }): Promise<Proyecto> {
     return this.put(`/api/proyectos/${proyectoId}/configuracion`, data);
   }
+
+  /**
+   * Obtiene datos de todos los colaboradores para exportación (PDF/CSV)
+   * Solo para proyectos colaborativos
+   */
+  static async getExportColaboradores(proyectoId: number, mes?: number, anio?: number): Promise<any> {
+    let url = `/api/proyectos/${proyectoId}/export-colaboradores`;
+    const params = new URLSearchParams();
+    if (mes !== undefined) params.append('mes', mes.toString());
+    if (anio !== undefined) params.append('anio', anio.toString());
+    if (params.toString()) url += `?${params.toString()}`;
+    return this.get(url);
+  }
 }

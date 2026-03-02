@@ -9,7 +9,11 @@ from app.utils.formatters import formato_a_horas, horas_a_formato
 class DiaService:
     @staticmethod
     def obtener_dias_mes(proyecto_id: int, anio: int, mes: int, empleado_id: int = None):
-        """Obtiene días del mes, opcionalmente filtrados por empleado"""
+        """Obtiene días del mes, opcionalmente filtrados por empleado
+        
+        NOTA IMPORTANTE: En proyectos colaborativos, los DÍAS son compartidos por todos.
+        Solo las TAREAS son individuales de cada colaborador.
+        """
         query = Dia.query.filter(
             Dia.proyecto_id == proyecto_id,
             func.extract('year', Dia.fecha) == anio,
@@ -19,7 +23,8 @@ class DiaService:
         if empleado_id is not None:
             query = query.filter(Dia.empleado_id == empleado_id)
         else:
-            # Para proyectos personales, solo días sin empleado
+            # Para proyectos personales y colaborativos, días sin empleado
+            # En colaborativos, todos ven los mismos días
             query = query.filter(Dia.empleado_id.is_(None))
         
         return query.order_by(Dia.fecha.asc()).all()
@@ -31,36 +36,76 @@ class DiaService:
     
     @staticmethod
     def actualizar_horas_dia(dia_id: int, horas_str: str, user_id: int):
-        """Actualiza horas del día"""
+        """Actualiza horas del día
+        
+        Para proyectos colaborativos, usa tabla dias_colaboradores (horas por colaborador).
+        Para otros proyectos, usa dias.horas_trabajadas directamente.
+        """
+        from app.models.dia_colaborador import DiaColaborador
+        from app.models.proyecto_colaborador import ProyectoColaborador
+        
         dia = Dia.query.filter(Dia.id == dia_id).first()
         if not dia:
             return None
         
-        # Obtener configuración del proyecto
+        # Obtener proyecto
         proyecto = Proyecto.query.filter(Proyecto.id == dia.proyecto_id).first()
-        usar_horas_reales = proyecto.horas_reales_activas if proyecto else False
+        if not proyecto:
+            return None
         
         horas_float = formato_a_horas(horas_str)
         
-        # Actualizar según la configuración del proyecto
-        if usar_horas_reales:
-            # Si usa horas reales:
-            # - Guardar entrada en horas_trabajadas
-            # - Calcular horas_reales como la mitad
-            dia.horas_trabajadas = horas_float
-            dia.horas_reales = horas_float / 2
+        # PROYECTOS COLABORATIVOS: usar tabla dias_colaboradores
+        if proyecto.tipo_proyecto == 'colaborativo':
+            # Obtener configuración del colaborador
+            colaborador = ProyectoColaborador.query.filter_by(
+                proyecto_id=proyecto.id,
+                usuario_id=user_id,
+                estado='aceptado'
+            ).first()
+            
+            if not colaborador:
+                return None
+            
+            # Buscar o crear registro en dias_colaboradores
+            dia_colaborador = DiaColaborador.query.filter_by(
+                dia_id=dia_id,
+                usuario_colaborador_id=user_id
+            ).first()
+            
+            if not dia_colaborador:
+                dia_colaborador = DiaColaborador(
+                    dia_id=dia_id,
+                    usuario_colaborador_id=user_id
+                )
+                db.session.add(dia_colaborador)
+            
+            # Actualizar según configuración del COLABORADOR (no del proyecto)
+            if colaborador.horas_reales_activas:
+                dia_colaborador.horas_trabajadas = horas_float
+                dia_colaborador.horas_reales = horas_float / 2
+            else:
+                dia_colaborador.horas_trabajadas = horas_float
+                dia_colaborador.horas_reales = 0
+            
+            db.session.commit()
+            
         else:
-            # Si NO usa horas reales:
-            # - Guardar entrada en horas_trabajadas
-            # - Limpiar horas_reales
-            dia.horas_trabajadas = horas_float
-            dia.horas_reales = 0
-        
-        db.session.commit()
-        db.session.refresh(dia)
-        
-        # Recalcular tareas afectadas solo si el día tiene tareas asociadas
-        DiaService.recalcular_tareas_afectadas_optimizado(dia, dia.proyecto_id)
+            # PROYECTOS PERSONALES/EMPLEADOS: usar dias.horas_trabajadas
+            usar_horas_reales = proyecto.horas_reales_activas if proyecto else False
+            
+            if usar_horas_reales:
+                dia.horas_trabajadas = horas_float
+                dia.horas_reales = horas_float / 2
+            else:
+                dia.horas_trabajadas = horas_float
+                dia.horas_reales = 0
+            
+            db.session.commit()
+            db.session.refresh(dia)
+            
+            # Recalcular tareas afectadas solo si el día tiene tareas asociadas
+            DiaService.recalcular_tareas_afectadas_optimizado(dia, dia.proyecto_id)
         
         return dia
     

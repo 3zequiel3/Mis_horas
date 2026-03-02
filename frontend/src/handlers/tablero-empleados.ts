@@ -222,6 +222,10 @@ export const TableroEmpleadosHandler = {
   /**
    * Verifica y crea automáticamente el mes siguiente si estamos en un mes nuevo
    */
+  /**
+   * Verifica y crea automáticamente el mes siguiente si estamos en un mes nuevo
+   * NOTA: Solo crea el mes automáticamente, NO cambia el mes que el usuario tiene seleccionado
+   */
   async verificarYCrearMesSiguiente(): Promise<void> {
     if (!this.state.proyectoActual) return;
 
@@ -253,26 +257,16 @@ export const TableroEmpleadosHandler = {
           );
           
           if (mesCreado) {
-            console.log(`[AUTO-MES TABLERO] Mes ${mesRealActual}/${anioRealActual} creado exitosamente`);
-            
-            // Actualizar el estado para usar el nuevo mes
-            this.state.mesActual = mesRealActual;
-            this.state.anioActual = anioRealActual;
-            this.state.proyectoActual.mes = mesRealActual;
-            this.state.proyectoActual.anio = anioRealActual;
+            console.log(`[AUTO-MES TABLERO] Mes ${mesRealActual}/${anioRealActual} creado exitosamente (disponible para seleccionar)`);
+            // NO actualizamos el estado - respetamos el mes que el usuario tiene seleccionado
           }
         } catch (error) {
           console.error('[AUTO-MES TABLERO] Error creando mes automático:', error);
         }
       } else {
         console.log(`[AUTO-MES TABLERO] El mes ${mesRealActual}/${anioRealActual} ya existe`);
-        
-        // Solo actualizar al mes actual si ya existe
-        this.state.mesActual = mesRealActual;
-        this.state.anioActual = anioRealActual;
-        this.state.proyectoActual.mes = mesRealActual;
-        this.state.proyectoActual.anio = anioRealActual;
       }
+      // NO actualizamos el estado - el usuario puede trabajar en cualquier mes que desee
     }
   },
 

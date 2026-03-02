@@ -95,6 +95,14 @@ def create_app():
     from app.routes.budget_addons import budget_addons_bp
     app.register_blueprint(budget_addons_bp)
     
+    # Registrar blueprint de Colaboradores (Proyectos Colaborativos)
+    from app.routes.colaboradores import colaboradores_bp
+    app.register_blueprint(colaboradores_bp)
+    
+    # Registrar blueprint de Exportación de Proyectos Colaborativos
+    from app.routes.proyecto_export import proyecto_export_bp
+    app.register_blueprint(proyecto_export_bp, url_prefix='/api')
+    
     # Crear tablas al inicializar la app (solo una vez)
     with app.app_context():
         try:

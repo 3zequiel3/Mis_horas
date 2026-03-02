@@ -26,6 +26,14 @@
       </a>
     </li>
     
+    <!-- Colaboradores - se muestra solo en proyectos personal o colaborativo -->
+    <li class="menu-item" data-view="colaboradores" id="menu-colaboradores" style="display: none;">
+      <a href="#" class="menu-link">
+        <span class="menu-icon">👥</span>
+        <p class="menu-text">Colaboradores</p>
+      </a>
+    </li>
+    
     <!-- Auditoría - se muestra si modules_config.audit === true -->
     <li class="menu-item" data-view="audit" data-module="audit" style="display: none;">
       <a href="/auditoria" class="menu-link">
@@ -212,7 +220,7 @@
    */
   
   // Función para actualizar los módulos visibles basados en la configuración del proyecto
-  function updateSidebarModules(modulesConfig: any, proyectoId?: number) {
+  function updateSidebarModules(modulesConfig: any, proyectoId?: number, tipoProyecto?: string) {
     const sidebar = document.getElementById('project-sidebar');
     if (!sidebar) return;
 
@@ -248,6 +256,17 @@
         (item as HTMLElement).style.display = 'none';
       }
     });
+
+    // Mostrar/ocultar opción de Colaboradores según tipo de proyecto
+    const menuColaboradores = document.getElementById('menu-colaboradores');
+    if (menuColaboradores) {
+      if (tipoProyecto === 'personal' || tipoProyecto === 'colaborativo') {
+        menuColaboradores.style.display = '';
+        visibleModules++;
+      } else {
+        menuColaboradores.style.display = 'none';
+      }
+    }
 
     // Verificar si hay más de una opción de menú (dashboard siempre + módulos activos)
     const sidebarToggle = document.getElementById('sidebar-toggle');

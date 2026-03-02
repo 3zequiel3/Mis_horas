@@ -132,9 +132,12 @@ const pageTitle = 'Tablero de Proyecto';
             </div>
           </div>
 
-          <!-- Botón Exportar -->
+          <!-- Botones Exportar -->
           <button id="exportar-pdf-btn" class="btn btn-danger btn-block">
             📥 Exportar PDF
+          </button>
+          <button id="exportar-csv-btn" class="btn btn-success btn-block" style="margin-top: 10px;">
+            📊 Exportar CSV
           </button>
         </div>
         <!-- Fin tareas-column -->
@@ -142,6 +145,67 @@ const pageTitle = 'Tablero de Proyecto';
       <!-- Fin proyecto-grid -->
       </div>
       <!-- Fin proyecto-wrapper -->
+      </div>
+      <!-- Fin view-dashboard -->
+
+      <!-- Vista Colaboradores -->
+      <div id="view-colaboradores" class="project-view">
+        <div class="colaboradores-container">
+          <h1>👥 Gestión de Colaboradores</h1>
+          
+          <!-- Estado del proyecto -->
+          <div class="card" id="estado-proyecto-card">
+            <h3>📌 Estado del Proyecto</h3>
+            <p>Tipo: <strong id="tipo-proyecto-text">Cargando...</strong></p>
+            <button id="btn-convertir-colaborativo" class="btn btn-primary" style="display: none;">
+              🔄 Convertir a Colaborativo
+            </button>
+          </div>
+
+          <!-- Formulario de invitación -->
+          <div class="card" id="invitar-colaborador-card" style="display: none;">
+            <h3>✉️ Invitar Colaborador</h3>
+            <form id="form-invitar-colaborador">
+              <div class="form-group">
+                <label for="email-colaborador">Email del colaborador</label>
+                <input type="email" id="email-colaborador" class="form-input" placeholder="usuario@ejemplo.com" required />
+              </div>
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="horas-reales-colaborador" />
+                  <span>Activar horas reales para este colaborador</span>
+                </label>
+              </div>
+              <button type="submit" class="btn btn-primary">📤 Enviar Invitación</button>
+            </form>
+          </div>
+
+          <!-- Lista de colaboradores -->
+          <div class="card" id="lista-colaboradores-card" style="display: none;">
+            <h3>📋 Colaboradores Actuales</h3>
+            <div id="colaboradores-list">
+              <p class="empty-message">Cargando...</p>
+            </div>
+          </div>
+
+          <!-- Resumen -->
+          <div class="card" id="resumen-colaboradores-card" style="display: none;">
+            <h3>📊 Resumen General</h3>
+            <p class="resumen-descripcion">Estadísticas totales del proyecto colaborativo</p>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-label">Total colaboradores:</span>
+                <span class="stat-value" id="total-colaboradores">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Total horas del proyecto:</span>
+                <span class="stat-value" id="total-horas-colaboradores">0h</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Fin view-colaboradores -->
 
       <!-- Modal para agregar mes -->
       <div class="add-mes-modal" id="add-mes-modal">
@@ -298,6 +362,7 @@ const pageTitle = 'Tablero de Proyecto';
   import { AlertUtils } from '../../utils/swal';
   import { TareaHandler } from '../../handlers/tarea';
   import { MesesHandler } from '../../handlers/meses';
+  import { ColaboradoresHandler } from '../../handlers/colaboradores';
 
   // Verificar autenticación
   if (!AuthService.isAuthenticated()) {
@@ -313,6 +378,50 @@ const pageTitle = 'Tablero de Proyecto';
   const form = document.getElementById('tarea-form') as HTMLFormElement;
   const diasSelect = document.getElementById('dias-select') as HTMLSelectElement;
   const diasSelectedDiv = document.getElementById('dias-selected')!;
+
+  // ========== GESTIÓN DE VISTAS ==========
+  
+  // Función para cambiar entre vistas
+  function cambiarVista(vistaId: string) {
+    // Ocultar todas las vistas
+    const vistas = document.querySelectorAll('.project-view');
+    vistas.forEach(vista => (vista as HTMLElement).style.display = 'none');
+    
+    // Mostrar vista seleccionada
+    const vistaActiva = document.getElementById(`view-${vistaId}`);
+    if (vistaActiva) {
+      vistaActiva.style.display = 'block';
+      
+      // Si es la vista de colaboradores, inicializar
+      if (vistaId === 'colaboradores') {
+        const proyectoId = parseInt(window.location.pathname.split('/')[2]);
+        if (proyectoId) {
+          ColaboradoresHandler.init(proyectoId);
+        }
+      }
+    }
+  }
+  
+  // Manejar clicks en items del menú del sidebar
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const menuItem = target.closest('.menu-item');
+    
+    if (menuItem) {
+      const vista = (menuItem as HTMLElement).dataset.view;
+      if (vista && (vista === 'dashboard' || vista === 'colaboradores')) {
+        e.preventDefault();
+        cambiarVista(vista);
+        
+        // Actualizar clases active
+        document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+        menuItem.classList.add('active');
+      }
+    }
+  });
+  
+  // Iniciar en vista dashboard
+  cambiarVista('dashboard');
 
   // ========== GESTIÓN DE TAREAS ==========
 
@@ -576,22 +685,52 @@ const pageTitle = 'Tablero de Proyecto';
       }
 
       const mes = MESES_ES[proyecto.mes as keyof typeof MESES_ES] || `Mes ${proyecto.mes}`;
-      const tareas = proyectoHandlers.state.tareasActuales;
-
-      if (tareas.length === 0) {
-        await AlertUtils.info('Información', 'No hay tareas para exportar');
-        return;
-      }
 
       AlertUtils.loading('Generando PDF...');
       try {
-        await generatePDFFromTemplate(
-          proyecto.nombre,
-          mes,
-          proyecto.anio,
-          tareas,
-          proyectoHandlers.state.diasActuales
-        );
+        // Si es proyecto colaborativo, obtener datos de todos los colaboradores
+        if (proyecto.tipo_proyecto === 'colaborativo') {
+          const colaboradoresData = await ProyectosService.getExportColaboradores(
+            proyecto.id,
+            proyecto.mes,
+            proyecto.anio
+          );
+
+          if (colaboradoresData.colaboradores.length === 0) {
+            AlertUtils.close();
+            await AlertUtils.info('Información', 'No hay colaboradores con tareas para exportar');
+            return;
+          }
+
+          await generatePDFFromTemplate(
+            proyecto.nombre,
+            mes,
+            proyecto.anio,
+            [],
+            [],
+            true, // isColaborativo
+            colaboradoresData
+          );
+        } else {
+          // Proyecto no colaborativo: usar lógica original
+          const tareas = proyectoHandlers.state.tareasActuales;
+
+          if (tareas.length === 0) {
+            AlertUtils.close();
+            await AlertUtils.info('Información', 'No hay tareas para exportar');
+            return;
+          }
+
+          await generatePDFFromTemplate(
+            proyecto.nombre,
+            mes,
+            proyecto.anio,
+            tareas,
+            proyectoHandlers.state.diasActuales,
+            false // No colaborativo
+          );
+        }
+
         AlertUtils.close();
         await AlertUtils.success('Éxito', 'PDF descargado correctamente');
       } catch (error) {
@@ -602,6 +741,91 @@ const pageTitle = 'Tablero de Proyecto';
     } catch (error) {
       console.error('Error:', error);
       await AlertUtils.error('Error', 'Error al exportar PDF');
+    }
+  });
+
+  // Botón Exportar CSV
+  document.getElementById('exportar-csv-btn')?.addEventListener('click', async () => {
+    try {
+      const proyecto = proyectoHandlers.state.proyectoActual;
+      if (!proyecto) {
+        await AlertUtils.error('Error', 'Proyecto no disponible');
+        return;
+      }
+
+      const mes = MESES_ES[proyecto.mes as keyof typeof MESES_ES] || `Mes ${proyecto.mes}`;
+      const tareas = proyectoHandlers.state.tareasActuales;
+
+      if (tareas.length === 0) {
+        await AlertUtils.info('Información', 'No hay tareas para exportar');
+        return;
+      }
+
+      AlertUtils.loading('Generando CSV...');
+      try {
+        // Crear contenido CSV
+        const headers = ['Tarea', 'Detalle', 'Horas', 'Días', 'Estado'];
+        const rows = tareas.map(tarea => {
+          const diasTarea = tarea.dias || [];
+          const diasAsociados = diasTarea.length > 0
+            ? diasTarea.map(d => new Date(d.fecha).getDate()).join('; ')
+            : '-';
+          
+          return [
+            tarea.titulo || '-',
+            (tarea.detalle || '-').replace(/,/g, ';').replace(/\n/g, ' '),
+            tarea.horas || '00:00',
+            diasAsociados,
+            tarea.completada ? 'Completada' : 'Pendiente'
+          ];
+        });
+
+        // Calcular total de horas
+        const totalHoras = tareas.reduce((sum, t) => {
+          const [horas, minutos] = (t.horas || '00:00').split(':').map(Number);
+          return sum + (horas || 0) + (minutos || 0) / 60;
+        }, 0);
+        const horasTotal = Math.floor(totalHoras);
+        const minutosTotal = Math.round((totalHoras - horasTotal) * 60);
+        const totalFormateado = `${horasTotal}:${minutosTotal.toString().padStart(2, '0')}`;
+
+        // Agregar fila de total
+        rows.push(['', '', totalFormateado, '', '']);
+        rows.unshift(headers);
+
+        // Convertir a CSV
+        const csvContent = rows.map(row => 
+          row.map(cell => {
+            const cellStr = String(cell);
+            // Escapar comillas y envolver en comillas si contiene comas, saltos de línea o comillas
+            if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+              return `"${cellStr.replace(/"/g, '""')}"`;
+            }
+            return cellStr;
+          }).join(',')
+        ).join('\n');
+
+        // Crear y descargar el archivo
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `${proyecto.nombre}-${mes}-${proyecto.anio}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        AlertUtils.close();
+        await AlertUtils.success('Éxito', 'CSV descargado correctamente');
+      } catch (error) {
+        console.error('Error generando CSV:', error);
+        AlertUtils.close();
+        await AlertUtils.error('Error', 'No se pudo generar el CSV');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      await AlertUtils.error('Error', 'Error al exportar CSV');
     }
   });
 
@@ -655,6 +879,11 @@ const pageTitle = 'Tablero de Proyecto';
       MesesHandler.renderMeses({ anio: proyecto.anio, mes: proyecto.mes });
       // updateMesInfo siempre muestra el mes actual real del sistema
       MesesHandler.updateMesInfo();
+      
+      // Actualizar sidebar con tipo de proyecto
+      if ((window as any).updateSidebarModules) {
+        (window as any).updateSidebarModules(proyecto.modules_config || {}, proyecto.id, proyecto.tipo_proyecto);
+      }
 
       // Actualizar nombre del sidebar
       const sidebarNombre = document.getElementById('proyecto-nombre-sidebar');
@@ -662,12 +891,51 @@ const pageTitle = 'Tablero de Proyecto';
 
       // Actualizar módulos del sidebar según configuración del proyecto
       if (typeof (window as any).updateSidebarModules === 'function') {
-        (window as any).updateSidebarModules(proyecto.modules_config || {});
+        (window as any).updateSidebarModules(proyecto.modules_config || {}, proyecto.id, proyecto.tipo_proyecto);
       }
     }
     
     // Inicializar modo de selección múltiple
     proyectoHandlers.initMultiSelect();
+  });
+
+  // Gestión de vistas (Dashboard, Colaboradores, etc)
+  const menuItems = document.querySelectorAll('.menu-item');
+  const views = {
+    'dashboard': document.getElementById('view-dashboard'),
+    'colaboradores': document.getElementById('view-colaboradores'),
+  };
+
+  menuItems.forEach(item => {
+    const link = item.querySelector('a');
+    if (!link) return;
+
+    item.addEventListener('click', async (e) => {
+      const view = (item as HTMLElement).dataset.view;
+      if (!view || !views[view as keyof typeof views]) return;
+
+      // Si tiene href y no es #, dejar que navegue normal
+      if (link.getAttribute('href') !== '#') return;
+
+      e.preventDefault();
+
+      // Ocultar todas las vistas
+      Object.values(views).forEach(v => v?.classList.remove('active'));
+
+      // Mostrar la vista seleccionada
+      views[view as keyof typeof views]?.classList.add('active');
+
+      // Actualizar menú activo
+      menuItems.forEach(mi => mi.classList.remove('active'));
+      item.classList.add('active');
+
+      // Si es colaboradores, inicializar
+      if (view === 'colaboradores') {
+        const proyectoId = parseInt(window.location.pathname.split('/')[2]);
+        const { ColaboradoresHandler } = await import('../../handlers/colaboradores');
+        await ColaboradoresHandler.init(proyectoId);
+      }
+    });
   });
 
   // Limpiar al salir
@@ -685,20 +953,280 @@ const pageTitle = 'Tablero de Proyecto';
 
 </script>
 
-      </div>
-      <!-- Fin Vista Dashboard -->
+<style is:global>
+  /* Estilos para vistas (Dashboard, Colaboradores, etc) */
+  .project-view {
+    display: none;
+  }
 
-      <!-- Otras vistas (ocultas por defecto) -->
-      <div id="view-audit" class="project-view">
-        <h2>Auditoría</h2>
-        <p>Vista de auditoría pendiente de implementar...</p>
+  .project-view.active {
+    display: block;
+  }
+
+  /* Estilos para Vista de Colaboradores */
+  .colaboradores-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .colaboradores-container h1 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    color: var(--text-primary, #d1d5db);
+  }
+
+  .card {
+    background: var(--card-bg, #1e1e1e);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  .card h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--text-primary, #d1d5db);
+  }
+
+  .resumen-descripcion {
+    color: var(--text-secondary, #9ca3af);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    font-style: italic;
+  }
+
+  /* Contenedor de lista de colaboradores */
+  #colaboradores-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .colaborador-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .colaborador-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .colaborador-item:hover {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: rgba(102, 126, 234, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .colaborador-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .colaborador-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .colaborador-icon {
+    font-size: 1.75rem;
+    line-height: 1;
+  }
+
+  .colaborador-nombre {
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--text-primary, #f3f4f6);
+    line-height: 1.2;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .badge-owner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.3rem 0.85rem;
+    border-radius: 14px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .colaborador-stats {
+    display: flex;
+    gap: 1.75rem;
+    color: var(--text-secondary, #9ca3af);
+    font-size: 0.95rem;
+    padding-left: 2.5rem;
+  }
+
+  .colaborador-stats > span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .colaborador-config {
+    padding-left: 2.5rem;
+  }
+
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--text-secondary, #9ca3af);
+    font-size: 0.9rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle-label:hover {
+    color: var(--text-primary, #d1d5db);
+  }
+
+  .toggle-label input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+  }
+
+  .toggle-label input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .colaborador-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    margin-top: 0.25rem;
+  }
+
+  .btn-eliminar-colaborador {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-eliminar-colaborador:hover {
+    background: #dc2626;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2rem;
+    margin-top: 0.5rem;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .stat-label {
+    color: var(--text-secondary, #9ca3af);
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .stat-value {
+    color: #667eea;
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+  }
+
+  .empty-message {
+    text-align: center;
+    color: var(--text-secondary, #9ca3af);
+    padding: 2.5rem;
+    font-style: italic;
+    font-size: 1rem;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--text-secondary, #d1d5db);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .checkbox-label:hover {
+    color: var(--text-primary, #f3f4f6);
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+  }
+  
+  /* Mejorar el formulario de invitación */
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary, #d1d5db);
+    font-weight: 500;
+    font-size: 0.95rem;
+  }
+  
+  .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 8px;
+    color: var(--text-primary, #f3f4f6);
+    font-size: 1rem;
+    transition: all 0.2s;
+  }
+  
+  .form-input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+  
+  .form-input::placeholder {
+    color: rgba(209, 213, 219, 0.4);
+  }
+</style>
+
       </div>
-      
-      <div id="view-approvals" class="project-view">
-        <h2>Aprobaciones</h2>
-        <p>Vista de aprobaciones pendiente de implementar...</p>
-      </div>
-    </div>
-    <!-- Fin container -->
+      <!-- Fin container -->
   </ProtectedRoute>
 </BaseLayout>

@@ -22,6 +22,8 @@ export interface CreateTareaRequest {
   horas?: string;
   que_falta?: string;
   proyecto_id: number;
+  mes: number;
+  anio: number;
   dias_ids?: number[];
 }
 
