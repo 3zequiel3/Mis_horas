@@ -9,6 +9,7 @@ from app.models.usuario import Usuario
 from app.models.dia import Dia
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import func, and_
+from sqlalchemy.exc import IntegrityError
 
 # Zona horaria local
 LOCAL_TZ = timezone(timedelta(hours=-3))
@@ -20,7 +21,10 @@ class ColaboradoresService:
     def convertir_a_colaborativo(proyecto_id: int, usuario_owner_id: int):
         """
         Convierte un proyecto personal a colaborativo
-        y agrega al usuario actual como owner
+        y agrega al usuario actual como owner.
+        Si el proyecto ya es colaborativo, garantiza igualmente que el owner
+        esté registrado en proyecto_colaboradores (corrige proyectos creados
+        directamente como colaborativos que quedaron sin registro de owner).
         """
         proyecto = Proyecto.query.get(proyecto_id)
         
@@ -30,19 +34,24 @@ class ColaboradoresService:
         if proyecto.tipo_proyecto == 'empleados':
             return None, "No se puede convertir un proyecto de empleados a colaborativo"
         
-        if proyecto.tipo_proyecto == 'colaborativo':
-            return proyecto, None  # Ya es colaborativo
-        
-        # Cambiar tipo de proyecto
+        # Cambiar tipo de proyecto (si todavía no es colaborativo)
         proyecto.tipo_proyecto = 'colaborativo'
         
-        # Agregar al usuario como owner si no existe
+        # Flush para persistir el cambio de tipo antes de consultar colaboradores
+        db.session.flush()
+        
+        # Verificar si ya existe un registro de owner para este usuario
         colaborador_existente = ProyectoColaborador.query.filter_by(
             proyecto_id=proyecto_id,
             usuario_id=usuario_owner_id
         ).first()
         
-        if not colaborador_existente:
+        if colaborador_existente:
+            # Actualizar el registro existente para asegurar rol y estado correctos
+            colaborador_existente.rol = 'owner'
+            colaborador_existente.estado = 'aceptado'
+            colaborador_existente.fecha_salida = None
+        else:
             owner = ProyectoColaborador(
                 proyecto_id=proyecto_id,
                 usuario_id=usuario_owner_id,
@@ -53,7 +62,23 @@ class ColaboradoresService:
             )
             db.session.add(owner)
         
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            # Entrada duplicada: ya existe el registro (race condition u otro flujo lo creó)
+            db.session.rollback()
+            # Actualizar el registro existente con rol correcto
+            colaborador_existente = ProyectoColaborador.query.filter_by(
+                proyecto_id=proyecto_id,
+                usuario_id=usuario_owner_id
+            ).first()
+            if colaborador_existente:
+                colaborador_existente.rol = 'owner'
+                colaborador_existente.estado = 'aceptado'
+                colaborador_existente.fecha_salida = None
+            proyecto.tipo_proyecto = 'colaborativo'
+            db.session.commit()
+        
         db.session.refresh(proyecto)
         
         return proyecto, None
