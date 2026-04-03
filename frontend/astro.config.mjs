@@ -1,6 +1,6 @@
 import { defineConfig } from 'astro/config';
 import node from '@astrojs/node';
-import tailwind from '@astrojs/tailwind';
+import tailwindcss from '@tailwindcss/vite';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -12,14 +12,14 @@ export default defineConfig({
   adapter: node({
     mode: 'standalone'
   }),
-  integrations: [
-    tailwind()
-  ],
   server: {
     host: '0.0.0.0',
     port: 3000,
   },
   vite: {
+    plugins: [
+      tailwindcss(),
+    ],
     ssr: {
       external: ['fsevents']
     },
