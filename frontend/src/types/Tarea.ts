@@ -11,6 +11,10 @@ export interface Tarea {
   horas: string;
   que_falta?: string;
   proyecto_id: number;
+  mes?: number;
+  anio?: number;
+  usuario_colaborador_id?: number | null;
+  position?: number;
   dias?: Dia[];
   creado_en?: string;
   actualizado_en?: string;

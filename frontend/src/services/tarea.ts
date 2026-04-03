@@ -101,4 +101,11 @@ export class TareaService extends ApiService {
       { horas }
     );
   }
+
+  /**
+   * Reordena tareas dentro de un mismo grupo lógico
+   */
+  static async reorderTareas(items: Array<{ id: number; position: number }>): Promise<Tarea[]> {
+    return this.patch('/api/tareas/reorder', { items });
+  }
 }

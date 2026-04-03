@@ -117,10 +117,30 @@ export class ConfigDrawerHandler {
         private loadTimeData(): void {
           if (!this.proyecto) return;
 
+          const esColaborativo = this.proyecto.tipo_proyecto === 'colaborativo';
+
           const horasRealesCheck = document.getElementById("horas_reales_activas") as HTMLInputElement;
           const modoHorariosSelect = document.getElementById("modo_horarios") as HTMLSelectElement;
 
-          if (horasRealesCheck) horasRealesCheck.checked = this.proyecto.horas_reales_activas || false;
+          if (horasRealesCheck) {
+            horasRealesCheck.checked = this.proyecto.horas_reales_activas || false;
+            // En proyectos colaborativos, horas_reales se configura por colaborador
+            // desde la vista de colaboradores, no globalmente desde aquí
+            if (esColaborativo) {
+              horasRealesCheck.disabled = true;
+              const settingInfo = horasRealesCheck.closest('.setting-item')?.querySelector('.setting-info');
+              if (settingInfo) {
+                const note = settingInfo.querySelector('.collab-note');
+                if (!note) {
+                  const noteEl = document.createElement('small');
+                  noteEl.className = 'collab-note';
+                  noteEl.style.color = '#6366f1';
+                  noteEl.textContent = '⚙️ En proyectos colaborativos se configura por colaborador desde la vista de colaboradores';
+                  settingInfo.appendChild(noteEl);
+                }
+              }
+            }
+          }
           if (modoHorariosSelect) modoHorariosSelect.value = this.proyecto.modo_horarios || "";
 
           const inicioInput = document.getElementById("horario_inicio") as HTMLInputElement;
@@ -363,10 +383,17 @@ export class ConfigDrawerHandler {
             const modoHorariosSelect = document.getElementById("modo_horarios") as HTMLSelectElement;
 
             const modo = modoHorariosSelect?.value || "";
+            const esColaborativo = this.proyecto?.tipo_proyecto === 'colaborativo';
+
             const data: any = {
-              horas_reales_activas: horasRealesCheck?.checked || false,
               modo_horarios: modo || null,
             };
+
+            // En proyectos colaborativos, horas_reales_activas es por-colaborador,
+            // no se actualiza globalmente desde aquí
+            if (!esColaborativo) {
+              data.horas_reales_activas = horasRealesCheck?.checked || false;
+            }
 
             if (modo === "corrido") {
               const inicioInput = document.getElementById("horario_inicio") as HTMLInputElement;
@@ -390,7 +417,7 @@ export class ConfigDrawerHandler {
             AlertUtils.success("✅ Guardado", "Configuración de horarios actualizada");
 
             if (this.proyecto) {
-              this.proyecto.horas_reales_activas = data.horas_reales_activas;
+              if (!esColaborativo) this.proyecto.horas_reales_activas = data.horas_reales_activas;
               this.proyecto.modo_horarios = data.modo_horarios;
               if (data.horario_inicio !== undefined) this.proyecto.horario_inicio = data.horario_inicio;
               if (data.horario_fin !== undefined) this.proyecto.horario_fin = data.horario_fin;

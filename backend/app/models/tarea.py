@@ -13,6 +13,7 @@ class Tarea(db.Model):
     mes = db.Column(db.Integer, nullable=False)
     anio = db.Column(db.Integer, nullable=False)
     usuario_colaborador_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)  # Para proyectos colaborativos
+    position = db.Column(db.Integer, nullable=False, default=0)
 
     proyecto = db.relationship("Proyecto", back_populates="tareas")
     dias = db.relationship("Dia", secondary=tarea_dia, back_populates="tareas")
@@ -29,6 +30,8 @@ class Tarea(db.Model):
             'proyecto_id': self.proyecto_id,
             'mes': self.mes,
             'anio': self.anio,
+            'usuario_colaborador_id': self.usuario_colaborador_id,
+            'position': self.position,
             'dias': [dia.to_dict() for dia in self.dias],
         }
         

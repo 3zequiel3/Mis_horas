@@ -108,7 +108,8 @@ def create_tarea(context):
         que_falta=data.get('que_falta', ''),
         dias_ids=dias_ids,
         usuario_id=context['user_id'],
-        usuario_colaborador_id=usuario_colaborador_id
+        usuario_colaborador_id=usuario_colaborador_id,
+        position=data.get('position')
     )
     
     return jsonify(tarea.to_dict(incluir_desglose_empleados=True)), 201
@@ -161,6 +162,58 @@ def delete_tarea(context, tarea_id):
         return jsonify({'error': 'Tarea no encontrada'}), 404
     
     return jsonify({'message': 'Tarea eliminada'}), 200
+
+@tarea_bp.route('/reorder', methods=['PATCH'])
+@organization_required
+def reorder_tareas(context):
+    """Reordena tareas en batch dentro de un mismo grupo lógico"""
+    data = request.get_json()
+    items = data if isinstance(data, list) else (data or {}).get('items')
+
+    if not isinstance(items, list) or len(items) == 0:
+        return jsonify({'error': 'Payload inválido. Envia una lista de items con id y position'}), 400
+
+    first_id = items[0].get('id') if isinstance(items[0], dict) else None
+    if not first_id:
+        return jsonify({'error': 'Payload inválido. El primer item debe incluir id'}), 400
+
+    tarea = TareaService.obtener_tarea_por_id(first_id)
+    if not tarea:
+        return jsonify({'error': 'Tarea no encontrada'}), 404
+
+    proyecto = ProyectoService.obtener_proyecto_por_id(tarea.proyecto_id)
+    if not proyecto:
+        return jsonify({'error': 'Proyecto no encontrado'}), 404
+
+    # Verificar acceso: admin, empleado o colaborador cross-org
+    es_admin = proyecto.usuario_id == context['user_id']
+    es_empleado = Empleado.query.filter_by(
+        proyecto_id=proyecto.id,
+        usuario_id=context['user_id']
+    ).first() is not None
+
+    es_colaborador = ProyectoColaborador.query.filter_by(
+        proyecto_id=proyecto.id,
+        usuario_id=context['user_id'],
+        estado='aceptado'
+    ).first() is not None
+
+    # Validar acceso según organización
+    if proyecto.organization_id == context['organization_id']:
+        if not (es_admin or es_empleado or es_colaborador):
+            return jsonify({'error': 'No tienes acceso a este proyecto'}), 403
+    else:
+        if not es_colaborador:
+            return jsonify({'error': 'No tienes acceso a este proyecto'}), 403
+
+    try:
+        tareas = TareaService.reordenar_tareas(items)
+    except LookupError as exc:
+        return jsonify({'error': str(exc)}), 404
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 400
+
+    return jsonify([t.to_dict(incluir_desglose_empleados=True) for t in tareas]), 200
 
 @tarea_bp.route('/<int:tarea_id>/dia/<int:dia_id>/horas', methods=['PATCH'])
 @organization_required

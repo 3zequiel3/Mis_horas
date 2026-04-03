@@ -2,7 +2,7 @@
  * Proyecto Details Page Handlers - Lógica separada del .astro
  */
 
-import type { Proyecto, Dia, Usuario } from '../types';
+import type { Proyecto, Dia, Usuario, Tarea } from '../types';
 import { ProyectosService } from '../services/proyectos';
 import { DiaService } from '../services/dia';
 import { TareaService } from '../services/tarea';
@@ -656,10 +656,54 @@ function renderTareaItem(tarea: any): string {
 
   return `
     <div class="tarea-item" data-tarea-id="${tarea.id}">
-      <h4>${tarea.titulo}</h4>
-      <small>${horasAMostrar} horas</small>
+      <div class="tarea-item-main">
+        <h4>${tarea.titulo}</h4>
+        <small>${horasAMostrar} horas</small>
+      </div>
+      <div class="tarea-order-actions">
+        <button class="tarea-order-btn" data-action="up" data-tarea-id="${tarea.id}" aria-label="Subir tarea" title="Subir">↑</button>
+        <button class="tarea-order-btn" data-action="down" data-tarea-id="${tarea.id}" aria-label="Bajar tarea" title="Bajar">↓</button>
+      </div>
     </div>
   `;
+}
+
+function getTareaGroupKey(tarea: Tarea): string {
+  const usuarioColaboradorId = tarea.usuario_colaborador_id ?? 'null';
+  const mes = tarea.mes ?? 'null';
+  const anio = tarea.anio ?? 'null';
+  return `${tarea.proyecto_id}-${mes}-${anio}-${usuarioColaboradorId}`;
+}
+
+async function reorderTarea(tareaId: number, direction: -1 | 1): Promise<void> {
+  const tareaActual = state.tareasActuales.find((t) => t.id === tareaId) as Tarea | undefined;
+  if (!tareaActual) return;
+
+  const groupKey = getTareaGroupKey(tareaActual);
+  const tareasGrupo = state.tareasActuales.filter((t) => getTareaGroupKey(t) === groupKey) as Tarea[];
+  const indexActual = tareasGrupo.findIndex((t) => t.id === tareaId);
+  const indexDestino = indexActual + direction;
+
+  if (indexActual < 0 || indexDestino < 0 || indexDestino >= tareasGrupo.length) {
+    return;
+  }
+
+  const copia = [...tareasGrupo];
+  const [movida] = copia.splice(indexActual, 1);
+  copia.splice(indexDestino, 0, movida);
+
+  const payload = copia.map((t, index) => ({
+    id: t.id,
+    position: index + 1
+  }));
+
+  try {
+    await TareaService.reorderTareas(payload);
+    await loadTareas();
+  } catch (error) {
+    console.error('Error reordenando tareas:', error);
+    showErrorModal('Error', 'No se pudo guardar el nuevo orden de tareas');
+  }
 }
 
 /**
@@ -995,6 +1039,20 @@ function attachTareaListeners(): void {
         const event = new CustomEvent('edit-tarea', { detail: { tarea } });
         document.dispatchEvent(event);
       }
+    });
+  });
+
+  listEl.querySelectorAll('.tarea-order-btn').forEach((button) => {
+    button.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+
+      const target = event.currentTarget as HTMLElement;
+      const tareaId = parseInt(target.getAttribute('data-tarea-id') || '0', 10);
+      const action = target.getAttribute('data-action');
+      if (!tareaId || !action) return;
+
+      await reorderTarea(tareaId, action === 'up' ? -1 : 1);
     });
   });
 }

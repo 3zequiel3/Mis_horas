@@ -52,7 +52,13 @@ export async function generatePDFFromTemplate(
 
     // Lógica original para proyectos no colaborativos
     // Preparar datos de tareas con días asociados
-    const tareasConDias = tareas.map((tarea) => {
+    const tareasOrdenadas = [...tareas].sort((a, b) => {
+      const positionA = a.position && a.position > 0 ? a.position : Number.MAX_SAFE_INTEGER;
+      const positionB = b.position && b.position > 0 ? b.position : Number.MAX_SAFE_INTEGER;
+      return positionA - positionB || a.id - b.id;
+    });
+
+    const tareasConDias = tareasOrdenadas.map((tarea) => {
       const diasTarea = tarea.dias || [];
       const diasAsociados = diasTarea.length > 0
         ? diasTarea.map((d) => new Date(d.fecha).getDate()).join(', ')
@@ -228,6 +234,11 @@ async function generateColaborativoPDF(
     for (let i = 0; i < colaboradores.length; i++) {
       const colaborador = colaboradores[i];
       const tareas = colaborador.tareas || [];
+      const tareasOrdenadas = [...tareas].sort((a: any, b: any) => {
+        const positionA = a.position && a.position > 0 ? a.position : Number.MAX_SAFE_INTEGER;
+        const positionB = b.position && b.position > 0 ? b.position : Number.MAX_SAFE_INTEGER;
+        return positionA - positionB || (a.id || 0) - (b.id || 0);
+      });
 
       // Cada colaborador empieza en página nueva, excepto el primero
       // que continúa en la misma página del encabezado del proyecto
@@ -250,7 +261,7 @@ async function generateColaborativoPDF(
       currentY = drawColaboradorNombre(currentY, colaborador.nombre);
 
       // Preparar datos de tareas del colaborador
-      const tareasConDias = tareas.map((tarea: any) => {
+      const tareasConDias = tareasOrdenadas.map((tarea: any) => {
         const diasTarea = tarea.dias || [];
         // Parsear fecha directamente del string para evitar desfase de timezone (UTC vs local)
         const diasAsociados = diasTarea.length > 0
@@ -277,7 +288,7 @@ async function generateColaborativoPDF(
       const minutosTotal = Math.round((totalHoras - horasTotal) * 60);
       const totalFormateado = `${horasTotal}:${minutosTotal.toString().padStart(2, '0')}`;
 
-      if (tareas.length === 0) {
+      if (tareasOrdenadas.length === 0) {
         // Si no tiene tareas, mostrar mensaje
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');

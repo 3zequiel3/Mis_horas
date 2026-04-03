@@ -768,7 +768,7 @@ const pageTitle = 'Tablero de Proyecto';
         const rows = tareas.map(tarea => {
           const diasTarea = tarea.dias || [];
           const diasAsociados = diasTarea.length > 0
-            ? diasTarea.map(d => new Date(d.fecha).getDate()).join('; ')
+            ? diasTarea.map((d: { fecha: string }) => new Date(d.fecha).getDate()).join('; ')
             : '-';
           
           return [
@@ -829,10 +829,17 @@ const pageTitle = 'Tablero de Proyecto';
     }
   });
 
-  // Botón de Configuración - Abrir drawer
+  // Botón de Configuración - Abrir drawer (solo para owners)
   document.getElementById('config-btn')?.addEventListener('click', async () => {
     const proyecto = proyectoHandlers.state.proyectoActual;
+    const usuarioActual = proyectoHandlers.state.usuarioActual;
     if (proyecto) {
+      // En proyectos colaborativos, solo el owner puede abrir configuración
+      if (proyecto.tipo_proyecto === 'colaborativo' && usuarioActual && proyecto.usuario_id !== usuarioActual.id) {
+        const { AlertUtils } = await import('../../utils/swal');
+        await AlertUtils.error('Sin acceso', 'Solo el dueño del proyecto puede modificar la configuración');
+        return;
+      }
       const { ConfigDrawerHandler } = await import('../../handlers/config-drawer');
       const drawer = new ConfigDrawerHandler(proyecto.id);
       await drawer.open();
@@ -872,7 +879,14 @@ const pageTitle = 'Tablero de Proyecto';
   // Inicializar al cargar la página
   proyectoHandlers.loadProyecto().then(async () => {
     const proyecto = proyectoHandlers.state.proyectoActual;
+    const usuarioActual = proyectoHandlers.state.usuarioActual;
     if (proyecto) {
+      // Ocultar botón de configuración si el usuario no es owner del proyecto colaborativo
+      if (proyecto.tipo_proyecto === 'colaborativo' && usuarioActual && proyecto.usuario_id !== usuarioActual.id) {
+        const configBtn = document.getElementById('config-btn');
+        if (configBtn) configBtn.style.display = 'none';
+      }
+
       // Cargar meses
       await MesesHandler.loadMeses(proyecto.id);
       // Renderizar meses marcando el mes del proyecto como seleccionado

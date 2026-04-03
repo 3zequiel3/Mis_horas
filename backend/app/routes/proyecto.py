@@ -250,6 +250,21 @@ def update_configuracion(context, proyecto_id):
     if not proyecto:
         return jsonify({'error': 'Proyecto no encontrado'}), 404
     
+    # Verificar permisos: solo el dueño puede actualizar la configuración
+    if proyecto.tipo_proyecto == 'colaborativo':
+        from app.models.proyecto_colaborador import ProyectoColaborador
+        es_owner = ProyectoColaborador.query.filter_by(
+            proyecto_id=proyecto_id,
+            usuario_id=context['user_id'],
+            rol='owner',
+            estado='aceptado'
+        ).first() is not None
+        if not es_owner:
+            return jsonify({'error': 'Solo el dueño del proyecto puede actualizar la configuración'}), 403
+    else:
+        if proyecto.usuario_id != context['user_id']:
+            return jsonify({'error': 'Solo el dueño del proyecto puede actualizar la configuración'}), 403
+    
     from app import db
     from datetime import datetime
     

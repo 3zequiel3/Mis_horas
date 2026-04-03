@@ -2,15 +2,58 @@ from app import db
 from app.models.tarea import Tarea
 from app.models.dia import Dia, tarea_dia
 from app.models.usuario import Usuario
-from sqlalchemy import func
+from sqlalchemy import func, case
 from app.utils.formatters import horas_a_formato
 
 class TareaService:
     @staticmethod
+    def _filtro_grupo_tareas(query, proyecto_id: int, mes: int, anio: int, usuario_colaborador_id: int = None):
+        """Aplica filtro por grupo lógico de tareas."""
+        query = query.filter(
+            Tarea.proyecto_id == proyecto_id,
+            Tarea.mes == mes,
+            Tarea.anio == anio
+        )
+
+        if usuario_colaborador_id is None:
+            query = query.filter(Tarea.usuario_colaborador_id.is_(None))
+        else:
+            query = query.filter(Tarea.usuario_colaborador_id == usuario_colaborador_id)
+
+        return query
+
+    @staticmethod
+    def _obtener_siguiente_position(proyecto_id: int, mes: int, anio: int, usuario_colaborador_id: int = None) -> int:
+        """Obtiene la siguiente posición disponible dentro del grupo lógico."""
+        query = db.session.query(func.max(Tarea.position))
+        query = TareaService._filtro_grupo_tareas(query, proyecto_id, mes, anio, usuario_colaborador_id)
+        max_position = query.scalar()
+        return (max_position or 0) + 1
+
+    @staticmethod
     def crear_tarea(proyecto_id: int, titulo: str, mes: int, anio: int, detalle: str = "", 
-                   que_falta: str = "", dias_ids: list = None, usuario_id: int = None, usuario_colaborador_id: int = None):
+                   que_falta: str = "", dias_ids: list = None, usuario_id: int = None,
+                   usuario_colaborador_id: int = None, position: int = None):
         """Crea una nueva tarea"""
         from app.models.proyecto import Proyecto
+
+        if position is None:
+            # Compatibilidad legacy: nuevas tareas quedan sin orden manual explícito.
+            position_final = 0
+        else:
+            position_final = max(1, int(position))
+            tareas_a_mover = db.session.query(Tarea)
+            tareas_a_mover = TareaService._filtro_grupo_tareas(
+                tareas_a_mover,
+                proyecto_id,
+                mes,
+                anio,
+                usuario_colaborador_id
+            ).filter(Tarea.position >= position_final)
+            tareas_a_mover.update(
+                {Tarea.position: Tarea.position + 1},
+                synchronize_session=False
+            )
         
         tarea = Tarea(
             titulo=titulo,
@@ -20,7 +63,8 @@ class TareaService:
             mes=mes,
             anio=anio,
             horas="00:00",  # Inicializar con 00:00
-            usuario_colaborador_id=usuario_colaborador_id
+            usuario_colaborador_id=usuario_colaborador_id,
+            position=position_final
         )
         
         if dias_ids:
@@ -85,7 +129,82 @@ class TareaService:
             else:
                 query = query.filter(Tarea.usuario_colaborador_id == usuario_colaborador_id)
         
-        return query.all()
+        # Si position <= 0, cae a orden histórico por id (legacy sin orden manual).
+        return query.order_by(
+            case((Tarea.position > 0, 0), else_=1),
+            Tarea.position.asc(),
+            Tarea.id.asc()
+        ).all()
+
+    @staticmethod
+    def reordenar_tareas(items: list):
+        """Reordena tareas en batch dentro del mismo grupo lógico y normaliza a 1..N."""
+        if not items:
+            raise ValueError('Debes enviar al menos una tarea para reordenar')
+
+        ids = [item.get('id') for item in items if isinstance(item, dict)]
+        if len(ids) != len(items) or any(tarea_id is None for tarea_id in ids):
+            raise ValueError('Cada item debe incluir id y position')
+
+        if len(set(ids)) != len(ids):
+            raise ValueError('No se permiten IDs duplicados en el payload')
+
+        tareas_payload = Tarea.query.filter(Tarea.id.in_(ids)).all()
+        if len(tareas_payload) != len(ids):
+            raise LookupError('Una o más tareas no existen')
+
+        primera = tareas_payload[0]
+        grupo = {
+            'proyecto_id': primera.proyecto_id,
+            'mes': primera.mes,
+            'anio': primera.anio,
+            'usuario_colaborador_id': primera.usuario_colaborador_id
+        }
+
+        for tarea in tareas_payload:
+            if (
+                tarea.proyecto_id != grupo['proyecto_id'] or
+                tarea.mes != grupo['mes'] or
+                tarea.anio != grupo['anio'] or
+                tarea.usuario_colaborador_id != grupo['usuario_colaborador_id']
+            ):
+                raise ValueError('Todas las tareas deben pertenecer al mismo grupo lógico')
+
+        query_grupo = Tarea.query
+        query_grupo = TareaService._filtro_grupo_tareas(
+            query_grupo,
+            grupo['proyecto_id'],
+            grupo['mes'],
+            grupo['anio'],
+            grupo['usuario_colaborador_id']
+        )
+        tareas_grupo = query_grupo.all()
+
+        if len(tareas_grupo) != len(ids):
+            raise ValueError('Debes enviar todas las tareas del grupo para reordenar de forma consistente')
+
+        tareas_por_id = {t.id: t for t in tareas_grupo}
+        posiciones_payload = {}
+        for item in items:
+            try:
+                pos = int(item.get('position'))
+            except (TypeError, ValueError):
+                raise ValueError('Cada item debe incluir position numérica')
+            if pos < 1:
+                raise ValueError('Las posiciones deben ser mayores o iguales a 1')
+            posiciones_payload[int(item['id'])] = pos
+
+        ids_ordenados = sorted(
+            posiciones_payload.keys(),
+            key=lambda tarea_id: (posiciones_payload[tarea_id], tarea_id)
+        )
+
+        for idx, tarea_id in enumerate(ids_ordenados, start=1):
+            tareas_por_id[tarea_id].position = idx
+
+        db.session.commit()
+
+        return sorted(tareas_grupo, key=lambda tarea: (tarea.position, tarea.id))
     
     @staticmethod
     def obtener_tarea_por_id(tarea_id: int):

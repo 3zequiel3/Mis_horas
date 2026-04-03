@@ -47,7 +47,7 @@ def create_app():
          supports_credentials=True,
          allow_headers=["Content-Type", "Authorization", "X-Organization-ID"],
          expose_headers=["X-Organization-ID"],
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
     
     # Registrar blueprints
     from app.routes import auth_bp, proyecto_bp, tarea_bp, dia_bp, usuario_bp, empleado_bp
