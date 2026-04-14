@@ -8,6 +8,8 @@ import type {
   ApprovePeriodRequest,
   RejectPeriodRequest,
   ReopenPeriodRequest,
+  ApprovalHistory,
+  PeriodActionResponse,
 } from '../types/approval';
 
 export const approvalService = {
@@ -57,61 +59,46 @@ export const approvalService = {
   /**
    * Aprueba un período de tiempo
    */
-  async approvePeriod(periodId: number, data: ApprovePeriodRequest = {}): Promise<TimePeriod> {
-    const result = await apiFetch<{ period: TimePeriod }>(
+  async approvePeriod(periodId: number, data: ApprovePeriodRequest = {}): Promise<PeriodActionResponse> {
+    return apiFetch<PeriodActionResponse>(
       `${API_ENDPOINTS.APPROVALS}/periods/${periodId}/approve`,
       {
         method: 'POST',
         body: JSON.stringify(data),
       }
     );
-    
-    if (!result.period) {
-      throw new Error('Error al aprobar período');
-    }
-    return result.period;
   },
 
   /**
    * Rechaza un período de tiempo
    */
-  async rejectPeriod(periodId: number, data: RejectPeriodRequest): Promise<TimePeriod> {
-    const result = await apiFetch<{ period: TimePeriod }>(
+  async rejectPeriod(periodId: number, data: RejectPeriodRequest): Promise<PeriodActionResponse> {
+    return apiFetch<PeriodActionResponse>(
       `${API_ENDPOINTS.APPROVALS}/periods/${periodId}/reject`,
       {
         method: 'POST',
         body: JSON.stringify(data),
       }
     );
-    
-    if (!result.period) {
-      throw new Error('Error al rechazar período');
-    }
-    return result.period;
   },
 
   /**
    * Reabre un período de tiempo cerrado
    */
-  async reopenPeriod(periodId: number, data: ReopenPeriodRequest): Promise<TimePeriod> {
-    const result = await apiFetch<{ period: TimePeriod }>(
+  async reopenPeriod(periodId: number, data: ReopenPeriodRequest): Promise<PeriodActionResponse> {
+    return apiFetch<PeriodActionResponse>(
       `${API_ENDPOINTS.APPROVALS}/periods/${periodId}/reopen`,
       {
         method: 'POST',
         body: JSON.stringify(data),
       }
     );
-    
-    if (!result.period) {
-      throw new Error('Error al reabrir período');
-    }
-    return result.period;
   },
 
   /**
    * Obtiene el historial de cambios de estado de un período
    */
-  async getPeriodHistory(empleadoId: number, anio: number, mes: number): Promise<any[]> {
+  async getPeriodHistory(empleadoId: number, anio: number, mes: number): Promise<ApprovalHistory[]> {
     const params = new URLSearchParams();
     params.append('empleado_id', empleadoId.toString());
     params.append('anio', anio.toString());
@@ -120,7 +107,7 @@ export const approvalService = {
     const queryString = params.toString();
     const url = `${API_ENDPOINTS.APPROVALS}/history?${queryString}`;
     
-    const result = await apiFetch<{ history: any[] }>(url);
+    const result = await apiFetch<{ history: ApprovalHistory[] }>(url);
     return result.history || [];
   }
 };

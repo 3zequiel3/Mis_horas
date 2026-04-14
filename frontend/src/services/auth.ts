@@ -29,9 +29,27 @@ export class AuthService {
   private static readonly TOKEN_PERSIST = 'auth_token_persist';  // localStorage (persiste 30 días)
   private static readonly USER_STORAGE = 'user';
   private static readonly REMEMBER_ME_FLAG = 'remember_me_enabled';
+  private static readonly AUTH_SYNC_EVENT = 'auth_sync_event';
+
+  private static broadcastAuthEvent(action: 'login' | 'logout'): void {
+    if (!isClient()) return;
+
+    try {
+      localStorage.setItem(
+        this.AUTH_SYNC_EVENT,
+        JSON.stringify({ action, ts: Date.now() })
+      );
+    } catch {
+      // Ignorar errores de storage para no cortar flujo de auth
+    }
+
+    window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { action } }));
+  }
 
   static setToken(token: string, rememberMe: boolean = false): void {
     if (!isClient()) return;
+
+    const useSecureCookie = window.location.protocol === 'https:';
 
     if (rememberMe) {
       // Guardar en localStorage con cookie de 30 días
@@ -45,7 +63,7 @@ export class AuthService {
       this.setCookie('auth_token', token, {
         maxAge: REMEMBER_ME_DURATION,
         path: '/',
-        secure: false, // Cambiar a true en producción con HTTPS
+        secure: useSecureCookie,
         sameSite: 'Lax',
       });
     } else {
@@ -61,10 +79,12 @@ export class AuthService {
       // La cookie expira cuando se cierra el navegador (sin maxAge)
       this.setCookie('auth_token', token, {
         path: '/',
-        secure: false, // Cambiar a true en producción con HTTPS
+        secure: useSecureCookie,
         sameSite: 'Lax',
       });
     }
+
+    this.broadcastAuthEvent('login');
   }
 
   private static setCookie(name: string, value: string, options?: { maxAge?: number; path?: string; secure?: boolean; sameSite?: string }): void {
@@ -158,6 +178,8 @@ export class AuthService {
 
     // IMPORTANTE: Eliminar la cookie para el middleware
     this.removeCookie('auth_token', '/');
+
+    this.broadcastAuthEvent('logout');
   }
 
   static isAuthenticated(): boolean {

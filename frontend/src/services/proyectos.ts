@@ -1,4 +1,4 @@
-import type { Proyecto, CreateProyectoRequest, Estadisticas } from '../types';
+import type { Proyecto, CreateProyectoRequest, Estadisticas, ExportColaboradoresResponse } from '../types';
 import { ApiService } from './api';
 
 /**
@@ -88,12 +88,12 @@ export class ProyectosService extends ApiService {
    * Obtiene datos de todos los colaboradores para exportación (PDF/CSV)
    * Solo para proyectos colaborativos
    */
-  static async getExportColaboradores(proyectoId: number, mes?: number, anio?: number): Promise<any> {
+  static async getExportColaboradores(proyectoId: number, mes?: number, anio?: number): Promise<ExportColaboradoresResponse> {
     let url = `/api/proyectos/${proyectoId}/export-colaboradores`;
     const params = new URLSearchParams();
     if (mes !== undefined) params.append('mes', mes.toString());
     if (anio !== undefined) params.append('anio', anio.toString());
     if (params.toString()) url += `?${params.toString()}`;
-    return this.get(url);
+    return this.get<ExportColaboradoresResponse>(url);
   }
 }

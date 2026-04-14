@@ -37,7 +37,7 @@ export class ApiService {
     });
 
     if (!response.ok) {
-      throw this.handleError(response);
+      throw await this.handleError(response);
     }
 
     return response.json();
@@ -58,7 +58,7 @@ export class ApiService {
     });
 
     if (!response.ok) {
-      throw this.handleError(response);
+      throw await this.handleError(response);
     }
 
     return response.json();
@@ -79,7 +79,7 @@ export class ApiService {
     });
 
     if (!response.ok) {
-      throw this.handleError(response);
+      throw await this.handleError(response);
     }
 
     return response.json();
@@ -100,7 +100,7 @@ export class ApiService {
     });
 
     if (!response.ok) {
-      throw this.handleError(response);
+      throw await this.handleError(response);
     }
 
     return response.json();
@@ -117,7 +117,7 @@ export class ApiService {
     });
 
     if (!response.ok) {
-      throw this.handleError(response);
+      throw await this.handleError(response);
     }
 
     return response.json();
@@ -126,7 +126,7 @@ export class ApiService {
   /**
    * Maneja errores de respuesta HTTP
    */
-  private static handleError(response: Response): Error {
+  private static async handleError(response: Response): Promise<Error> {
     const status = response.status;
 
     const errorMessages: Record<number, string> = {
@@ -134,10 +134,31 @@ export class ApiService {
       401: 'No autenticado',
       403: 'No autorizado',
       404: 'Recurso no encontrado',
+      422: 'Error de validación',
       500: 'Error del servidor',
     };
 
-    const message = errorMessages[status] || `Error HTTP ${status}`;
+    let message = errorMessages[status] || `Error HTTP ${status}`;
+
+    // Priorizar detalle de validación del backend (Pydantic/FastAPI style)
+    if (status === 422) {
+      try {
+        const errorData = await response.clone().json();
+        const detail = errorData?.detail;
+
+        if (Array.isArray(detail) && detail.length > 0) {
+          const first = detail[0];
+          const field = Array.isArray(first?.loc) ? first.loc.join('.') : 'campo';
+          const detailMessage = first?.msg || 'valor inválido';
+          message = `${field}: ${detailMessage}`;
+        } else if (typeof detail === 'string') {
+          message = detail;
+        }
+      } catch {
+        // Mantener mensaje base si no se puede parsear el body
+      }
+    }
+
     return new Error(message);
   }
 }
