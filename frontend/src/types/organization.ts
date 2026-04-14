@@ -47,6 +47,21 @@ export interface OrganizationInvitation {
   };
 }
 
+export interface OrganizationStats {
+  total_miembros: number;
+  total_proyectos: number;
+  proyectos_activos: number;
+  plan?: string;
+  limite_proyectos?: number | null;
+  limite_miembros?: number | null;
+}
+
+export interface InviteMemberResponse {
+  message: string;
+  membership: OrganizationMember;
+  es_nuevo_usuario: boolean;
+}
+
 export interface CreateOrganizationRequest {
   nombre: string;
   descripcion?: string;

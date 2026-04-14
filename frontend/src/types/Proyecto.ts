@@ -78,6 +78,20 @@ export interface CreateProyectoRequest {
   turno_manana_fin?: string;
   turno_tarde_inicio?: string;
   turno_tarde_fin?: string;
+  
+  // Phase 4: Campos de organización y finanzas
+  client_name?: string;
+  brand_color?: string;
+  modules_config?: {
+    budget?: boolean;
+    time_tracking?: boolean;
+    audit?: boolean;
+    approvals?: boolean;
+    public_view?: boolean;
+  };
+  budget_type?: 'none' | 'fixed_price' | 'hourly_retainer' | 'time_and_materials';
+  budget_base_amount?: number | null;
+  currency?: string;
 }
 
 export interface ProyectoView {
@@ -85,4 +99,27 @@ export interface ProyectoView {
   isActive: boolean;
   statusText: string;
   statusClass: string;
+}
+
+export interface ExportColaboradorData {
+  usuario_id: number;
+  nombre: string;
+  rol: string;
+  tareas: Array<Record<string, unknown>>;
+  dias: Array<Record<string, unknown>>;
+  estadisticas: {
+    total_horas?: number;
+    total_horas_reales?: number;
+    total_dias?: number;
+  };
+}
+
+export interface ExportColaboradoresResponse {
+  proyecto: {
+    id: number;
+    nombre: string;
+    mes: number;
+    anio: number;
+  };
+  colaboradores: ExportColaboradorData[];
 }

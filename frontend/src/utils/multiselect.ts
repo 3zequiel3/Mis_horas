@@ -16,7 +16,7 @@ export class MultiSelectTable {
   private table: HTMLElement | null;
   private selectedRows: Set<number> = new Set();
   private isSelectionMode: boolean = false;
-  private holdTimer: NodeJS.Timeout | null = null;
+  private holdTimer: ReturnType<typeof setTimeout> | null = null;
   private options: MultiselectOptions;
   private readonly HOLD_DURATION: number;
 

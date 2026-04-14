@@ -18,7 +18,9 @@ export type {
   ProyectoView,
   ModulesConfig,
   ConfiguracionAsistenciaProyecto,
-  BudgetData
+  BudgetData,
+  ExportColaboradoresResponse,
+  ExportColaboradorData
 } from './Proyecto';
 
 // Empleado

@@ -54,6 +54,29 @@ export interface TimePeriod {
   };
 }
 
+export interface ApprovalHistory {
+  id: number;
+  period_id: number;
+  empleado_id: number;
+  empleado_nombre?: string;
+  proyecto_id: number;
+  proyecto_nombre?: string;
+  anio: number;
+  mes: number;
+  action: string;
+  action_label: string;
+  timestamp: string;
+  performed_by_id?: number;
+  performed_by_email?: string;
+  performed_by_role?: string;
+  notes?: string;
+  severity: 'info' | 'warning' | 'critical';
+}
+
+export interface PeriodActionResponse {
+  message: string;
+}
+
 export interface SubmitPeriodRequest {
   // No requiere body, el ID viene en la URL
 }

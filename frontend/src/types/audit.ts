@@ -4,70 +4,70 @@
 
 export type AuditAction =
   // Organizaciones
-  | 'create_organization'
-  | 'update_organization'
-  | 'delete_organization'
-  | 'invite_member'
-  | 'remove_member'
-  | 'update_member_role'
+  | "create_organization"
+  | "update_organization"
+  | "delete_organization"
+  | "invite_member"
+  | "remove_member"
+  | "update_member_role"
   // Usuarios
-  | 'create_user'
-  | 'update_user'
-  | 'delete_user'
-  | 'change_password'
-  | 'login'
-  | 'logout'
-  | 'failed_login'
+  | "create_user"
+  | "update_user"
+  | "delete_user"
+  | "change_password"
+  | "login"
+  | "logout"
+  | "failed_login"
   // Proyectos
-  | 'create_project'
-  | 'update_project'
-  | 'delete_project'
-  | 'assign_employee'
-  | 'remove_employee'
+  | "create_project"
+  | "update_project"
+  | "delete_project"
+  | "assign_employee"
+  | "remove_employee"
   // Tiempo
-  | 'create_time_entry'
-  | 'update_time_entry'
-  | 'delete_time_entry'
-  | 'submit_timesheet'
-  | 'approve_timesheet'
-  | 'reject_timesheet'
-  | 'reopen_timesheet'
-  | 'lock_period'
+  | "create_time_entry"
+  | "update_time_entry"
+  | "delete_time_entry"
+  | "submit_timesheet"
+  | "approve_timesheet"
+  | "reject_timesheet"
+  | "reopen_timesheet"
+  | "lock_period"
   // Tareas
-  | 'create_task'
-  | 'update_task'
-  | 'delete_task'
-  | 'complete_task'
+  | "create_task"
+  | "update_task"
+  | "delete_task"
+  | "complete_task"
   // Empleados
-  | 'create_employee'
-  | 'update_employee'
-  | 'delete_employee'
-  | 'update_hourly_rate'
+  | "create_employee"
+  | "update_employee"
+  | "delete_employee"
+  | "update_hourly_rate"
   // Financiero
-  | 'view_financial_report'
-  | 'export_financial_data'
-  | 'update_budget'
+  | "view_financial_report"
+  | "export_financial_data"
+  | "update_budget"
   // Seguridad
-  | 'change_permissions'
-  | 'access_denied'
-  | 'security_alert'
+  | "change_permissions"
+  | "access_denied"
+  | "security_alert"
   // Sistema
-  | 'system_config'
-  | 'backup'
-  | 'restore';
+  | "system_config"
+  | "backup"
+  | "restore";
 
 export type AuditCategory =
-  | 'organization'
-  | 'user'
-  | 'project'
-  | 'time'
-  | 'task'
-  | 'employee'
-  | 'financial'
-  | 'security'
-  | 'system';
+  | "organization"
+  | "user"
+  | "project"
+  | "time"
+  | "task"
+  | "employee"
+  | "financial"
+  | "security"
+  | "system";
 
-export type AuditSeverity = 'info' | 'warning' | 'error' | 'critical';
+export type AuditSeverity = "info" | "warning" | "error" | "critical";
 
 export interface AuditLog {
   id: number;
@@ -86,6 +86,8 @@ export interface AuditLog {
   user_agent?: string;
   severity: AuditSeverity;
   created_at: string;
+  user_email?: string;
+  user_role?: string;
   user?: {
     id: number;
     nombre: string;

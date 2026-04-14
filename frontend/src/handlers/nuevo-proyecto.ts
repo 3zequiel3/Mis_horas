@@ -67,7 +67,8 @@ export const ProyectoFormHandler = {
       const modulesConfig = JSON.parse(modulesConfigStr);
 
       // FASE 4: Configuración financiera
-      const budgetType = (document.getElementById('budget_type') as HTMLInputElement)?.value || 'none';
+      const budgetTypeValue = (document.getElementById('budget_type') as HTMLInputElement)?.value || 'none';
+      const budgetType = budgetTypeValue as 'none' | 'fixed_price' | 'hourly_retainer' | 'time_and_materials';
       const budgetBaseAmountStr = (document.getElementById('budget_base_amount') as HTMLInputElement)?.value;
       const budgetBaseAmount = budgetBaseAmountStr ? parseFloat(budgetBaseAmountStr) : undefined;
       const currency = (document.getElementById('currency') as HTMLSelectElement)?.value || 'USD';

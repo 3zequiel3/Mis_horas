@@ -3,15 +3,22 @@
  * Configuración centralizada para todas las llamadas a la API
  */
 
+import { AuthService } from '../services/auth';
+import { $currentOrganizationId } from '../stores/organizationStore';
+
 // URL base de la API
 export const API_BASE_URL = import.meta.env.PUBLIC_API_BASE_URL || 'http://localhost:22000';
 
 // Endpoints principales
 export const API_ENDPOINTS = {
   // Auth
-  LOGIN: '/api/login',
-  REGISTER: '/api/register',
-  LOGOUT: '/api/logout',
+  LOGIN: '/api/auth/login',
+  REGISTER: '/api/auth/register',
+  LOGOUT: '/api/auth/logout',
+  // Deprecated aliases (kept for compatibility during migration)
+  LOGIN_LEGACY: '/api/login',
+  REGISTER_LEGACY: '/api/register',
+  LOGOUT_LEGACY: '/api/logout',
   
   // Usuarios
   USUARIOS: '/api/usuarios',
@@ -63,25 +70,14 @@ export const API_ENDPOINTS = {
  * Obtiene los headers de autenticación
  */
 export function getAuthHeaders(): HeadersInit {
-  let token: string | null = null;
+  const token = AuthService.getToken();
   let orgId: string | null = null;
-  
-  // IMPORTANTE: Buscar en sessionStorage Y localStorage (AuthService puede usar ambos)
-  if (typeof window !== 'undefined') {
-    // Buscar token en las keys que usa AuthService
-    // PRIMERO sessionStorage (sesión actual), LUEGO localStorage (remember me)
-    token = sessionStorage.getItem('auth_token_session') || 
-            localStorage.getItem('auth_token_persist') ||
-            localStorage.getItem('token'); // Mantener compatibilidad con código legacy
-    
+
+  const currentOrg = $currentOrganizationId.get();
+  if (currentOrg) {
+    orgId = String(currentOrg);
+  } else if (typeof window !== 'undefined') {
     orgId = localStorage.getItem('currentOrganizationId');
-    
-    console.log('[getAuthHeaders] Tokens encontrados:', {
-      session: !!sessionStorage.getItem('auth_token_session'),
-      persist: !!localStorage.getItem('auth_token_persist'),
-      legacy: !!localStorage.getItem('token'),
-      orgId: !!orgId
-    });
   }
   
   const headers: HeadersInit = {
@@ -90,14 +86,10 @@ export function getAuthHeaders(): HeadersInit {
   
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-  } else {
-    console.error('[getAuthHeaders] ⚠️ ERROR: No se encontró token en sessionStorage ni localStorage');
   }
   
   if (orgId) {
     headers['X-Organization-ID'] = orgId;
-  } else {
-    console.warn('[getAuthHeaders] ⚠️ No se encontró orgId');
   }
   
   return headers;
@@ -112,7 +104,23 @@ export async function handleApiResponse<T>(response: Response): Promise<T> {
     
     try {
       const errorData = await response.json();
-      errorMessage = errorData.message || errorData.error || errorMessage;
+
+      if (response.status === 422) {
+        const detail = errorData?.detail;
+
+        if (Array.isArray(detail) && detail.length > 0) {
+          const first = detail[0];
+          const field = Array.isArray(first?.loc) ? first.loc.join('.') : 'campo';
+          const detailMessage = first?.msg || 'valor inválido';
+          errorMessage = `${field}: ${detailMessage}`;
+        } else if (typeof detail === 'string') {
+          errorMessage = detail;
+        } else {
+          errorMessage = errorData.message || errorData.error || 'Error de validación';
+        }
+      } else {
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      }
     } catch (e) {
       // Si no se puede parsear el JSON, usar mensaje por defecto
       console.error('[handleApiResponse] No se pudo parsear error JSON:', e);
@@ -136,6 +144,7 @@ export async function apiFetch<T>(
   const url = `${API_BASE_URL}${endpoint}`;
   
   const config: RequestInit = {
+    credentials: 'include',
     ...options,
     headers: {
       ...getAuthHeaders(),
