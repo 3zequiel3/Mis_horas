@@ -2,7 +2,6 @@
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
     "ignoreDeprecations": "6.0",
-    "jsxImportSource": "astro",
     "strictNullChecks": true,
     "resolveJsonModule": true,
     "baseUrl": ".",
