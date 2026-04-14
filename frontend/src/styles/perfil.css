@@ -1,212 +1,6 @@
-.perfil-container {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: calc(100vh - 200px);
-  padding: 2rem 0;
-}
-
-.perfil-card {
-  background: var(--bg-primary);
-  border-radius: var(--border-radius);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  padding: 2.5rem;
-  width: 100%;
-  max-width: 700px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  position: relative;
-  overflow: hidden;
-}
-
-.perfil-card::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.1), transparent);
-  border-radius: 50%;
-}
-
-.card-header {
-  position: relative;
-  z-index: 1;
-  margin-bottom: 2rem;
-}
-
-.card-header h1 {
-  font-size: 2rem;
-  margin: 0 0 0.5rem 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 700;
-}
-
-.card-header p {
-  color: var(--text-secondary);
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-.perfil-content {
-  position: relative;
-  z-index: 1;
-}
-
-.section {
-  margin-bottom: 2.5rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.section:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-.section h2 {
-  font-size: 1.25rem;
-  margin: 0 0 1.5rem 0;
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: var(--text-primary);
-  font-weight: 500;
-  font-size: 0.95rem;
-}
-
-input[type='text'],
-input[type='email'],
-input[type='password'],
-.form-select {
-  width: 100%;
-  padding: 0.875rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
-  font-size: 1rem;
-  font-family: inherit;
-  transition: all 0.3s ease;
-}
-
-.form-select {
-  cursor: pointer;
-}
-
-.form-select option {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-}
-
-input[type='text']::placeholder,
-input[type='email']::placeholder,
-input[type='password']::placeholder {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-input[type='text']:focus,
-input[type='email']:focus,
-input[type='password']:focus,
-.form-select:focus {
-  outline: none;
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-input[type='text']:readonly {
-  background: rgba(255, 255, 255, 0.02);
-  cursor: not-allowed;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.config-item {
-  margin-bottom: 1.5rem;
-}
-
-.config-item label {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0;
-  cursor: pointer;
-}
-
-input[type='checkbox'] {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  accent-color: #667eea;
-}
-
-.help-text {
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  margin: 0.5rem 0 0 1.75rem;
-}
-
-.btn {
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  text-decoration: none;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.alert {
-  padding: 1rem;
-  border-radius: 8px;
-  margin-top: 1.5rem;
-  animation: slideIn 0.3s ease;
-}
-
-.alert-success {
-  background: rgba(76, 175, 80, 0.1);
-  border: 1px solid rgba(76, 175, 80, 0.3);
-  color: #4caf50;
-}
-
-.alert-error {
-  background: rgba(244, 67, 54, 0.1);
-  border: 1px solid rgba(244, 67, 54, 0.3);
-  color: #f44336;
-}
+/* ===========================
+   PERFIL STYLES
+   =========================== */
 
 @keyframes slideIn {
   from {
@@ -219,12 +13,206 @@ input[type='checkbox'] {
   }
 }
 
-@media (max-width: 640px) {
+@layer components {
+  .perfil-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: calc(100vh - 200px);
+    padding: 2rem 0;
+  }
+
   .perfil-card {
-    padding: 1.5rem;
+    background: var(--tf-bg-surface);
+    border-radius: var(--tf-radius-xl);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 700px;
+    border: 1px solid var(--tf-border);
+  }
+
+  .card-header {
+    margin-bottom: 2rem;
   }
 
   .card-header h1 {
-    font-size: 1.5rem;
+    font-size: 2rem;
+    margin: 0 0 0.5rem 0;
+    color: var(--tf-color-primary);
+    font-weight: 700;
+  }
+
+  .card-header p {
+    color: var(--tf-text-secondary);
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .perfil-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .section {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .section h2 {
+    font-size: 1.25rem;
+    margin: 0 0 1.5rem 0;
+    color: var(--tf-text-primary);
+    font-weight: 600;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--tf-text-primary);
+    font-weight: 500;
+    font-size: 0.95rem;
+  }
+
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  .form-select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius-md);
+    background: var(--tf-bg-input);
+    color: var(--tf-text-primary);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .form-select {
+    cursor: pointer;
+  }
+
+  .form-select option {
+    background: var(--tf-bg-surface);
+    color: var(--tf-text-primary);
+  }
+
+  input[type='text']::placeholder,
+  input[type='email']::placeholder,
+  input[type='password']::placeholder {
+    color: var(--tf-text-muted);
+  }
+
+  input[type='text']:focus,
+  input[type='email']:focus,
+  input[type='password']:focus,
+  .form-select:focus {
+    outline: none;
+    border-color: var(--tf-color-primary);
+    background: rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  input[type='text']:readonly {
+    background: rgba(255, 255, 255, 0.02);
+    cursor: not-allowed;
+    color: var(--tf-text-muted);
+  }
+
+  .config-item {
+    margin-bottom: 1.5rem;
+  }
+
+  .config-item label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0;
+    cursor: pointer;
+  }
+
+  input[type='checkbox'] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--tf-color-primary);
+  }
+
+  .help-text {
+    color: var(--tf-text-secondary);
+    font-size: 0.85rem;
+    margin: 0.5rem 0 0 1.75rem;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--tf-radius-md);
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--tf-color-primary);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: var(--tf-color-primary-hover);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+  }
+
+  .btn-secondary {
+    background: var(--tf-bg-input);
+    color: var(--tf-text-primary);
+    border: 1px solid var(--tf-border-hover);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .alert {
+    padding: 1rem;
+    border-radius: var(--tf-radius-md);
+    margin-top: 1.5rem;
+    animation: slideIn 0.3s ease;
+  }
+
+  .alert-success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: var(--tf-color-success);
+  }
+
+  .alert-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--tf-color-danger);
+  }
+
+  @media (max-width: 640px) {
+    .perfil-card {
+      padding: 1.5rem;
+    }
+
+    .card-header h1 {
+      font-size: 1.5rem;
+    }
   }
 }

@@ -1,254 +1,340 @@
 /* ===========================
    SIDEBAR MESES STYLES
+   Tailwind 4 — @layer components
    =========================== */
 
-.proyecto-wrapper {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 1.5rem;
-  align-items: start;
-}
+@layer components {
+  .proyecto-wrapper {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
 
-/* Sidebar */
-.meses-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  height: fit-content;
-  position: sticky;
-  top: 1rem;
-  max-height: calc(100vh - 2rem);
-  overflow-y: auto;
-  padding-right: 0.5rem;
-}
+  /* Sidebar */
+  .meses-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    height: fit-content;
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    padding-right: 0.5rem;
+  }
 
-.meses-sidebar::-webkit-scrollbar {
-  width: 6px;
-}
+  /* Sidebar Header */
+  .sidebar-header {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--tf-border);
+  }
 
-.meses-sidebar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-}
+  .sidebar-header h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.95rem;
+    color: var(--tf-text-primary);
+    font-weight: 700;
+  }
 
-.meses-sidebar::-webkit-scrollbar-thumb {
-  background: rgba(102, 126, 234, 0.3);
-  border-radius: 10px;
-}
+  .sidebar-header p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--tf-text-secondary);
+  }
 
-.meses-sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(102, 126, 234, 0.5);
-}
+  /* Meses List */
+  .meses-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
 
-/* Sidebar Header */
-.sidebar-header {
-  margin-bottom: 1.25rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(102, 126, 234, 0.2);
-}
+  .mes-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0.85rem;
+    background: var(--tf-bg-input);
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    color: var(--tf-text-primary);
+    font-weight: 500;
+  }
 
-.sidebar-header h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.95rem;
-  color: var(--text-primary);
-  font-weight: 700;
-}
+  .mes-item:hover {
+    background: rgba(102, 126, 234, 0.08);
+    border-color: rgba(102, 126, 234, 0.3);
+    transform: translateX(4px);
+  }
 
-.sidebar-header p {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
+  .mes-item.active {
+    background: rgba(102, 126, 234, 0.12);
+    border-color: var(--tf-color-primary);
+    border-left: 3px solid var(--tf-color-primary);
+    color: var(--tf-color-primary);
+    font-weight: 600;
+  }
 
-/* Meses List */
-.meses-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
+  .mes-item.active::before {
+    content: '✓';
+    display: inline-block;
+    margin-right: 0.5rem;
+    font-weight: 700;
+    color: var(--tf-color-primary);
+  }
 
-.mes-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 0.85rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  font-weight: 500;
-}
+  .mes-badge {
+    font-size: 0.75rem;
+    background: rgba(102, 126, 234, 0.15);
+    color: var(--tf-color-primary);
+    padding: 0.2rem 0.4rem;
+    border-radius: 10px;
+    font-weight: 600;
+  }
 
-.mes-item:hover {
-  background: rgba(102, 126, 234, 0.08);
-  border-color: rgba(102, 126, 234, 0.3);
-  transform: translateX(4px);
-}
+  .mes-item.active .mes-badge {
+    background: rgba(102, 126, 234, 0.3);
+  }
 
-.mes-item.active {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-  border-color: rgba(102, 126, 234, 0.5);
-  color: #667eea;
-  font-weight: 600;
-}
+  /* Add Mes Button */
+  .add-mes-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: var(--tf-radius-sm);
+    color: var(--tf-color-primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
 
-.mes-item.active::before {
-  content: '✓';
-  display: inline-block;
-  margin-right: 0.5rem;
-  font-weight: 700;
-  color: #667eea;
-}
+  .add-mes-btn:hover {
+    background: rgba(102, 126, 234, 0.15);
+    border-color: rgba(102, 126, 234, 0.5);
+  }
 
-.mes-badge {
-  font-size: 0.75rem;
-  background: rgba(102, 126, 234, 0.15);
-  color: #667eea;
-  padding: 0.2rem 0.4rem;
-  border-radius: 10px;
-  font-weight: 600;
-}
+  /* Modal para agregar mes */
+  .add-mes-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
 
-.mes-item.active .mes-badge {
-  background: rgba(102, 126, 234, 0.3);
-}
+  .add-mes-modal.show {
+    display: flex;
+  }
 
-/* Add Mes Button */
-.add-mes-btn {
-  width: 100%;
-  padding: 0.75rem;
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid rgba(102, 126, 234, 0.3);
-  border-radius: 6px;
-  color: #667eea;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-}
+  .add-mes-form {
+    background: var(--tf-bg-surface);
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius-lg);
+    padding: 2rem;
+    min-width: 320px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
 
-.add-mes-btn:hover {
-  background: rgba(102, 126, 234, 0.15);
-  border-color: rgba(102, 126, 234, 0.5);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-}
+  .add-mes-form h3 {
+    margin: 0 0 1.5rem 0;
+    color: var(--tf-text-primary);
+    font-size: 1.1rem;
+  }
 
-/* Modal para agregar mes */
-.add-mes-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
 
-.add-mes-modal.show {
-  display: flex;
-}
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--tf-text-primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
 
-.add-mes-form {
-  background: var(--bg-primary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 2rem;
-  min-width: 320px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
+  .form-group select,
+  .form-group input {
+    width: 100%;
+    padding: 0.7rem;
+    background: var(--tf-bg-input);
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius-sm);
+    color: var(--tf-text-primary);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+  }
 
-.add-mes-form h3 {
-  margin: 0 0 1.5rem 0;
-  color: var(--text-primary);
-  font-size: 1.1rem;
-}
+  .form-group select:focus,
+  .form-group input:focus {
+    outline: none;
+    background: rgba(102, 126, 234, 0.08);
+    border-color: var(--tf-color-primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
 
-.form-group {
-  margin-bottom: 1.25rem;
-}
+  .form-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
 
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
+  .form-actions button {
+    padding: 0.75rem;
+    border-radius: var(--tf-radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border: none;
+    font-size: 0.9rem;
+  }
 
-.form-group select,
-.form-group input {
-  width: 100%;
-  padding: 0.7rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 5px;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-}
+  .form-actions .btn-primary {
+    background: var(--tf-color-primary);
+    color: white;
+  }
 
-.form-group select:focus,
-.form-group input:focus {
-  outline: none;
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(102, 126, 234, 0.5);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
+  .form-actions .btn-primary:hover {
+    background: var(--tf-color-primary-hover);
+  }
 
-.form-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-}
+  .form-actions .btn-secondary {
+    background: var(--tf-bg-input);
+    color: var(--tf-text-primary);
+    border: 1px solid var(--tf-border-hover);
+  }
 
-.form-actions button {
-  padding: 0.75rem;
-  border-radius: 5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-  font-size: 0.9rem;
-}
+  .form-actions .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
 
-.form-actions .btn-primary {
-  background: #667eea;
-  color: white;
-}
+  .mes-info {
+    background: rgba(102, 126, 234, 0.08);
+    border-left: 3px solid var(--tf-color-primary);
+    padding: 0.75rem;
+    border-radius: var(--tf-radius-sm);
+    font-size: 0.8rem;
+    color: var(--tf-text-secondary);
+    margin-bottom: 1rem;
+  }
 
-.form-actions .btn-primary:hover {
-  background: #5568d3;
-}
+  /* ===========================
+     CARDS EN SIDEBAR
+     =========================== */
 
-.form-actions .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
+  .sidebar-card {
+    background: var(--tf-bg-elevated);
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius-lg);
+    padding: 1.25rem;
+  }
 
-.form-actions .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-}
+  /* Estilos de tareas-header, tareas-badge, y btn-small movidos a tareas.css */
 
-.mes-info {
-  background: rgba(102, 126, 234, 0.08);
-  border-left: 3px solid #667eea;
-  padding: 0.75rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-bottom: 1rem;
+  .tareas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+  }
+
+  .empty-tareas {
+    text-align: center;
+    padding: 2rem 0.5rem;
+    color: var(--tf-text-secondary);
+  }
+
+  .empty-tareas p {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .tarea-item {
+    background: var(--tf-bg-input);
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius-md);
+    padding: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .tarea-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(102, 126, 234, 0.3);
+    transform: translateX(2px);
+  }
+
+  .tarea-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .tarea-titulo {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--tf-text-primary);
+    flex: 1;
+    line-height: 1.3;
+  }
+
+  .tarea-horas {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--tf-color-success);
+    padding: 0.15rem 0.5rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .tarea-detalle {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.8rem;
+    color: var(--tf-text-secondary);
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .tarea-footer {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--tf-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .tarea-dias-count {
+    font-size: 0.75rem;
+    color: var(--tf-text-secondary);
+  }
 }
 
 /* Responsive */
@@ -281,121 +367,4 @@
     padding: 0.65rem 0.75rem;
     font-size: 0.85rem;
   }
-}
-
-/* ===========================
-   CARDS EN SIDEBAR
-   =========================== */
-
-.sidebar-card {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-  border: 1px solid rgba(102, 126, 234, 0.2);
-  border-radius: 12px;
-  padding: 1.25rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-/* Estilos de tareas-header, tareas-badge, y btn-small movidos a tareas.css */
-
-.tareas-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-height: 400px;
-  overflow-y: auto;
-  padding-right: 0.25rem;
-}
-
-.tareas-list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.tareas-list::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-}
-
-.tareas-list::-webkit-scrollbar-thumb {
-  background: rgba(102, 126, 234, 0.3);
-  border-radius: 10px;
-}
-
-.empty-tareas {
-  text-align: center;
-  padding: 2rem 0.5rem;
-  color: var(--text-secondary);
-}
-
-.empty-tareas p {
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-.tarea-item {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  padding: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tarea-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(102, 126, 234, 0.3);
-  transform: translateX(2px);
-}
-
-.tarea-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.tarea-titulo {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  flex: 1;
-  line-height: 1.3;
-}
-
-.tarea-horas {
-  background: rgba(67, 233, 123, 0.15);
-  color: #43e97b;
-  padding: 0.15rem 0.5rem;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.tarea-detalle {
-  margin: 0.5rem 0 0 0;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.tarea-footer {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.tarea-dias-count {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
 }

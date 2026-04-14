@@ -1,35 +1,37 @@
 /* Estilos para las vistas del proyecto (dashboard, auditoría, aprobaciones) */
 
-.project-view {
-  display: none;
-  width: 100%;
-  padding: 2rem;
-  min-height: calc(100vh - 90px);
-  animation: fadeInView 0.3s ease-in-out;
-}
-
-.project-view.active {
-  display: block;
-}
-
-@keyframes fadeInView {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+@layer components {
+  .project-view {
+    display: none;
+    width: 100%;
+    padding: 2rem;
+    min-height: calc(100vh - 90px);
+    animation: fadeInView 0.3s ease-in-out;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .project-view.active {
+    display: block;
   }
-}
 
-.project-view h2 {
-  font-size: 1.8rem;
-  margin-bottom: 1rem;
-  color: #667eea;
-}
+  @keyframes fadeInView {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
-.project-view p {
-  color: #9ca3af;
-  font-size: 1.1rem;
+  .project-view h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    color: var(--tf-color-primary);
+  }
+
+  .project-view p {
+    color: var(--tf-text-secondary);
+    font-size: 1.1rem;
+  }
 }

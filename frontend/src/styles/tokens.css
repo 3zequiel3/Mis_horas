@@ -1,0 +1,42 @@
+:root {
+  /* ── TimeFlow Design Tokens ── */
+  /* Source of truth for color system. All other styles reference these. */
+
+  /* Brand */
+  --tf-color-primary: #667eea;
+  --tf-color-primary-hover: #5a6fe0;
+  --tf-color-accent: #ff5757;
+  --tf-color-accent-hover: #ff6b6b;
+
+  /* Semantic */
+  --tf-color-success: #10b981;
+  --tf-color-danger: #ef4444;
+  --tf-color-warning: #f59e0b;
+  --tf-color-info: #3b82f6;
+
+  /* Surfaces (dark theme) */
+  --tf-bg-base: #0f1419;
+  --tf-bg-surface: #1a1a2e;
+  --tf-bg-elevated: #16213e;
+  --tf-bg-input: rgba(255, 255, 255, 0.05);
+
+  /* Text */
+  --tf-text-primary: #f1f5f9;
+  --tf-text-secondary: #94a3b8;
+  --tf-text-muted: #64748b;
+
+  /* Borders */
+  --tf-border: rgba(255, 255, 255, 0.1);
+  --tf-border-hover: rgba(255, 255, 255, 0.2);
+
+  /* Shadows */
+  --tf-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --tf-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --tf-shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+
+  /* Radii */
+  --tf-radius-sm: 6px;
+  --tf-radius-md: 8px;
+  --tf-radius-lg: 12px;
+  --tf-radius-xl: 16px;
+}

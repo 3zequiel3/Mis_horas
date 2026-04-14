@@ -1,37 +1,42 @@
-/* ===========================
-   TABLE STYLES
-   =========================== */
+@layer components {
+  /* ===========================
+     TABLE STYLES
+     =========================== */
 
-.table-container {
-  overflow-x: auto;
-}
+  .table-container {
+    overflow-x: auto;
+  }
 
-.dias-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: auto;
-}
+  .dias-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+  }
 
   .dias-table th {
     padding: 0.6rem 0.75rem;
     text-align: center;
     font-weight: 600;
     font-size: 0.85rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }.dias-table th:first-child,
-.dias-table th:nth-child(2) {
-  text-align: left;
-}
+    border-bottom: 1px solid var(--tf-border);
+  }
+
+  .dias-table th:first-child,
+  .dias-table th:nth-child(2) {
+    text-align: left;
+  }
 
   .dias-table td {
     padding: 0.6rem 0.75rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--tf-border);
     text-align: center;
     font-size: 0.85rem;
-  }.dias-table td:first-child,
-.dias-table td:nth-child(2) {
-  text-align: left;
-}
+  }
+
+  .dias-table td:first-child,
+  .dias-table td:nth-child(2) {
+    text-align: left;
+  }
 
   .dias-table td:nth-child(3) {
     padding: 0.6rem 0.75rem;
@@ -43,45 +48,44 @@
     padding: 0.6rem 0.75rem;
     width: 120px;
     text-align: center;
-  }.dias-table tbody tr {
-  transition: background 0.2s ease;
-}
+  }
 
-/* Modo de selección múltiple */
-.dias-table tbody.selection-mode-active tr {
-  cursor: pointer;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-}
+  .dias-table tbody tr {
+    transition: background 0.2s ease;
+    position: relative;
+  }
 
-.dias-table tbody tr.row-selected {
-  background: rgba(102, 126, 234, 0.3) !important;
-  box-shadow: inset 4px 0 0 #667eea;
-}
+  /* Modo de selección múltiple */
+  .dias-table tbody.selection-mode-active tr {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+  }
 
-.dias-table tbody tr.row-selected:hover {
-  background: rgba(102, 126, 234, 0.4) !important;
-}
+  .dias-table tbody tr.row-selected {
+    background: color-mix(in srgb, var(--tf-color-primary) 30%, transparent) !important;
+    box-shadow: inset 4px 0 0 var(--tf-color-primary);
+  }
 
-.dias-table tbody tr {
-  position: relative;
-}
+  .dias-table tbody tr.row-selected:hover {
+    background: color-mix(in srgb, var(--tf-color-primary) 40%, transparent) !important;
+  }
 
-/* Estilos para días sin horas */
-.dias-table tbody tr.dia-sin-horas {
-  background: rgba(239, 68, 68, 0.08);
-}
+  /* Estilos para días sin horas */
+  .dias-table tbody tr.dia-sin-horas {
+    background: color-mix(in srgb, var(--tf-color-danger) 8%, transparent);
+  }
 
-/* Estilos para días con horas */
-.dias-table tbody tr.dia-con-horas {
-  background: rgba(34, 197, 94, 0.08);
-}
+  /* Estilos para días con horas */
+  .dias-table tbody tr.dia-con-horas {
+    background: color-mix(in srgb, var(--tf-color-success) 8%, transparent);
+  }
 
   .totals-row td {
     padding: 0.6rem 0.75rem;
     text-align: center;
-    border-top: 2px solid rgba(255, 255, 255, 0.2);
+    border-top: 2px solid var(--tf-border-hover);
     font-size: 0.85rem;
     vertical-align: middle;
   }
@@ -104,125 +108,122 @@
     vertical-align: middle;
   }
 
-.text-center {
-  text-align: center;
-}
-
-/* Mensaje de Mes No Activo */
-.mes-message-row {
-  padding: 0 !important;
-  border-bottom: none !important;
-}
-
-.mes-message {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 3rem 1rem;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-  border-radius: 8px;
-  margin: 1rem;
-  border-left: 4px solid rgba(102, 126, 234, 0.3);
-}
-
-.mes-icon {
-  font-size: 3rem;
-  display: block;
-}
-
-.mes-text {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  letter-spacing: 0.5px;
-}
-
-/* Estilos especiales para mes terminado */
-.mes-message.mes-terminado {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-  border-left: 4px solid rgba(102, 126, 234, 0.5);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.mes-message.mes-terminado .mes-icon {
-  font-size: 2.5rem;
-  animation: fadeInIcon 1s ease-in-out;
-}
-
-.mes-message.mes-terminado .mes-text {
-  color: rgba(102, 126, 234, 1);
-  font-size: 1.2rem;
-}
-
-.mes-message.mes-terminado p {
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-@keyframes fadeInIcon {
-  from {
-    opacity: 0;
-    transform: scale(0.5);
+  .text-center {
+    text-align: center;
   }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
 
-/* Horas Input */
-.horas-input {
+  /* Mensaje de Mes No Activo */
+  .mes-message-row {
+    padding: 0 !important;
+    border-bottom: none !important;
+  }
+
+  .mes-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 3rem 1rem;
+    background: color-mix(in srgb, var(--tf-color-primary) 5%, transparent);
+    border-radius: var(--tf-radius-md);
+    margin: 1rem;
+    border-left: 4px solid color-mix(in srgb, var(--tf-color-primary) 30%, transparent);
+  }
+
+  .mes-icon {
+    font-size: 3rem;
+    display: block;
+  }
+
+  .mes-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--tf-text-primary);
+    letter-spacing: 0.5px;
+  }
+
+  /* Estilos especiales para mes terminado */
+  .mes-message.mes-terminado {
+    background: color-mix(in srgb, var(--tf-color-primary) 8%, transparent);
+    border-left: 4px solid color-mix(in srgb, var(--tf-color-primary) 50%, transparent);
+  }
+
+  .mes-message.mes-terminado .mes-icon {
+    font-size: 2.5rem;
+    animation: fadeInIcon 1s ease-in-out;
+  }
+
+  .mes-message.mes-terminado .mes-text {
+    color: var(--tf-color-primary);
+    font-size: 1.2rem;
+  }
+
+  .mes-message.mes-terminado p {
+    color: var(--tf-text-secondary);
+    margin: 0;
+  }
+
+  @keyframes fadeInIcon {
+    from {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Horas Input */
+  .horas-input {
     width: 70px !important;
     max-width: 70px !important;
     min-width: 70px !important;
     padding: 0.4rem 0.6rem !important;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%) !important;
-  border: 2px solid rgba(102, 126, 234, 0.4) !important;
-  border-radius: 6px;
-  color: var(--text-primary);
-  text-align: center;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  transition: all 0.3s ease;
-  cursor: text;
-  flex-shrink: 0 !important;
-  flex-grow: 0 !important;
-  margin: 0 auto !important;
-}
-
-.horas-input:hover {
-  border-color: rgba(102, 126, 234, 0.5);
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%);
-  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.15);
-}
-
-.horas-input:focus {
-  outline: none;
-  border-color: #667eea;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-  box-shadow: 0 0 10px rgba(102, 126, 234, 0.4), inset 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.horas-input::placeholder {
-  color: rgba(102, 126, 234, 0.5);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .dias-table {
-    font-size: 0.8rem;
+    background: var(--tf-bg-input) !important;
+    border: 2px solid color-mix(in srgb, var(--tf-color-primary) 40%, transparent) !important;
+    border-radius: var(--tf-radius-sm);
+    color: var(--tf-text-primary);
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    transition: all 0.2s ease;
+    cursor: text;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    margin: 0 auto !important;
   }
 
-  .dias-table th,
-  .dias-table td {
-    padding: 0.4rem;
+  .horas-input:hover {
+    border-color: color-mix(in srgb, var(--tf-color-primary) 50%, transparent);
   }
 
-  .horas-input {
-    width: 60px;
-    padding: 0.3rem;
+  .horas-input:focus {
+    outline: none;
+    border-color: var(--tf-color-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tf-color-primary) 20%, transparent);
+  }
+
+  .horas-input::placeholder {
+    color: var(--tf-text-muted);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .dias-table {
+      font-size: 0.8rem;
+    }
+
+    .dias-table th,
+    .dias-table td {
+      padding: 0.4rem;
+    }
+
+    .horas-input {
+      width: 60px;
+      padding: 0.3rem;
+    }
   }
 }
