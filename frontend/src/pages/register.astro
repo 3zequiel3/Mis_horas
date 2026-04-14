@@ -6,22 +6,22 @@ const pageTitle = 'Crear Cuenta';
 ---
 
 <BaseLayout title={pageTitle}>
-  <div class="container register-container">
+  <main class="container register-container" role="main" aria-label="Registro de cuenta">
     <div class="register-card">
       <div class="register-header">
         <h2>Crea tu Cuenta</h2>
         <p>Gestiona tu tiempo y tu equipo de forma profesional</p>
       </div>
       
-      <form id="register-form" class="form">
+      <form id="register-form" class="form" aria-label="Formulario de registro">
         <div class="form-group">
-          <label for="username">Usuario</label>
-          <input type="text" id="username" name="username" placeholder="tu_usuario" required />
+          <label for="username">Usuario <span class="required" aria-hidden="true">*</span></label>
+          <input type="text" id="username" name="username" placeholder="tu_usuario" required aria-required="true" />
         </div>
 
         <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email" placeholder="tu@email.com" required />
+          <label for="email">Email <span class="required" aria-hidden="true">*</span></label>
+          <input type="email" id="email" name="email" placeholder="tu@email.com" required aria-required="true" />
           <input type="hidden" id="token_invitacion" name="token_invitacion" value="" />
         </div>
 
@@ -31,13 +31,13 @@ const pageTitle = 'Crear Cuenta';
         </div>
 
         <div class="form-group">
-          <label for="password">Contraseña</label>
-          <input type="password" id="password" name="password" placeholder="••••••••" required />
+          <label for="password">Contraseña <span class="required" aria-hidden="true">*</span></label>
+          <input type="password" id="password" name="password" placeholder="••••••••" required aria-required="true" />
         </div>
 
         <div class="form-group">
-          <label for="password-confirm">Confirmar Contraseña</label>
-          <input type="password" id="password-confirm" name="password-confirm" placeholder="••••••••" required />
+          <label for="password-confirm">Confirmar Contraseña <span class="required" aria-hidden="true">*</span></label>
+          <input type="password" id="password-confirm" name="password-confirm" placeholder="••••••••" required aria-required="true" />
         </div>
 
         <button type="submit" class="btn btn-primary btn-full">Registrarse</button>
@@ -50,10 +50,13 @@ const pageTitle = 'Crear Cuenta';
       <div id="error-message"></div>
       <div id="success-message"></div>
     </div>
-  </div>
+  </main>
 </BaseLayout>
 
 <style>
+  .required {
+    color: var(--tf-color-danger);
+  }
 </style>
 
 <script>
@@ -82,7 +85,7 @@ const pageTitle = 'Crear Cuenta';
         if (emailInput && tokenInput) {
           emailInput.value = invitacion.email_destinatario;
           emailInput.readOnly = true;
-          emailInput.style.backgroundColor = '#f0f0f0';
+          emailInput.style.backgroundColor = 'var(--tf-bg-elevated)';
           tokenInput.value = token;
         }
 

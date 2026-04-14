@@ -18,7 +18,7 @@ const title = `Auditoría - Proyecto ${proyectoId}`;
   <ProtectedRoute />
   <Header />
 
-  <main class="auditoria-container">
+  <main class="auditoria-container" role="main" aria-label="Auditoría y trazabilidad">
     <!-- Mensajes -->
     <div id="message-container"></div>
 
@@ -45,7 +45,7 @@ const title = `Auditoría - Proyecto ${proyectoId}`;
     </div>
 
     <!-- Filtros -->
-    <div class="auditoria-filtros">
+    <div class="auditoria-filtros" role="search" aria-label="Filtros de auditoría">
       <div class="auditoria-filtros-header">
         <h2>Filtros</h2>
         <button id="btn-clear-filters" class="btn-clear-filters">Limpiar filtros</button>
@@ -197,7 +197,7 @@ const title = `Auditoría - Proyecto ${proyectoId}`;
 
   <script>
     import { auditService } from '../../../services/auditService';
-    import type { AuditLog, AuditLogFilters } from '../../../types/audit';
+    import type { AuditLog, AuditLogFilters, AuditCategory, AuditSeverity } from '../../../types/audit';
     import { AuthService } from '../../../services/auth';
 
     // Obtener proyectoId de la URL
@@ -424,9 +424,9 @@ const title = `Auditoría - Proyecto ${proyectoId}`;
         per_page: 50,
         ...(startDate && { start_date: startDate }),
         ...(endDate && { end_date: endDate }),
-        ...(category && { category }),
-        ...(severity && { severity }),
-      };
+        ...(category && { category: category as AuditCategory }),
+        ...(severity && { severity: severity as AuditSeverity }),
+      } satisfies AuditLogFilters;
 
       loadLogs();
     });

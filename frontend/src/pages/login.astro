@@ -6,22 +6,22 @@ const pageTitle = 'Iniciar Sesión';
 ---
 
 <BaseLayout title={pageTitle}>
-  <div class="container login-container">
+  <main class="container login-container" role="main" aria-label="Inicio de sesión">
     <div class="login-card">
       <div class="login-header">
         <h2>Bienvenido</h2>
         <p>Inicia sesión para continuar</p>
       </div>
       
-      <form id="login-form" class="form">
+      <form id="login-form" class="form" aria-label="Formulario de inicio de sesión">
         <div class="form-group">
-          <label for="username">Usuario o Email</label>
-          <input type="text" id="username" name="username" placeholder="tu@email.com" required />
+          <label for="username">Usuario o Email <span class="required" aria-hidden="true">*</span></label>
+          <input type="text" id="username" name="username" placeholder="tu@email.com" required aria-required="true" />
         </div>
 
         <div class="form-group">
-          <label for="password">Contraseña</label>
-          <input type="password" id="password" name="password" placeholder="••••••••" required />
+          <label for="password">Contraseña <span class="required" aria-hidden="true">*</span></label>
+          <input type="password" id="password" name="password" placeholder="••••••••" required aria-required="true" />
         </div>
 
         <div class="form-group checkbox-group">
@@ -40,10 +40,14 @@ const pageTitle = 'Iniciar Sesión';
 
       <div id="error-message"></div>
     </div>
-  </div>
+  </main>
 </BaseLayout>
 
 <style>
+  .required {
+    color: var(--tf-color-danger);
+  }
+
   .checkbox-group {
     display: flex;
     align-items: center;

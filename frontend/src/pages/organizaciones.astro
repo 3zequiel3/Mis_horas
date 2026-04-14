@@ -13,7 +13,7 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
   <ProtectedRoute />
   <Header />
   
-  <main class="container">
+  <main class="container" role="main" aria-label="Mis organizaciones">
     <div class="page-header">
       <h1>📊 Mis Organizaciones</h1>
       <button id="btn-nueva-org" class="btn btn-primary">
@@ -26,9 +26,9 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
       <p>Cargando organizaciones...</p>
     </div>
 
-    <div id="organizations-grid" class="organizations-grid" style="display: none;">
+    <section id="organizations-grid" class="organizations-grid" style="display: none;" aria-label="Lista de organizaciones">
       <!-- Las tarjetas se generarán dinámicamente -->
-    </div>
+    </section>
 
     <div id="empty-state" class="empty-state" style="display: none;">
       <div class="empty-icon">🏢</div>
@@ -58,7 +58,7 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
   .page-header h1 {
     margin: 0;
     font-size: 2rem;
-    color: #333;
+    color: var(--tf-text-primary);
   }
 
   .btn {
@@ -75,13 +75,13 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
   }
 
   .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--tf-color-primary);
     color: white;
   }
 
   .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    background: var(--tf-color-primary-hover);
+    box-shadow: var(--tf-shadow-md);
   }
 
   .loading-container {
@@ -92,8 +92,8 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
   .spinner {
     width: 50px;
     height: 50px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
+    border: 4px solid var(--tf-border);
+    border-top: 4px solid var(--tf-color-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 1rem;
@@ -112,14 +112,15 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
   }
 
   .org-card {
-    background: white;
-    border-radius: 12px;
+    background: var(--tf-bg-surface);
+    border-radius: var(--tf-radius-lg);
     padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--tf-shadow-sm);
     transition: all 0.3s ease;
     cursor: pointer;
     position: relative;
     overflow: hidden;
+    border: 1px solid var(--tf-border);
   }
 
   .org-card::before {
@@ -129,17 +130,17 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--tf-color-primary);
   }
 
   .org-card.active {
-    border: 2px solid #667eea;
-    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+    border: 2px solid var(--tf-color-primary);
+    box-shadow: var(--tf-shadow-md);
   }
 
   .org-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    border-color: var(--tf-border-hover);
+    box-shadow: var(--tf-shadow-md);
   }
 
   .org-card-header {
@@ -152,7 +153,7 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
   .org-info h3 {
     margin: 0 0 0.5rem 0;
     font-size: 1.25rem;
-    color: #333;
+    color: var(--tf-text-primary);
   }
 
   .org-type {
@@ -164,10 +165,10 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
     text-transform: uppercase;
   }
 
-  .org-type.personal { background: #e3f2fd; color: #1976d2; }
-  .org-type.empresa { background: #f3e5f5; color: #7b1fa2; }
-  .org-type.freelance { background: #fff3e0; color: #f57c00; }
-  .org-type.agencia { background: #e8f5e9; color: #388e3c; }
+  .org-type.personal { background: rgba(59, 130, 246, 0.15); color: var(--tf-color-info); }
+  .org-type.empresa { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+  .org-type.freelance { background: rgba(245, 158, 11, 0.15); color: var(--tf-color-warning); }
+  .org-type.agencia { background: rgba(16, 185, 129, 0.15); color: var(--tf-color-success); }
 
   .org-badge {
     display: inline-flex;
@@ -177,12 +178,12 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 600;
-    background: #ffd700;
-    color: #333;
+    background: var(--tf-color-warning);
+    color: var(--tf-bg-base);
   }
 
   .org-description {
-    color: #666;
+    color: var(--tf-text-secondary);
     font-size: 0.9rem;
     margin-bottom: 1rem;
     min-height: 40px;
@@ -194,7 +195,7 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
     gap: 1rem;
     margin-bottom: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--tf-border);
   }
 
   .stat {
@@ -204,13 +205,13 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
   .stat-value {
     font-size: 1.5rem;
     font-weight: bold;
-    color: #667eea;
+    color: var(--tf-color-primary);
     margin: 0;
   }
 
   .stat-label {
     font-size: 0.75rem;
-    color: #999;
+    color: var(--tf-text-muted);
     margin: 0;
   }
 
@@ -218,7 +219,7 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
     display: flex;
     gap: 0.5rem;
     padding-top: 1rem;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--tf-border);
   }
 
   .btn-sm {
@@ -228,12 +229,12 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
   }
 
   .btn-secondary {
-    background: #f5f5f5;
-    color: #666;
+    background: var(--tf-bg-elevated);
+    color: var(--tf-text-secondary);
   }
 
   .btn-secondary:hover {
-    background: #e0e0e0;
+    background: var(--tf-bg-input);
   }
 
   .empty-state {
@@ -248,12 +249,12 @@ import ProtectedRoute from '../components/ProtectedRoute.astro';
   }
 
   .empty-state h2 {
-    color: #666;
+    color: var(--tf-text-secondary);
     margin-bottom: 0.5rem;
   }
 
   .empty-state p {
-    color: #999;
+    color: var(--tf-text-muted);
     margin-bottom: 2rem;
   }
 

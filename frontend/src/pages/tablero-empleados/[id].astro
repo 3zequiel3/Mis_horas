@@ -28,7 +28,7 @@ const pageTitle = "Tablero de Empleados";
     <ConfigDrawer />
     <ProjectSidebar />
     
-    <div class="proyecto-layout-with-sidebar" id="proyecto-layout">
+    <div class="proyecto-layout-with-sidebar" id="proyecto-layout" role="main" aria-label="Tablero de empleados">
       <div class="project-views-container">
         <!-- Vista Dashboard (actual tablero empleados) -->
         <div id="view-dashboard" class="project-view active">
@@ -136,7 +136,7 @@ const pageTitle = "Tablero de Empleados";
                   class="empleados-management-list"
                   id="empleados-management-list"
                 >
-                  <p style="text-align: center; color: var(--text-secondary);">
+                  <p style="text-align: center; color: var(--tf-text-secondary);">
                     Cargando...
                   </p>
                 </div>
@@ -216,13 +216,13 @@ const pageTitle = "Tablero de Empleados";
                 <table class="dias-table" id="empleado-mes-dias-table">
                   <thead>
                     <tr>
-                      <th>Fecha</th>
-                      <th>Día</th>
-                      <th id="empleado-th-turnos" style="display: none;">Turnos</th>
-                      <th id="empleado-th-entrada">Entrada</th>
-                      <th id="empleado-th-salida">Salida</th>
-                      <th>Horas Trabajadas</th>
-                      <th id="empleado-th-horas-reales">Horas Reales</th>
+                      <th scope="col">Fecha</th>
+                      <th scope="col">Día</th>
+                      <th scope="col" id="empleado-th-turnos" style="display: none;">Turnos</th>
+                      <th scope="col" id="empleado-th-entrada">Entrada</th>
+                      <th scope="col" id="empleado-th-salida">Salida</th>
+                      <th scope="col">Horas Trabajadas</th>
+                      <th scope="col" id="empleado-th-horas-reales">Horas Reales</th>
                     </tr>
                   </thead>
                   <tbody id="empleado-mes-dias-tbody">
@@ -872,19 +872,19 @@ const pageTitle = "Tablero de Empleados";
       html: `
         <div style="text-align: left; padding: 10px;">
           <div style="margin-bottom: 15px;">
-            <strong style="color: #667eea;">Total Empleados:</strong>
+            <strong style="color: var(--tf-color-primary);">Total Empleados:</strong>
             <span style="float: right; color: #c8c8c8;">${totalEmpleados}</span>
           </div>
           <div style="margin-bottom: 15px;">
-            <strong style="color: #667eea;">Horas Totales:</strong>
+            <strong style="color: var(--tf-color-primary);">Horas Totales:</strong>
             <span style="float: right; color: #c8c8c8;">${horasAFormato(totalHorasAcumuladas)}</span>
           </div>
           <div style="margin-bottom: 15px;">
-            <strong style="color: #667eea;">Promedio por Empleado:</strong>
+            <strong style="color: var(--tf-color-primary);">Promedio por Empleado:</strong>
             <span style="float: right; color: #c8c8c8;">${horasAFormato(totalEmpleados > 0 ? Math.round(totalHorasAcumuladas / totalEmpleados) : 0)}</span>
           </div>
           <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(102, 126, 234, 0.2);">
-            <strong style="color: #667eea;">Período:</strong>
+            <strong style="color: var(--tf-color-primary);">Período:</strong>
             <span style="float: right; color: #c8c8c8;">${MESES_ES[TableroEmpleadosHandler.state.mesActual as keyof typeof MESES_ES]} ${TableroEmpleadosHandler.state.anioActual}</span>
           </div>
         </div>

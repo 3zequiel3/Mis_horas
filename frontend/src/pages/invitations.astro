@@ -14,33 +14,241 @@ const title = 'Invitaciones';
   <ProtectedRoute />
   <Header />
 
-  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">Invitaciones Pendientes</h1>
-      <p class="mt-2 text-gray-600">Revisa y responde las invitaciones a organizaciones</p>
+  <main class="invitations-page" role="main" aria-label="Invitaciones pendientes">
+    <div class="invitations-header">
+      <h1>Invitaciones Pendientes</h1>
+      <p>Revisa y responde las invitaciones a organizaciones</p>
     </div>
 
     <div id="message-container"></div>
     
-    <div id="loading-state" class="text-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-      <p class="mt-4 text-gray-600">Cargando invitaciones...</p>
+    <div id="loading-state" class="invitations-loading">
+      <div class="loading-spinner"></div>
+      <p>Cargando invitaciones...</p>
     </div>
 
-    <div id="invitations-container" class="hidden space-y-4"></div>
+    <div id="invitations-container" class="invitations-list" style="display: none;"></div>
 
-    <div id="empty-state" class="hidden text-center py-12">
-      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div id="empty-state" class="invitations-empty" style="display: none;">
+      <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76"></path>
       </svg>
-      <h3 class="mt-2 text-sm font-medium text-gray-900">No hay invitaciones</h3>
-      <p class="mt-1 text-sm text-gray-500">No tienes invitaciones pendientes en este momento.</p>
+      <h3>No hay invitaciones</h3>
+      <p>No tienes invitaciones pendientes en este momento.</p>
     </div>
   </main>
 
+  <style>
+    .invitations-page {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    .invitations-header {
+      margin-bottom: 2rem;
+    }
+
+    .invitations-header h1 {
+      font-size: 1.875rem;
+      font-weight: 700;
+      color: var(--tf-text-primary);
+      margin: 0 0 0.5rem 0;
+    }
+
+    .invitations-header p {
+      color: var(--tf-text-secondary);
+      margin: 0;
+    }
+
+    .invitations-loading {
+      text-align: center;
+      padding: 3rem 0;
+    }
+
+    .loading-spinner {
+      width: 3rem;
+      height: 3rem;
+      border: 2px solid transparent;
+      border-bottom-color: var(--tf-color-primary);
+      border-radius: 50%;
+      margin: 0 auto;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .invitations-loading p {
+      margin-top: 1rem;
+      color: var(--tf-text-secondary);
+    }
+
+    .invitations-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .invitations-empty {
+      text-align: center;
+      padding: 3rem 0;
+    }
+
+    .empty-icon {
+      width: 3rem;
+      height: 3rem;
+      color: var(--tf-text-muted);
+      margin: 0 auto 0.5rem;
+      display: block;
+    }
+
+    .invitations-empty h3 {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--tf-text-primary);
+      margin: 0.5rem 0;
+    }
+
+    .invitations-empty p {
+      font-size: 0.875rem;
+      color: var(--tf-text-muted);
+      margin: 0;
+    }
+
+    /* Invitation card */
+    .invitation-card {
+      background: var(--tf-bg-surface);
+      border: 1px solid var(--tf-border);
+      border-radius: var(--tf-radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--tf-shadow-sm);
+    }
+
+    .invitation-card-body {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .invitation-card h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--tf-text-primary);
+      margin: 0 0 0.25rem;
+    }
+
+    .invitation-card .invitation-role {
+      font-size: 0.875rem;
+      color: var(--tf-text-secondary);
+    }
+
+    .invitation-card .invitation-role .role-badge {
+      font-weight: 500;
+      padding: 0.125rem 0.5rem;
+      border-radius: var(--tf-radius-sm);
+      background: var(--tf-bg-input);
+      color: var(--tf-color-primary);
+    }
+
+    .invitation-card .invitation-inviter {
+      font-size: 0.875rem;
+      color: var(--tf-text-muted);
+      margin-top: 0.5rem;
+    }
+
+    .invitation-card .invitation-inviter .inviter-name {
+      font-weight: 500;
+      color: var(--tf-text-secondary);
+    }
+
+    .invitation-card .invitation-expiry {
+      font-size: 0.75rem;
+      color: var(--tf-text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .invitation-actions {
+      margin-top: 1rem;
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn-accept {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      border: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: var(--tf-radius-md);
+      color: white;
+      background: var(--tf-color-success);
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-accept:hover {
+      opacity: 0.9;
+    }
+
+    .btn-accept svg {
+      width: 1.25rem;
+      height: 1.25rem;
+      margin-right: 0.5rem;
+    }
+
+    .btn-reject {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--tf-border);
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: var(--tf-radius-md);
+      color: var(--tf-text-secondary);
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .btn-reject:hover {
+      background: var(--tf-bg-input);
+      border-color: var(--tf-border-hover);
+    }
+
+    .btn-reject svg {
+      width: 1.25rem;
+      height: 1.25rem;
+      margin-right: 0.5rem;
+    }
+
+    /* Message toast */
+    .message-toast {
+      padding: 0.75rem 1rem;
+      border-radius: var(--tf-radius-md);
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .message-toast.success {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--tf-color-success);
+    }
+
+    .message-toast.error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--tf-color-danger);
+    }
+  </style>
+
   <script>
     import { organizationService } from '../services/organizationService';
-    import { getRoleLabel, getRoleColor } from '../utils/permissions';
+    import { getRoleLabel } from '../utils/permissions';
 
     async function loadInvitations() {
       const loading = document.getElementById('loading-state');
@@ -50,49 +258,51 @@ const title = 'Invitaciones';
       try {
         const invitations = await organizationService.getMyInvitations();
         
-        if (loading) loading.classList.add('hidden');
+        if (loading) loading.style.display = 'none';
 
         if (invitations.length === 0) {
-          if (empty) empty.classList.remove('hidden');
-          if (container) container.classList.add('hidden');
+          if (empty) empty.style.display = 'block';
+          if (container) container.style.display = 'none';
         } else {
-          if (empty) empty.classList.add('hidden');
+          if (empty) empty.style.display = 'none';
           if (container) {
-            container.classList.remove('hidden');
+            container.style.display = 'flex';
             container.innerHTML = invitations.map(inv => `
-              <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-gray-900">${inv.organization?.nombre || 'Organización'}</h3>
-                    <p class="mt-1 text-sm text-gray-600">
-                      Te han invitado como <span class="font-medium ${getRoleColor(inv.role)} px-2 py-0.5 rounded">${getRoleLabel(inv.role)}</span>
+              <div class="invitation-card">
+                <div class="invitation-card-body">
+                  <div>
+                    <h3>${inv.organization?.nombre || 'Organización'}</h3>
+                    <p class="invitation-role">
+                      Te han invitado como <span class="role-badge">${getRoleLabel(inv.role)}</span>
                     </p>
                     ${inv.inviter ? `
-                      <p class="mt-2 text-sm text-gray-500">
-                        Invitado por: <span class="font-medium">${inv.inviter.nombre}</span> (${inv.inviter.email})
+                      <p class="invitation-inviter">
+                        Invitado por: <span class="inviter-name">${inv.inviter.nombre}</span> (${inv.inviter.email})
                       </p>
                     ` : ''}
-                    <p class="mt-1 text-xs text-gray-400">
+                    <p class="invitation-expiry">
                       Expira: ${new Date(inv.expires_at).toLocaleDateString('es-ES')}
                     </p>
                   </div>
                 </div>
                 
-                <div class="mt-4 flex gap-3">
+                <div class="invitation-actions">
                   <button
                     onclick="acceptInvitation(${inv.id})"
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                    class="btn-accept"
+                    aria-label="Aceptar invitación de ${inv.organization?.nombre || 'Organización'}"
                   >
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     Aceptar
                   </button>
                   <button
                     onclick="rejectInvitation(${inv.id})"
-                    class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                    class="btn-reject"
+                    aria-label="Rechazar invitación de ${inv.organization?.nombre || 'Organización'}"
                   >
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                     Rechazar
@@ -135,11 +345,11 @@ const title = 'Invitaciones';
       const container = document.getElementById('message-container');
       if (!container) return;
 
-      const bgColor = type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800';
+      const bgClass = type === 'success' ? 'success' : 'error';
       
       container.innerHTML = `
-        <div class="${bgColor} border px-4 py-3 rounded-md mb-4">
-          <p class="text-sm font-medium">${message}</p>
+        <div class="message-toast ${bgClass}">
+          <p>${message}</p>
         </div>
       `;
 

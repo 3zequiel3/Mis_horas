@@ -23,7 +23,7 @@ const pageTitle = 'Tablero de Proyecto';
     <ConfigDrawer />
     <ProjectSidebar />
     
-    <div class="container" id="proyecto-layout">
+    <div class="container" id="proyecto-layout" role="main" aria-label="Tablero de proyecto">
       <!-- Vista Dashboard (actual tablero) -->
       <div id="view-dashboard" class="project-view active">
       <!-- Header del Proyecto -->
@@ -987,25 +987,25 @@ const pageTitle = 'Tablero de Proyecto';
   .colaboradores-container h1 {
     font-size: 2rem;
     margin-bottom: 2rem;
-    color: var(--text-primary, #d1d5db);
+    color: var(--tf-text-primary);
   }
 
   .card {
-    background: var(--card-bg, #1e1e1e);
-    border-radius: 12px;
+    background: var(--tf-bg-surface);
+    border-radius: var(--tf-radius-lg);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    box-shadow: var(--tf-shadow-sm);
   }
 
   .card h3 {
     margin-top: 0;
     margin-bottom: 1rem;
-    color: var(--text-primary, #d1d5db);
+    color: var(--tf-text-primary);
   }
 
   .resumen-descripcion {
-    color: var(--text-secondary, #9ca3af);
+    color: var(--tf-text-secondary);
     font-size: 0.9rem;
     margin-bottom: 1.5rem;
     font-style: italic;
@@ -1024,9 +1024,9 @@ const pageTitle = 'Tablero de Proyecto';
     align-items: flex-start;
     padding: 1.25rem;
     margin-bottom: 0.75rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(102, 126, 234, 0.2);
-    border-radius: 8px;
+    background: var(--tf-bg-input);
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius-md);
     transition: all 0.2s;
   }
 
@@ -1035,8 +1035,8 @@ const pageTitle = 'Tablero de Proyecto';
   }
 
   .colaborador-item:hover {
-    background: rgba(102, 126, 234, 0.1);
-    border-color: rgba(102, 126, 234, 0.4);
+    background: var(--tf-bg-elevated);
+    border-color: var(--tf-border-hover);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
@@ -1063,7 +1063,7 @@ const pageTitle = 'Tablero de Proyecto';
   .colaborador-nombre {
     font-weight: 600;
     font-size: 1.15rem;
-    color: var(--text-primary, #f3f4f6);
+    color: var(--tf-text-primary);
     line-height: 1.2;
   }
 
@@ -1076,7 +1076,7 @@ const pageTitle = 'Tablero de Proyecto';
   }
 
   .badge-owner {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--tf-color-primary);
     color: white;
     padding: 0.3rem 0.85rem;
     border-radius: 14px;
@@ -1089,7 +1089,7 @@ const pageTitle = 'Tablero de Proyecto';
   .colaborador-stats {
     display: flex;
     gap: 1.75rem;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--tf-text-secondary);
     font-size: 0.95rem;
     padding-left: 2.5rem;
   }
@@ -1108,14 +1108,14 @@ const pageTitle = 'Tablero de Proyecto';
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--tf-text-secondary);
     font-size: 0.9rem;
     cursor: pointer;
     user-select: none;
   }
 
   .toggle-label:hover {
-    color: var(--text-primary, #d1d5db);
+    color: var(--tf-text-primary);
   }
 
   .toggle-label input[type="checkbox"] {
@@ -1137,18 +1137,18 @@ const pageTitle = 'Tablero de Proyecto';
   }
 
   .btn-eliminar-colaborador {
-    background: #ef4444;
+    background: var(--tf-color-danger);
     color: white;
     border: none;
     padding: 0.6rem 1.1rem;
-    border-radius: 6px;
+    border-radius: var(--tf-radius-sm);
     cursor: pointer;
     transition: background 0.2s;
   }
 
   .btn-eliminar-colaborador:hover {
-    background: #dc2626;
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    background: color-mix(in srgb, var(--tf-color-danger) 85%, black);
+    box-shadow: var(--tf-shadow-sm);
   }
 
   .stats-grid {
@@ -1165,13 +1165,13 @@ const pageTitle = 'Tablero de Proyecto';
   }
 
   .stat-label {
-    color: var(--text-secondary, #9ca3af);
+    color: var(--tf-text-secondary);
     font-size: 0.95rem;
     font-weight: 500;
   }
 
   .stat-value {
-    color: #667eea;
+    color: var(--tf-color-primary);
     font-size: 2rem;
     font-weight: bold;
     line-height: 1;
@@ -1179,7 +1179,7 @@ const pageTitle = 'Tablero de Proyecto';
 
   .empty-message {
     text-align: center;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--tf-text-secondary);
     padding: 2.5rem;
     font-style: italic;
     font-size: 1rem;
@@ -1189,13 +1189,13 @@ const pageTitle = 'Tablero de Proyecto';
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    color: var(--text-secondary, #d1d5db);
+    color: var(--tf-text-secondary);
     cursor: pointer;
     user-select: none;
   }
 
   .checkbox-label:hover {
-    color: var(--text-primary, #f3f4f6);
+    color: var(--tf-text-primary);
   }
 
   .checkbox-label input[type="checkbox"] {
@@ -1212,7 +1212,7 @@ const pageTitle = 'Tablero de Proyecto';
   .form-group label {
     display: block;
     margin-bottom: 0.5rem;
-    color: var(--text-secondary, #d1d5db);
+    color: var(--tf-text-secondary);
     font-weight: 500;
     font-size: 0.95rem;
   }
@@ -1220,23 +1220,23 @@ const pageTitle = 'Tablero de Proyecto';
   .form-input {
     width: 100%;
     padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(102, 126, 234, 0.3);
-    border-radius: 8px;
-    color: var(--text-primary, #f3f4f6);
+    background: var(--tf-bg-input);
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius-md);
+    color: var(--tf-text-primary);
     font-size: 1rem;
     transition: all 0.2s;
   }
   
   .form-input:focus {
     outline: none;
-    border-color: #667eea;
-    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--tf-color-primary);
+    background: var(--tf-bg-elevated);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
   
   .form-input::placeholder {
-    color: rgba(209, 213, 219, 0.4);
+    color: var(--tf-text-muted);
   }
 </style>
 

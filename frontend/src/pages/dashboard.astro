@@ -10,7 +10,7 @@ const pageTitle = 'Dashboard';
 <BaseLayout title={pageTitle}>
   <ProtectedRoute>
     <Header />
-    <div class="container">
+    <main class="container" role="main" aria-label="Panel principal">
       <div class="dashboard">
         <h1>📊 Dashboard</h1>
         
@@ -36,7 +36,7 @@ const pageTitle = 'Dashboard';
         <div class="mt-4">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h2>📋 Proyectos Recientes</h2>
-            <a href="/proyectos" style="color: #667eea; text-decoration: none; font-weight: 600;">Ver todos →</a>
+            <a href="/proyectos" style="color: var(--tf-color-primary); text-decoration: none; font-weight: 600;">Ver todos →</a>
           </div>
           <div id="proyectos-container" class="projects-grid grid grid-cols-3">
             <div class="loading">Cargando proyectos...</div>
@@ -45,7 +45,7 @@ const pageTitle = 'Dashboard';
 
         <div id="error-message"></div>
       </div>
-    </div>
+    </main>
   </ProtectedRoute>
 </BaseLayout>
 

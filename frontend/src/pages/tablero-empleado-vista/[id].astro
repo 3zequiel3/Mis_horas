@@ -23,7 +23,7 @@ const pageTitle = "Mi Tablero";
   <ProtectedRoute>
     <Header />
     <div class="container">
-      <div class="empleado-vista-container">
+      <div class="empleado-vista-container" role="main" aria-label="Vista de empleado">
         <!-- Header Personal del Empleado -->
         <div class="empleado-personal-header">
           <div class="empleado-info-banner">
@@ -177,11 +177,11 @@ const pageTitle = "Mi Tablero";
 
   /* Header Personal */
   .empleado-personal-header {
-    background: var(--bg-card);
-    border-radius: 16px;
+    background: var(--tf-bg-surface);
+    border-radius: var(--tf-radius-xl);
     padding: 2rem;
     margin-bottom: 2rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--tf-shadow-lg);
   }
 
   .empleado-info-banner {
@@ -195,24 +195,24 @@ const pageTitle = "Mi Tablero";
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--tf-color-primary);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 2rem;
     font-weight: bold;
     color: white;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: var(--tf-shadow-md);
   }
 
   .empleado-detalles h1 {
     margin: 0;
     font-size: 2rem;
-    color: var(--text-primary);
+    color: var(--tf-text-primary);
   }
 
   .proyecto-nombre-empleado {
-    color: var(--text-secondary);
+    color: var(--tf-text-secondary);
     margin: 0.5rem 0 0 0;
     font-size: 1.1rem;
   }
@@ -224,13 +224,13 @@ const pageTitle = "Mi Tablero";
   }
 
   .stat-card {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--tf-bg-input);
     padding: 1.5rem;
-    border-radius: 12px;
+    border-radius: var(--tf-radius-lg);
     display: flex;
     align-items: center;
     gap: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--tf-border);
   }
 
   .stat-icon {
@@ -245,12 +245,12 @@ const pageTitle = "Mi Tablero";
   .stat-value {
     font-size: 1.8rem;
     font-weight: bold;
-    color: var(--text-primary);
+    color: var(--tf-text-primary);
   }
 
   .stat-label {
     font-size: 0.9rem;
-    color: var(--text-secondary);
+    color: var(--tf-text-secondary);
   }
 
   /* Acciones Rápidas */
@@ -262,9 +262,9 @@ const pageTitle = "Mi Tablero";
   }
 
   .btn-accion-rapida {
-    background: var(--bg-card);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    background: var(--tf-bg-surface);
+    border: 2px solid var(--tf-border);
+    border-radius: var(--tf-radius-lg);
     padding: 1.5rem;
     display: flex;
     align-items: center;
@@ -276,11 +276,11 @@ const pageTitle = "Mi Tablero";
 
   .btn-accion-rapida:not(:disabled):hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    box-shadow: var(--tf-shadow-md);
   }
 
   .btn-entrada {
-    border-color: #10b981;
+    border-color: var(--tf-color-success);
   }
 
   .btn-entrada:not(:disabled):hover {
@@ -288,7 +288,7 @@ const pageTitle = "Mi Tablero";
   }
 
   .btn-salida {
-    border-color: #ef4444;
+    border-color: var(--tf-color-danger);
   }
 
   .btn-salida:not(:disabled):hover {
@@ -307,19 +307,19 @@ const pageTitle = "Mi Tablero";
   .btn-accion-rapida .texto {
     flex: 1;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--tf-text-primary);
   }
 
   .btn-accion-rapida .hora {
     font-size: 1.2rem;
     font-weight: bold;
-    color: #667eea;
+    color: var(--tf-color-primary);
   }
 
   .estado-jornada {
-    background: var(--bg-card);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    background: var(--tf-bg-surface);
+    border: 2px solid var(--tf-border);
+    border-radius: var(--tf-radius-lg);
     padding: 1.5rem;
     display: flex;
     align-items: center;
@@ -327,7 +327,7 @@ const pageTitle = "Mi Tablero";
   }
 
   .estado-jornada.activa {
-    border-color: #10b981;
+    border-color: var(--tf-color-success);
     background: rgba(16, 185, 129, 0.1);
   }
 
@@ -337,11 +337,11 @@ const pageTitle = "Mi Tablero";
 
   .texto-estado {
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--tf-text-secondary);
   }
 
   .estado-jornada.activa .texto-estado {
-    color: #10b981;
+    color: var(--tf-color-success);
   }
 
   /* Tabs */
@@ -349,7 +349,7 @@ const pageTitle = "Mi Tablero";
     display: flex;
     gap: 0.5rem;
     margin-bottom: 2rem;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 2px solid var(--tf-border);
     overflow-x: auto;
   }
 
@@ -361,7 +361,7 @@ const pageTitle = "Mi Tablero";
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
-    color: var(--text-secondary);
+    color: var(--tf-text-secondary);
     border-bottom: 3px solid transparent;
     transition: all 0.2s ease;
     white-space: nowrap;
@@ -369,13 +369,13 @@ const pageTitle = "Mi Tablero";
   }
 
   .tab-btn:hover {
-    color: var(--text-primary);
-    background: rgba(102, 126, 234, 0.05);
+    color: var(--tf-text-primary);
+    background: var(--tf-bg-input);
   }
 
   .tab-btn.active {
-    color: #667eea;
-    border-bottom-color: #667eea;
+    color: var(--tf-color-primary);
+    border-bottom-color: var(--tf-color-primary);
   }
 
   .tab-icon {
@@ -387,7 +387,7 @@ const pageTitle = "Mi Tablero";
   }
 
   .tab-badge {
-    background: #ef4444;
+    background: var(--tf-color-danger);
     color: white;
     font-size: 0.7rem;
     padding: 0.2rem 0.5rem;
@@ -397,8 +397,8 @@ const pageTitle = "Mi Tablero";
 
   /* Contenido de Tabs */
   .tabs-content-wrapper {
-    background: var(--bg-card);
-    border-radius: 16px;
+    background: var(--tf-bg-surface);
+    border-radius: var(--tf-radius-xl);
     padding: 2rem;
     min-height: 500px;
   }
@@ -417,12 +417,12 @@ const pageTitle = "Mi Tablero";
     align-items: center;
     margin-bottom: 2rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--tf-border);
   }
 
   .tab-header h2 {
     margin: 0;
-    color: var(--text-primary);
+    color: var(--tf-text-primary);
   }
 
   .mes-selector {
@@ -432,22 +432,22 @@ const pageTitle = "Mi Tablero";
   }
 
   .btn-mes {
-    background: rgba(102, 126, 234, 0.1);
-    border: 1px solid rgba(102, 126, 234, 0.3);
-    color: #667eea;
+    background: var(--tf-bg-input);
+    border: 1px solid var(--tf-border-hover);
+    color: var(--tf-color-primary);
     padding: 0.5rem 1rem;
-    border-radius: 8px;
+    border-radius: var(--tf-radius-md);
     cursor: pointer;
     transition: all 0.2s ease;
   }
 
   .btn-mes:hover {
-    background: rgba(102, 126, 234, 0.2);
+    background: var(--tf-bg-elevated);
   }
 
   #mes-actual-texto {
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--tf-text-primary);
     min-width: 150px;
     text-align: center;
   }
@@ -455,7 +455,7 @@ const pageTitle = "Mi Tablero";
   .loading-state {
     text-align: center;
     padding: 3rem;
-    color: var(--text-secondary);
+    color: var(--tf-text-secondary);
   }
 
   /* Responsive */

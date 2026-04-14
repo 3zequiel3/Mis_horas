@@ -14,7 +14,7 @@ const { id } = Astro.params;
   <ProtectedRoute />
   <Header />
   
-  <main class="container">
+  <main class="container" role="main" aria-label="Miembros de la organización">
     <div class="page-header">
       <h1>👥 Miembros de la Organización</h1>
       <div class="header-actions">
@@ -133,7 +133,7 @@ const { id } = Astro.params;
   .page-header h1 {
     margin: 0;
     font-size: 2rem;
-    color: #333;
+    color: var(--tf-text-primary);
   }
 
   .header-actions {
@@ -155,33 +155,35 @@ const { id } = Astro.params;
   }
 
   .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--tf-color-primary);
     color: white;
   }
 
   .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    background: var(--tf-color-primary-hover);
+    box-shadow: var(--tf-shadow-md);
   }
 
   .btn-secondary {
-    background: #f5f5f5;
-    color: #666;
+    background: var(--tf-bg-input);
+    color: var(--tf-text-secondary);
+    border: 1px solid var(--tf-border);
   }
 
   .btn-secondary:hover {
-    background: #e0e0e0;
+    background: var(--tf-bg-elevated);
+    border-color: var(--tf-border-hover);
   }
 
   .btn-danger {
-    background: #e74c3c;
+    background: var(--tf-color-danger);
     color: white;
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
   }
 
   .btn-change-role {
-    background: #3498db;
+    background: var(--tf-color-info);
     color: white;
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
@@ -195,8 +197,8 @@ const { id } = Astro.params;
   .spinner {
     width: 50px;
     height: 50px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
+    border: 4px solid var(--tf-border);
+    border-top: 4px solid var(--tf-color-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 1rem;
@@ -208,10 +210,10 @@ const { id } = Astro.params;
   }
 
   .org-info-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--tf-color-primary);
     color: white;
     padding: 2rem;
-    border-radius: 12px;
+    border-radius: var(--tf-radius-lg);
     margin-bottom: 2rem;
   }
 
@@ -227,10 +229,11 @@ const { id } = Astro.params;
   }
 
   .members-section {
-    background: white;
-    border-radius: 12px;
+    background: var(--tf-bg-surface);
+    border-radius: var(--tf-radius-lg);
     padding: 2rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--tf-shadow-sm);
+    border: 1px solid var(--tf-border);
   }
 
   .section-header {
@@ -245,21 +248,23 @@ const { id } = Astro.params;
   .section-header h3 {
     margin: 0;
     font-size: 1.25rem;
-    color: #333;
+    color: var(--tf-text-primary);
   }
 
   .search-input {
     padding: 0.75rem 1rem;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
+    border: 2px solid var(--tf-border);
+    border-radius: var(--tf-radius-md);
     font-size: 1rem;
     width: 300px;
     max-width: 100%;
+    background: var(--tf-bg-input);
+    color: var(--tf-text-primary);
   }
 
   .search-input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: var(--tf-color-primary);
   }
 
   .members-table {
@@ -272,10 +277,10 @@ const { id } = Astro.params;
     grid-template-columns: 2fr 1fr 1fr 1fr;
     gap: 1rem;
     padding: 1rem;
-    background: #f8f9fa;
-    border-radius: 8px 8px 0 0;
+    background: var(--tf-bg-elevated);
+    border-radius: var(--tf-radius-md) var(--tf-radius-md) 0 0;
     font-weight: 600;
-    color: #666;
+    color: var(--tf-text-secondary);
     font-size: 0.9rem;
   }
 
@@ -289,13 +294,13 @@ const { id } = Astro.params;
     grid-template-columns: 2fr 1fr 1fr 1fr;
     gap: 1rem;
     padding: 1rem;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--tf-border);
     align-items: center;
     transition: background 0.2s ease;
   }
 
   .member-row:hover {
-    background: #f8f9fa;
+    background: var(--tf-bg-elevated);
   }
 
   .user-info {
@@ -308,7 +313,7 @@ const { id } = Astro.params;
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--tf-color-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -320,13 +325,13 @@ const { id } = Astro.params;
   .user-details h4 {
     margin: 0;
     font-size: 1rem;
-    color: #333;
+    color: var(--tf-text-primary);
   }
 
   .user-details p {
     margin: 0;
     font-size: 0.85rem;
-    color: #999;
+    color: var(--tf-text-muted);
   }
 
   .role-badge {
@@ -340,14 +345,14 @@ const { id } = Astro.params;
     width: fit-content;
   }
 
-  .role-badge.owner { background: #ffd700; color: #333; }
-  .role-badge.admin { background: #e3f2fd; color: #1976d2; }
-  .role-badge.manager { background: #f3e5f5; color: #7b1fa2; }
-  .role-badge.member { background: #e8f5e9; color: #388e3c; }
-  .role-badge.viewer { background: #fff3e0; color: #f57c00; }
+  .role-badge.owner { background: var(--tf-color-warning); color: var(--tf-bg-base); }
+  .role-badge.admin { background: var(--tf-bg-elevated); color: var(--tf-color-info); }
+  .role-badge.manager { background: var(--tf-bg-elevated); color: var(--tf-color-primary); }
+  .role-badge.member { background: var(--tf-bg-elevated); color: var(--tf-color-success); }
+  .role-badge.viewer { background: var(--tf-bg-elevated); color: var(--tf-color-warning); }
 
   .member-date {
-    color: #666;
+    color: var(--tf-text-secondary);
     font-size: 0.9rem;
   }
 
@@ -375,12 +380,13 @@ const { id } = Astro.params;
   }
 
   .modal-content {
-    background: white;
-    border-radius: 12px;
+    background: var(--tf-bg-surface);
+    border-radius: var(--tf-radius-lg);
     max-width: 500px;
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
+    border: 1px solid var(--tf-border);
   }
 
   .modal-header {
@@ -388,26 +394,26 @@ const { id } = Astro.params;
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--tf-border);
   }
 
   .modal-header h2 {
     margin: 0;
     font-size: 1.5rem;
-    color: #333;
+    color: var(--tf-text-primary);
   }
 
   .modal-close {
     background: none;
     border: none;
     font-size: 2rem;
-    color: #999;
+    color: var(--tf-text-muted);
     cursor: pointer;
     line-height: 1;
   }
 
   .modal-close:hover {
-    color: #333;
+    color: var(--tf-text-primary);
   }
 
   .modal-body {
@@ -425,45 +431,47 @@ const { id } = Astro.params;
 
   label {
     font-weight: 600;
-    color: #333;
+    color: var(--tf-text-primary);
     font-size: 0.9rem;
   }
 
   label.required::after {
     content: ' *';
-    color: #e74c3c;
+    color: var(--tf-color-danger);
   }
 
   .form-control {
     padding: 0.75rem;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
+    border: 2px solid var(--tf-border);
+    border-radius: var(--tf-radius-md);
     font-size: 1rem;
     font-family: inherit;
+    background: var(--tf-bg-input);
+    color: var(--tf-text-primary);
   }
 
   .form-control:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: var(--tf-color-primary);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
 
   .info-box {
-    background: #e3f2fd;
+    background: var(--tf-bg-elevated);
     padding: 1rem;
-    border-radius: 8px;
-    border-left: 4px solid #1976d2;
+    border-radius: var(--tf-radius-md);
+    border-left: 4px solid var(--tf-color-info);
   }
 
   .info-box strong {
     display: block;
     margin-bottom: 0.5rem;
-    color: #1976d2;
+    color: var(--tf-color-info);
   }
 
   .info-box p {
     margin: 0;
-    color: #666;
+    color: var(--tf-text-secondary);
     font-size: 0.9rem;
   }
 
@@ -472,7 +480,7 @@ const { id } = Astro.params;
     gap: 1rem;
     justify-content: flex-end;
     padding-top: 1rem;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--tf-border);
   }
 
   @media (max-width: 768px) {

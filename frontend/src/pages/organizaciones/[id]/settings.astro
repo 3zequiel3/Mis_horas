@@ -14,7 +14,7 @@ const { id } = Astro.params;
   <ProtectedRoute />
   <Header />
   
-  <main class="container">
+  <main class="container" role="main" aria-label="Configuración de organización">
     <div class="page-header">
       <h1>⚙️ Configuración de Organización</h1>
       <button id="btn-volver" class="btn btn-secondary">
@@ -231,7 +231,7 @@ const { id } = Astro.params;
   .page-header h1 {
     margin: 0;
     font-size: 2rem;
-    color: var(--text-primary);
+    color: var(--tf-text-primary);
   }
 
   /* Tabs Navigation */
@@ -239,7 +239,7 @@ const { id } = Astro.params;
     display: flex;
     gap: 0.5rem;
     margin-bottom: 2rem;
-    border-bottom: 2px solid var(--border-color);
+    border-bottom: 2px solid var(--tf-border);
     padding-bottom: 0;
   }
 
@@ -247,7 +247,7 @@ const { id } = Astro.params;
     padding: 0.75rem 1.5rem;
     border: none;
     background: transparent;
-    color: var(--text-secondary);
+    color: var(--tf-text-secondary);
     font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
@@ -257,13 +257,13 @@ const { id } = Astro.params;
   }
 
   .tab-btn:hover {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.05);
+    color: var(--tf-text-primary);
+    background: var(--tf-bg-input);
   }
 
   .tab-btn.active {
-    color: #667eea;
-    border-bottom-color: #667eea;
+    color: var(--tf-color-primary);
+    border-bottom-color: var(--tf-color-primary);
     font-weight: 600;
   }
 
@@ -301,37 +301,38 @@ const { id } = Astro.params;
   }
 
   .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--tf-color-primary);
     color: white;
   }
 
   .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    background: var(--tf-color-primary-hover);
+    box-shadow: var(--tf-shadow-md);
   }
 
   .btn-secondary {
-    background: #f5f5f5;
-    color: #666;
+    background: var(--tf-bg-input);
+    color: var(--tf-text-secondary);
+    border: 1px solid var(--tf-border);
   }
 
   .btn-secondary:hover {
-    background: #e0e0e0;
+    background: var(--tf-bg-elevated);
+    border-color: var(--tf-border-hover);
   }
 
   .btn-danger {
-    background: #e74c3c;
+    background: var(--tf-color-danger);
     color: white;
   }
 
   .btn-danger:hover {
-    background: #c0392b;
-    transform: translateY(-2px);
+    background: color-mix(in srgb, var(--tf-color-danger) 85%, black);
   }
 
   .btn-upgrade {
     width: 100%;
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: var(--tf-color-primary);
     color: white;
     margin-top: 1rem;
   }
@@ -344,8 +345,8 @@ const { id } = Astro.params;
   .spinner {
     width: 50px;
     height: 50px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
+    border: 4px solid var(--tf-border);
+    border-top: 4px solid var(--tf-color-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 1rem;
@@ -363,24 +364,24 @@ const { id } = Astro.params;
   }
 
   .settings-section {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
+    background: var(--tf-bg-surface);
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius-lg);
     padding: 2rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--tf-shadow-sm);
     margin-bottom: 1.5rem;
   }
 
   .settings-section h2 {
     margin: 0 0 1.5rem 0;
     font-size: 1.25rem;
-    color: var(--text-primary);
+    color: var(--tf-text-primary);
   }
 
   .settings-section h4 {
     margin: 1.5rem 0 1rem 0;
     font-size: 1rem;
-    color: var(--text-primary);
+    color: var(--tf-text-primary);
   }
 
   .settings-form {
@@ -403,31 +404,31 @@ const { id } = Astro.params;
 
   label {
     font-weight: 600;
-    color: #333;
+    color: var(--tf-text-primary);
     font-size: 0.9rem;
   }
 
   label.required::after {
     content: ' *';
-    color: #e74c3c;
+    color: var(--tf-color-danger);
   }
 
   .form-control {
     padding: 0.75rem;
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
+    border: 2px solid var(--tf-border);
+    border-radius: var(--tf-radius-md);
     font-size: 1rem;
     transition: all 0.3s ease;
     font-family: inherit;
-    background: var(--input-bg);
-    color: var(--text-primary);
+    background: var(--tf-bg-input);
+    color: var(--tf-text-primary);
   }
 
   .form-control:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: var(--tf-color-primary);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--tf-bg-elevated);
   }
 
   textarea.form-control {
@@ -438,7 +439,7 @@ const { id } = Astro.params;
     display: flex;
     justify-content: flex-end;
     padding-top: 1rem;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--tf-border);
   }
 
   .plan-info {
@@ -456,13 +457,13 @@ const { id } = Astro.params;
   .plan-header h3 {
     margin: 0 0 0.25rem 0;
     font-size: 1.5rem;
-    color: #667eea;
+    color: var(--tf-color-primary);
   }
 
   .plan-description {
     margin: 0;
     font-size: 0.9rem;
-    color: var(--text-secondary);
+    color: var(--tf-text-secondary);
   }
 
   .plan-badge {
@@ -470,13 +471,13 @@ const { id } = Astro.params;
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 600;
-    background: #4caf50;
+    background: var(--tf-color-success);
     color: white;
   }
 
   .plan-features {
-    background: rgba(102, 126, 234, 0.1);
-    border-radius: 8px;
+    background: var(--tf-bg-elevated);
+    border-radius: var(--tf-radius-md);
     padding: 1.5rem;
     margin: 1.5rem 0;
   }
@@ -489,7 +490,7 @@ const { id } = Astro.params;
 
   .plan-features li {
     padding: 0.5rem 0;
-    color: var(--text-secondary);
+    color: var(--tf-text-secondary);
   }
 
   .limits-list {
@@ -506,34 +507,34 @@ const { id } = Astro.params;
 
   .limit-label {
     font-weight: 600;
-    color: #666;
+    color: var(--tf-text-secondary);
   }
 
   .limit-value {
     font-size: 0.9rem;
-    color: #999;
+    color: var(--tf-text-muted);
   }
 
   .progress-bar {
     width: 100%;
     height: 8px;
-    background: #f0f0f0;
+    background: var(--tf-bg-input);
     border-radius: 4px;
     overflow: hidden;
   }
 
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: var(--tf-color-primary);
     transition: width 0.3s ease;
   }
 
   .danger-section {
-    border: 2px solid #ffe0e0;
+    border: 2px solid rgba(239, 68, 68, 0.3);
   }
 
   .danger-section h2 {
-    color: #e74c3c;
+    color: var(--tf-color-danger);
   }
 
   .danger-content {
@@ -552,12 +553,12 @@ const { id } = Astro.params;
   .danger-item h3 {
     margin: 0 0 0.5rem 0;
     font-size: 1rem;
-    color: #333;
+    color: var(--tf-text-primary);
   }
 
   .danger-item p {
     margin: 0 0 0.5rem 0;
-    color: var(--text-secondary);
+    color: var(--tf-text-secondary);
     font-size: 0.9rem;
   }
 
@@ -569,13 +570,13 @@ const { id } = Astro.params;
 
   .danger-list li {
     padding: 0.5rem 0;
-    color: var(--text-secondary);
+    color: var(--tf-text-secondary);
     font-size: 0.9rem;
   }
 
   .danger-warning {
     font-weight: 600;
-    color: #e74c3c;
+    color: var(--tf-color-danger);
     margin-top: 1rem;
   }
 
@@ -586,11 +587,11 @@ const { id } = Astro.params;
   }
 
   .info-message {
-    background: rgba(102, 126, 234, 0.1);
-    border-left: 4px solid #667eea;
+    background: var(--tf-bg-elevated);
+    border-left: 4px solid var(--tf-color-primary);
     padding: 1rem;
-    border-radius: 8px;
-    color: var(--text-secondary);
+    border-radius: var(--tf-radius-md);
+    color: var(--tf-text-secondary);
     margin: 0;
   }
 
@@ -599,7 +600,7 @@ const { id } = Astro.params;
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem 0;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--tf-border);
   }
 
   .billing-detail:last-child {
@@ -608,11 +609,11 @@ const { id } = Astro.params;
 
   .billing-label {
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--tf-text-primary);
   }
 
   .billing-value {
-    color: var(--text-secondary);
+    color: var(--tf-text-secondary);
   }
 
   @media (max-width: 768px) {
