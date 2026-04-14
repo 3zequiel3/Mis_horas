@@ -1,0 +1,249 @@
+---
+/**
+ * ApprovalHistoryTimeline Component
+ * 
+ * Muestra el historial de cambios/aprobaciones de un período
+ * en formato timeline compacto y visual
+ */
+
+export interface ApprovalHistoryEntry {
+  id?: number;
+  action: 'approved' | 'rejected' | 'reopened' | 'submitted';
+  action_label: string;
+  timestamp: string | Date;
+  performed_by_email?: string;
+  notes?: string;
+  severity: 'info' | 'warning' | 'critical';
+}
+
+export interface Props {
+  history?: ApprovalHistoryEntry[];
+  maxItems?: number;
+}
+
+const { history = [], maxItems = 5 } = Astro.props;
+const recentHistory = history.slice(0, maxItems);
+
+const getSeverityColor = (severity: string): string => {
+  const colors: Record<string, string> = {
+    'info': 'bg-blue-100 text-blue-800',
+    'warning': 'bg-yellow-100 text-yellow-800',
+    'critical': 'bg-red-100 text-red-800',
+  };
+  return colors[severity] || colors.info;
+};
+
+const getActionIcon = (action: string): string => {
+  const icons: Record<string, string> = {
+    'approved': '✓',
+    'rejected': '✗',
+    'reopened': '↻',
+    'submitted': '→',
+  };
+  return icons[action] || '•';
+};
+
+const getActionColor = (action: string): string => {
+  const colors: Record<string, string> = {
+    'approved': 'bg-green-200 text-green-700',
+    'rejected': 'bg-red-200 text-red-700',
+    'reopened': 'bg-yellow-200 text-yellow-700',
+    'submitted': 'bg-blue-200 text-blue-700',
+  };
+  return colors[action] || 'bg-gray-200 text-gray-700';
+};
+
+const formatDate = (date: string | Date): string => {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+---
+
+<div class="approval-history-timeline">
+  <h4 class="approval-history-title">Historial de Cambios</h4>
+  
+  {recentHistory.length === 0 ? (
+    <div class="approval-history-empty">
+      <p>Sin cambios registrados</p>
+    </div>
+  ) : (
+    <ul class="approval-history-list">
+      {recentHistory.map((entry) => (
+        <li class="approval-history-entry">
+          <div class={`approval-history-icon ${getActionColor(entry.action)}`}>
+            {getActionIcon(entry.action)}
+          </div>
+          
+          <div class="approval-history-content">
+            <div class="approval-history-header">
+              <span class="approval-history-action">
+                {entry.action_label}
+              </span>
+              <time class="approval-history-time">
+                {formatDate(entry.timestamp)}
+              </time>
+            </div>
+            
+            {entry.performed_by_email && (
+              <p class="approval-history-author">
+                Por: <strong>{entry.performed_by_email}</strong>
+              </p>
+            )}
+            
+            {entry.notes && (
+              <p class="approval-history-notes">
+                "{entry.notes}"
+              </p>
+            )}
+            
+            <span class={`approval-history-severity ${getSeverityColor(entry.severity)}`}>
+              {entry.severity}
+            </span>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
+
+<style>
+  .approval-history-timeline {
+    border-radius: 8px;
+    background: var(--bg-elevated, #ffffff);
+    padding: 1rem;
+    border: 1px solid var(--border-color, #e5e7eb);
+  }
+
+  .approval-history-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary, #111827);
+    margin: 0 0 1rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .approval-history-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+
+  .approval-history-empty p {
+    font-size: 0.875rem;
+    color: var(--text-secondary, #6b7280);
+    margin: 0;
+  }
+
+  .approval-history-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .approval-history-entry {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 0.75rem;
+    background: var(--bg-secondary, #f9fafb);
+    border-radius: 6px;
+    font-size: 0.875rem;
+  }
+
+  .approval-history-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .approval-history-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .approval-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .approval-history-action {
+    font-weight: 500;
+    color: var(--text-primary, #111827);
+  }
+
+  .approval-history-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #6b7280);
+    white-space: nowrap;
+  }
+
+  .approval-history-author {
+    margin: 0.25rem 0;
+    color: var(--text-secondary, #6b7280);
+    font-size: 0.8125rem;
+  }
+
+  .approval-history-author strong {
+    color: var(--text-primary, #111827);
+  }
+
+  .approval-history-notes {
+    margin: 0.25rem 0;
+    color: var(--text-secondary, #6b7280);
+    font-size: 0.8125rem;
+    font-style: italic;
+    word-break: break-word;
+  }
+
+  .approval-history-severity {
+    display: inline-block;
+    margin-top: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: capitalize;
+  }
+
+  @media (max-width: 640px) {
+    .approval-history-entry {
+      padding: 0.5rem;
+      gap: 0.5rem;
+    }
+
+    .approval-history-icon {
+      width: 28px;
+      height: 28px;
+      font-size: 0.875rem;
+    }
+
+    .approval-history-header {
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .approval-history-time {
+      display: block;
+      width: 100%;
+      text-align: left;
+    }
+  }
+</style>

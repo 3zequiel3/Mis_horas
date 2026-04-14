@@ -19,6 +19,8 @@ const { children } = Astro.props;
 <script>
   import { AuthService } from '../services/auth';
 
+  const AUTH_SYNC_EVENT = 'auth_sync_event';
+
   // Verificar autenticación inmediatamente
   function checkAuth() {
     if (!AuthService.isAuthenticated()) {
@@ -31,6 +33,17 @@ const { children } = Astro.props;
 
   // Ejecutar inmediatamente
   checkAuth();
+
+  // Re-validar auth cuando cambia en otra pestaña o en el mismo contexto
+  window.addEventListener('storage', (event) => {
+    if (event.key === AUTH_SYNC_EVENT) {
+      checkAuth();
+    }
+  });
+
+  window.addEventListener('auth-state-changed', () => {
+    checkAuth();
+  });
 
   // Disparar evento personalizado cuando la autenticación está verificada
   if (AuthService.isAuthenticated()) {

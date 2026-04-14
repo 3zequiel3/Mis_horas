@@ -14,13 +14,13 @@
 </button>
 
 <!-- Sidebar -->
-<aside id="project-sidebar" class="project-sidebar project-sidebar--hidden">
+<aside id="project-sidebar" class="project-sidebar project-sidebar--hidden" role="navigation" aria-label="Project sidebar">
   <div class="sidebar-title">Administración</div>
   <div class="sidebar-subtitle">Panel de Control</div>
   
   <ul class="sidebar-menu">
     <li class="menu-item active" data-view="dashboard">
-      <a href="#" class="menu-link">
+      <a href="#" class="menu-link" aria-current="true">
         <span class="menu-icon">📊</span>
         <p class="menu-text">Gestión</p>
       </a>
@@ -59,8 +59,8 @@
     top: 90px;
     left: 10px;
     z-index: 1001;
-    background: #667eea;
-    color: #fff;
+    background: var(--tf-color-primary);
+    color: var(--tf-text-primary);
     border: none;
     border-radius: 50%;
     width: 44px;
@@ -71,6 +71,15 @@
     font-size: 1.6rem;
     cursor: pointer;
     transition: background 0.2s, color 0.2s, left 0.3s, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-toggle:hover {
+    background: var(--tf-color-primary-hover);
+  }
+
+  .sidebar-toggle:focus-visible {
+    outline: 2px solid var(--tf-color-primary);
+    outline-offset: 2px;
   }
 
   .sidebar-toggle span {
@@ -105,15 +114,16 @@
       top: 90px;
       left: 0;
       width: 260px;
-      background: #1e1e1e;
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+      background: var(--tf-bg-surface);
+      border-right: 1px solid var(--tf-border);
+      box-shadow: var(--tf-shadow-md);
       padding: 3rem 0 1.5rem 0;
       z-index: 900;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
       margin-left: 0.5rem;
-      border-radius: 2rem;
+      border-radius: var(--tf-radius-lg);
       overflow: hidden;
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s, box-shadow 0.2s;
       will-change: transform, opacity;
@@ -130,7 +140,7 @@
     .sidebar-title {
       font-size: 1.1rem;
       font-weight: bold;
-      color: #667eea;
+      color: var(--tf-color-primary);
       margin-bottom: 0.25rem;
       letter-spacing: 0.3px;
       padding: 0 1.5rem;
@@ -139,7 +149,7 @@
 
     .sidebar-subtitle {
       font-size: 0.8rem;
-      color: #999;
+      color: var(--tf-text-muted);
       margin-bottom: 1.25rem;
       padding: 0 1.5rem;
       line-height: 1.2;
@@ -161,7 +171,7 @@
 
     .menu-link {
       text-decoration: none;
-      color: #d1d5db;
+      color: var(--tf-text-secondary);
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -169,15 +179,26 @@
       height: 100%;
       padding: 0.75rem 1.5rem 0.75rem 1.8rem;
       font-size: 1rem;
-      border-left: 3.5px solid transparent;
+      border-left: 3px solid transparent;
       background: none;
       transition: all 0.2s;
     }
 
-    .menu-item.active .menu-link,
+    .menu-link:focus-visible {
+      outline: 2px solid var(--tf-color-primary);
+      outline-offset: -2px;
+    }
+
+    .menu-item.active .menu-link {
+      color: var(--tf-color-primary);
+      border-left-color: var(--tf-color-primary);
+      background: rgba(102, 126, 234, 0.08);
+    }
+
     .menu-item:hover .menu-link {
-      color: #667eea;
-      border-left-color: #667eea;
+      color: var(--tf-color-primary);
+      border-left-color: var(--tf-color-primary);
+      background: rgba(102, 126, 234, 0.05);
     }
 
     .menu-icon {
@@ -303,11 +324,11 @@
         if (isHidden) {
           iconHamburguesa.style.display = '';
           iconX.style.display = 'none';
-          sidebarToggle.style.background = '#667eea';
+          sidebarToggle.style.background = 'var(--tf-color-primary)';
         } else {
           iconHamburguesa.style.display = 'none';
           iconX.style.display = '';
-          sidebarToggle.style.background = '#1e1e1e';
+          sidebarToggle.style.background = 'var(--tf-bg-surface)';
         }
       }
     }

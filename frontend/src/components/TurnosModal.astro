@@ -5,11 +5,11 @@
  */
 ---
 
-<div id="turnos-modal" class="modal-overlay" style="display: none;">
+<div id="turnos-modal" class="modal-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="turnos-title">
   <div class="modal-content turnos-modal">
     <div class="modal-header">
       <div>
-        <h2>⏰ Gestionar Turnos</h2>
+        <h2 id="turnos-title">⏰ Gestionar Turnos</h2>
         <p class="modal-subtitle"><span id="modal-empleado-nombre"></span> - <span id="modal-fecha"></span></p>
       </div>
       <button class="modal-close" id="close-turnos-modal">&times;</button>
@@ -95,7 +95,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -104,7 +104,7 @@
 }
 
 .turnos-modal {
-  background: var(--bg-primary);
+  background: var(--tf-bg-elevated);
   border-radius: 16px;
   width: 90%;
   max-width: 600px;
@@ -112,7 +112,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--tf-border);
 }
 
 .modal-header {
@@ -120,20 +120,20 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--tf-border);
   flex-shrink: 0;
 }
 
 .modal-header h2 {
   margin: 0 0 0.25rem 0;
   font-size: 1.35rem;
-  color: var(--text-primary);
+  color: var(--tf-text-primary);
 }
 
 .modal-subtitle {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--tf-text-secondary);
   font-weight: 400;
 }
 
@@ -141,7 +141,7 @@
   background: none;
   border: none;
   font-size: 2rem;
-  color: var(--text-secondary);
+  color: var(--tf-text-secondary);
   cursor: pointer;
   line-height: 1;
   padding: 0;
@@ -154,7 +154,7 @@
 }
 
 .modal-close:hover {
-  color: var(--text-primary);
+  color: var(--tf-text-primary);
 }
 
 .modal-body {
@@ -174,7 +174,7 @@
 .turno-section h3 {
   margin: 0 0 0.75rem 0;
   font-size: 1.05rem;
-  color: var(--text-primary);
+  color: var(--tf-text-primary);
 }
 
 .time-inputs {
@@ -192,16 +192,16 @@
 
 .time-group label {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--tf-text-secondary);
   font-weight: 500;
 }
 
 .time-group input[type="time"] {
   padding: 0.625rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--tf-border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
+  background: var(--tf-bg-input);
+  color: var(--tf-text-primary);
   font-size: 0.95rem;
   font-family: inherit;
   transition: all 0.3s ease;
@@ -209,7 +209,7 @@
 
 .time-group input[type="time"]:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--tf-color-primary);
   background: rgba(102, 126, 234, 0.1);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
@@ -218,12 +218,12 @@
   margin: 0;
   text-align: right;
   font-size: 0.875rem;
-  color: var(--text-secondary);
+  color: var(--tf-text-secondary);
 }
 
 .subtotal span {
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--tf-text-primary);
 }
 
 .totales-section {
@@ -250,13 +250,13 @@
 .total-label,
 .extras-label {
   font-size: 0.95rem;
-  color: var(--text-secondary);
+  color: var(--tf-text-secondary);
 }
 
 .total-value {
   font-size: 1.35rem;
   font-weight: 700;
-  color: #667eea;
+  color: var(--tf-color-primary);
 }
 
 .extras-row {
@@ -267,7 +267,7 @@
 .extras-value {
   font-size: 1.15rem;
   font-weight: 600;
-  color: #4caf50;
+  color: var(--tf-color-success);
 }
 
 .modal-actions {
@@ -288,18 +288,18 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--tf-color-primary);
   color: white;
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+  background: var(--tf-color-primary-hover);
+  box-shadow: var(--tf-shadow-md);
 }
 
 .btn-secondary {
   background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
+  color: var(--tf-text-primary);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 

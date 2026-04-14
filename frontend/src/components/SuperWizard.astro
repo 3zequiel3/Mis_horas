@@ -14,6 +14,12 @@ interface Props {
 }
 
 const { organizationType = 'personal' } = Astro.props;
+
+/**
+ * P2.4 NOTE: Este componente es candidato para refactorización a React con `client:visible`.
+ * Directiva propuesta: client:visible (Se hidrata cuando es visible en viewport)
+ * Razón: Wizard de creación es deferred (no en critical path)
+ */
 ---
 
 <script define:vars={{ API_BASE_URL }}>
@@ -151,7 +157,7 @@ const { organizationType = 'personal' } = Astro.props;
       <!-- Step 1: Identidad -->
       <div class="flex items-center">
         <div 
-          :class="currentStep > 1 ? 'bg-green-500 text-white' : currentStep === 1 ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500'"
+          :class="currentStep > 1 ? 'bg-[var(--tf-color-success)] text-white' : currentStep === 1 ? 'bg-[var(--tf-color-primary)] text-white' : 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-secondary)]'"
           class="w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors"
         >
           <span x-show="currentStep <= 1">1</span>
@@ -162,17 +168,17 @@ const { organizationType = 'personal' } = Astro.props;
         <span class="ml-2 text-sm font-medium">Identidad</span>
       </div>
 
-      <div class="flex-1 h-1 mx-2 bg-gray-200 rounded">
+      <div class="flex-1 h-1 mx-2 bg-[var(--tf-bg-surface)] rounded">
         <div 
           :style="`width: ${currentStep > 1 ? 100 : 0}%`"
-          class="h-full bg-indigo-600 transition-all duration-500"
+          class="h-full bg-[var(--tf-color-primary)] transition-all duration-500"
         ></div>
       </div>
 
       <!-- Step 2: Módulos -->
       <div class="flex items-center">
         <div 
-          :class="currentStep > 2 ? 'bg-green-500 text-white' : currentStep === 2 ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500'"
+          :class="currentStep > 2 ? 'bg-[var(--tf-color-success)] text-white' : currentStep === 2 ? 'bg-[var(--tf-color-primary)] text-white' : 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-secondary)]'"
           class="w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors"
         >
           <span x-show="currentStep <= 2">2</span>
@@ -186,16 +192,16 @@ const { organizationType = 'personal' } = Astro.props;
       <!-- Step 3: Finanzas (condicional) -->
       <template x-if="formData.modules_config.budget">
         <>
-          <div class="flex-1 h-1 mx-2 bg-gray-200 rounded">
+          <div class="flex-1 h-1 mx-2 bg-[var(--tf-bg-surface)] rounded">
             <div 
               :style="`width: ${currentStep > financialStepNumber ? 100 : 0}%`"
-              class="h-full bg-indigo-600 transition-all duration-500"
+              class="h-full bg-[var(--tf-color-primary)] transition-all duration-500"
             ></div>
           </div>
 
           <div class="flex items-center">
             <div 
-              :class="currentStep > financialStepNumber ? 'bg-green-500 text-white' : currentStep === financialStepNumber ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500'"
+              :class="currentStep > financialStepNumber ? 'bg-[var(--tf-color-success)] text-white' : currentStep === financialStepNumber ? 'bg-[var(--tf-color-primary)] text-white' : 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-secondary)]'"
               class="w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors"
             >
               <span x-show="currentStep <= financialStepNumber">3</span>
@@ -211,16 +217,16 @@ const { organizationType = 'personal' } = Astro.props;
       <!-- Step 4: Equipo (condicional) -->
       <template x-if="organizationType === 'empresa'">
         <>
-          <div class="flex-1 h-1 mx-2 bg-gray-200 rounded">
+          <div class="flex-1 h-1 mx-2 bg-[var(--tf-bg-surface)] rounded">
             <div 
               :style="`width: ${currentStep > teamStepNumber ? 100 : 0}%`"
-              class="h-full bg-indigo-600 transition-all duration-500"
+              class="h-full bg-[var(--tf-color-primary)] transition-all duration-500"
             ></div>
           </div>
 
           <div class="flex items-center">
             <div 
-              :class="currentStep === teamStepNumber ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500'"
+              :class="currentStep === teamStepNumber ? 'bg-[var(--tf-color-primary)] text-white' : 'bg-[var(--tf-bg-surface)] text-[var(--tf-text-secondary)]'"
               class="w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors"
             >
               <span x-text="teamStepNumber"></span>
@@ -233,53 +239,52 @@ const { organizationType = 'personal' } = Astro.props;
   </div>
 
   <!-- Form Content -->
-  <div class="bg-white rounded-lg shadow-lg p-8">
+  <div class="bg-[var(--tf-bg-elevated)] rounded-lg shadow-lg p-8 border border-[var(--tf-border)]" role="form" aria-label="Crear nuevo proyecto">
     <!-- Step 1: Identidad -->
     <div x-show="currentStep === 1" class="space-y-6">
-      <h3 class="text-2xl font-bold text-gray-900">Identidad del Proyecto</h3>
+      <h3 class="text-2xl font-bold text-[var(--tf-text-primary)]">Identidad del Proyecto</h3>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">
-          Nombre del proyecto <span class="text-red-500">*</span>
+        <label class="block text-sm font-medium text-[var(--tf-text-primary)] mb-1">
+          Nombre del proyecto <span class="text-[var(--tf-color-danger)]">*</span>
         </label>
         <input
           type="text"
           x-model="formData.nombre"
           placeholder="ej: Plataforma E-commerce"
-          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          required
+          class="w-full px-4 py-2 border border-[var(--tf-border)] rounded-md focus:ring-2 focus:ring-[var(--tf-color-primary)] focus:border-[var(--tf-color-primary)]"
         />
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+        <label class="block text-sm font-medium text-[var(--tf-text-primary)] mb-1">Descripción</label>
         <textarea
           x-model="formData.descripcion"
           rows="4"
           placeholder="Breve descripción del proyecto..."
-          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          class="w-full px-4 py-2 border border-[var(--tf-border)] rounded-md focus:ring-2 focus:ring-[var(--tf-color-primary)] focus:border-[var(--tf-color-primary)]"
         ></textarea>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+        <label class="block text-sm font-medium text-[var(--tf-text-primary)] mb-1">Cliente</label>
         <input
           type="text"
           x-model="formData.client_name"
           placeholder="Nombre del cliente (opcional)"
-          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          class="w-full px-4 py-2 border border-[var(--tf-border)] rounded-md focus:ring-2 focus:ring-[var(--tf-color-primary)] focus:border-[var(--tf-color-primary)]"
         />
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Color de marca</label>
+        <label class="block text-sm font-medium text-[var(--tf-text-primary)] mb-2">Color de marca</label>
         <div class="flex items-center space-x-3 mb-3">
           <template x-for="color in presetColors" :key="color">
             <button
               type="button"
               @click="formData.brand_color = color"
               :style="`background-color: ${color}`"
-              :class="formData.brand_color === color ? 'ring-4 ring-indigo-300' : ''"
+              :class="formData.brand_color === color ? 'ring-4 ring-[var(--tf-color-primary)]' : ''"
               class="w-10 h-10 rounded-full transition-all hover:scale-110"
             ></button>
           </template>
@@ -288,12 +293,12 @@ const { organizationType = 'personal' } = Astro.props;
           <input
             type="color"
             x-model="formData.brand_color"
-            class="h-10 w-20 rounded border border-gray-300"
+            class="h-10 w-20 rounded border border-[var(--tf-border)]"
           />
           <input
             type="text"
             x-model="formData.brand_color"
-            class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            class="flex-1 px-4 py-2 border border-[var(--tf-border)] rounded-md focus:ring-2 focus:ring-[var(--tf-color-primary)] focus:border-[var(--tf-color-primary)]"
           />
         </div>
       </div>
@@ -301,122 +306,122 @@ const { organizationType = 'personal' } = Astro.props;
 
     <!-- Step 2: Módulos -->
     <div x-show="currentStep === 2" class="space-y-6">
-      <h3 class="text-2xl font-bold text-gray-900">Módulos del Proyecto</h3>
-      <p class="text-gray-600">Selecciona las funcionalidades que necesitas</p>
+      <h3 class="text-2xl font-bold text-[var(--tf-text-primary)]">Módulos del Proyecto</h3>
+      <p class="text-[var(--tf-text-secondary)]">Selecciona las funcionalidades que necesitas</p>
 
       <div class="grid grid-cols-2 gap-4">
         <!-- Presupuesto -->
         <button
           type="button"
           @click="formData.modules_config.budget = !formData.modules_config.budget"
-          :class="formData.modules_config.budget ? 'ring-4 ring-indigo-500 bg-indigo-50' : 'bg-white'"
-          class="p-6 border-2 border-gray-200 rounded-lg text-left hover:border-indigo-300 transition-all"
+          :class="formData.modules_config.budget ? 'ring-4 ring-[var(--tf-color-primary)] bg-[var(--tf-bg-surface)]' : 'bg-[var(--tf-bg-elevated)]'"
+          class="p-6 border-2 border-[var(--tf-border)] rounded-lg text-left hover:border-[var(--tf-border-hover)] transition-all"
         >
           <div class="text-4xl mb-3">💰</div>
-          <h4 class="font-semibold text-gray-900 mb-1">Gestión de Presupuesto</h4>
-          <p class="text-sm text-gray-500">Control de costos y burn rate</p>
+          <h4 class="font-semibold text-[var(--tf-text-primary)] mb-1">Gestión de Presupuesto</h4>
+          <p class="text-sm text-[var(--tf-text-secondary)]">Control de costos y burn rate</p>
         </button>
 
         <!-- Time Tracking -->
         <button
           type="button"
           @click="formData.modules_config.time_tracking = !formData.modules_config.time_tracking"
-          :class="formData.modules_config.time_tracking ? 'ring-4 ring-indigo-500 bg-indigo-50' : 'bg-white'"
-          class="p-6 border-2 border-gray-200 rounded-lg text-left hover:border-indigo-300 transition-all"
+          :class="formData.modules_config.time_tracking ? 'ring-4 ring-[var(--tf-color-primary)] bg-[var(--tf-bg-surface)]' : 'bg-[var(--tf-bg-elevated)]'"
+          class="p-6 border-2 border-[var(--tf-border)] rounded-lg text-left hover:border-[var(--tf-border-hover)] transition-all"
         >
           <div class="text-4xl mb-3">⏱️</div>
-          <h4 class="font-semibold text-gray-900 mb-1">Seguimiento de Tiempo</h4>
-          <p class="text-sm text-gray-500">Registro de horas trabajadas</p>
+          <h4 class="font-semibold text-[var(--tf-text-primary)] mb-1">Seguimiento de Tiempo</h4>
+          <p class="text-sm text-[var(--tf-text-secondary)]">Registro de horas trabajadas</p>
         </button>
 
         <!-- Auditoría -->
         <button
           type="button"
           @click="formData.modules_config.audit = !formData.modules_config.audit"
-          :class="formData.modules_config.audit ? 'ring-4 ring-indigo-500 bg-indigo-50' : 'bg-white'"
-          class="p-6 border-2 border-gray-200 rounded-lg text-left hover:border-indigo-300 transition-all"
+          :class="formData.modules_config.audit ? 'ring-4 ring-[var(--tf-color-primary)] bg-[var(--tf-bg-surface)]' : 'bg-[var(--tf-bg-elevated)]'"
+          class="p-6 border-2 border-[var(--tf-border)] rounded-lg text-left hover:border-[var(--tf-border-hover)] transition-all"
         >
           <div class="text-4xl mb-3">📋</div>
-          <h4 class="font-semibold text-gray-900 mb-1">Auditoría</h4>
-          <p class="text-sm text-gray-500">Timeline de cambios y acciones</p>
+          <h4 class="font-semibold text-[var(--tf-text-primary)] mb-1">Auditoría</h4>
+          <p class="text-sm text-[var(--tf-text-secondary)]">Timeline de cambios y acciones</p>
         </button>
 
         <!-- Aprobaciones -->
         <button
           type="button"
           @click="formData.modules_config.approvals = !formData.modules_config.approvals"
-          :class="formData.modules_config.approvals ? 'ring-4 ring-indigo-500 bg-indigo-50' : 'bg-white'"
-          class="p-6 border-2 border-gray-200 rounded-lg text-left hover:border-indigo-300 transition-all"
+          :class="formData.modules_config.approvals ? 'ring-4 ring-[var(--tf-color-primary)] bg-[var(--tf-bg-surface)]' : 'bg-[var(--tf-bg-elevated)]'"
+          class="p-6 border-2 border-[var(--tf-border)] rounded-lg text-left hover:border-[var(--tf-border-hover)] transition-all"
         >
           <div class="text-4xl mb-3">✓</div>
-          <h4 class="font-semibold text-gray-900 mb-1">Aprobaciones</h4>
-          <p class="text-sm text-gray-500">Flujo de aprobación de períodos</p>
+          <h4 class="font-semibold text-[var(--tf-text-primary)] mb-1">Aprobaciones</h4>
+          <p class="text-sm text-[var(--tf-text-secondary)]">Flujo de aprobación de períodos</p>
         </button>
 
         <!-- Vista Pública -->
         <button
           type="button"
           @click="formData.modules_config.public_view = !formData.modules_config.public_view"
-          :class="formData.modules_config.public_view ? 'ring-4 ring-indigo-500 bg-indigo-50' : 'bg-white'"
-          class="p-6 border-2 border-gray-200 rounded-lg text-left hover:border-indigo-300 transition-all"
+          :class="formData.modules_config.public_view ? 'ring-4 ring-[var(--tf-color-primary)] bg-[var(--tf-bg-surface)]' : 'bg-[var(--tf-bg-elevated)]'"
+          class="p-6 border-2 border-[var(--tf-border)] rounded-lg text-left hover:border-[var(--tf-border-hover)] transition-all"
         >
           <div class="text-4xl mb-3">🌐</div>
-          <h4 class="font-semibold text-gray-900 mb-1">Vista Pública</h4>
-          <p class="text-sm text-gray-500">Compartir progreso con cliente</p>
+          <h4 class="font-semibold text-[var(--tf-text-primary)] mb-1">Vista Pública</h4>
+          <p class="text-sm text-[var(--tf-text-secondary)]">Compartir progreso con cliente</p>
         </button>
       </div>
     </div>
 
     <!-- Step 3: Estrategia Financiera (condicional) -->
     <div x-show="currentStep === financialStepNumber && formData.modules_config.budget" class="space-y-6">
-      <h3 class="text-2xl font-bold text-gray-900">Estrategia Financiera</h3>
-      <p class="text-gray-600">¿Cómo se facturará este proyecto?</p>
+      <h3 class="text-2xl font-bold text-[var(--tf-text-primary)]">Estrategia Financiera</h3>
+      <p class="text-[var(--tf-text-secondary)]">¿Cómo se facturará este proyecto?</p>
 
       <div class="grid grid-cols-3 gap-4">
         <!-- Monto Fijo -->
         <button
           type="button"
           @click="formData.budget_type = 'fixed_price'"
-          :class="formData.budget_type === 'fixed_price' ? 'ring-4 ring-indigo-500 bg-indigo-50' : 'bg-white'"
-          class="p-6 border-2 border-gray-200 rounded-lg text-center hover:border-indigo-300 transition-all"
+          :class="formData.budget_type === 'fixed_price' ? 'ring-4 ring-[var(--tf-color-primary)] bg-[var(--tf-bg-surface)]' : 'bg-[var(--tf-bg-elevated)]'"
+          class="p-6 border-2 border-[var(--tf-border)] rounded-lg text-center hover:border-[var(--tf-border-hover)] transition-all"
         >
           <div class="text-4xl mb-3">💵</div>
-          <h4 class="font-semibold text-gray-900 mb-1">Monto Fijo</h4>
-          <p class="text-xs text-gray-500">Precio cerrado por proyecto</p>
+          <h4 class="font-semibold text-[var(--tf-text-primary)] mb-1">Monto Fijo</h4>
+          <p class="text-xs text-[var(--tf-text-secondary)]">Precio cerrado por proyecto</p>
         </button>
 
         <!-- Bolsa de Horas -->
         <button
           type="button"
           @click="formData.budget_type = 'hourly_retainer'"
-          :class="formData.budget_type === 'hourly_retainer' ? 'ring-4 ring-indigo-500 bg-indigo-50' : 'bg-white'"
-          class="p-6 border-2 border-gray-200 rounded-lg text-center hover:border-indigo-300 transition-all"
+          :class="formData.budget_type === 'hourly_retainer' ? 'ring-4 ring-[var(--tf-color-primary)] bg-[var(--tf-bg-surface)]' : 'bg-[var(--tf-bg-elevated)]'"
+          class="p-6 border-2 border-[var(--tf-border)] rounded-lg text-center hover:border-[var(--tf-border-hover)] transition-all"
         >
           <div class="text-4xl mb-3">⏰</div>
-          <h4 class="font-semibold text-gray-900 mb-1">Bolsa de Horas</h4>
-          <p class="text-xs text-gray-500">Cantidad de horas contratadas</p>
+          <h4 class="font-semibold text-[var(--tf-text-primary)] mb-1">Bolsa de Horas</h4>
+          <p class="text-xs text-[var(--tf-text-secondary)]">Cantidad de horas contratadas</p>
         </button>
 
         <!-- Time & Materials -->
         <button
           type="button"
           @click="formData.budget_type = 'time_and_materials'"
-          :class="formData.budget_type === 'time_and_materials' ? 'ring-4 ring-indigo-500 bg-indigo-50' : 'bg-white'"
-          class="p-6 border-2 border-gray-200 rounded-lg text-center hover:border-indigo-300 transition-all"
+          :class="formData.budget_type === 'time_and_materials' ? 'ring-4 ring-[var(--tf-color-primary)] bg-[var(--tf-bg-surface)]' : 'bg-[var(--tf-bg-elevated)]'"
+          class="p-6 border-2 border-[var(--tf-border)] rounded-lg text-center hover:border-[var(--tf-border-hover)] transition-all"
         >
           <div class="text-4xl mb-3">📊</div>
-          <h4 class="font-semibold text-gray-900 mb-1">Por Hora (T&M)</h4>
-          <p class="text-xs text-gray-500">Facturación por tiempo real</p>
+          <h4 class="font-semibold text-[var(--tf-text-primary)] mb-1">Por Hora (T&M)</h4>
+          <p class="text-xs text-[var(--tf-text-secondary)]">Facturación por tiempo real</p>
         </button>
       </div>
 
       <!-- Inputs según tipo -->
       <div x-show="formData.budget_type === 'fixed_price'" class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+          <label class="block text-sm font-medium text-[var(--tf-text-primary)] mb-1">Moneda</label>
           <select
             x-model="formData.currency"
-            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            class="w-full px-4 py-2 border border-[var(--tf-border)] rounded-md focus:ring-2 focus:ring-[var(--tf-color-primary)]"
           >
             <option value="USD">🇺🇸 USD - Dólar</option>
             <option value="EUR">🇪🇺 EUR - Euro</option>
@@ -426,32 +431,32 @@ const { organizationType = 'personal' } = Astro.props;
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Monto</label>
+          <label class="block text-sm font-medium text-[var(--tf-text-primary)] mb-1">Monto</label>
           <input
             type="number"
             x-model="formData.budget_base_amount"
             placeholder="50000"
-            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            class="w-full px-4 py-2 border border-[var(--tf-border)] rounded-md focus:ring-2 focus:ring-[var(--tf-color-primary)]"
           />
         </div>
       </div>
 
       <div x-show="formData.budget_type === 'hourly_retainer'" class="grid grid-cols-1 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad de horas</label>
+          <label class="block text-sm font-medium text-[var(--tf-text-primary)] mb-1">Cantidad de horas</label>
           <input
             type="number"
             x-model="formData.budget_base_amount"
             placeholder="160"
-            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+            class="w-full px-4 py-2 border border-[var(--tf-border)] rounded-md focus:ring-2 focus:ring-[var(--tf-color-primary)]"
           />
-          <p class="mt-1 text-xs text-gray-500">Total de horas contratadas para el proyecto</p>
+          <p class="mt-1 text-xs text-[var(--tf-text-secondary)]">Total de horas contratadas para el proyecto</p>
         </div>
       </div>
 
       <div x-show="formData.budget_type === 'time_and_materials'" class="grid grid-cols-1 gap-4">
-        <div class="p-4 bg-blue-50 border border-blue-200 rounded-md">
-          <p class="text-sm text-blue-800">
+        <div class="p-4 bg-[var(--tf-bg-surface)] border border-[var(--tf-border)] rounded-md">
+          <p class="text-sm text-[var(--tf-color-info)]">
             💡 En T&M se factura por el tiempo real trabajado. Puedes definir tarifas por rol en la configuración del proyecto.
           </p>
         </div>
@@ -460,24 +465,23 @@ const { organizationType = 'personal' } = Astro.props;
 
     <!-- Step 4: Equipo (condicional) -->
     <div x-show="currentStep === teamStepNumber && organizationType === 'empresa'" class="space-y-6">
-      <h3 class="text-2xl font-bold text-gray-900">Equipo del Proyecto</h3>
-      <p class="text-gray-600">Asigna miembros de tu organización</p>
+      <h3 class="text-2xl font-bold text-[var(--tf-text-primary)]">Equipo del Proyecto</h3>
+      <p class="text-[var(--tf-text-secondary)]">Asigna miembros de tu organización</p>
 
-      <div class="text-center py-12 text-gray-500">
+      <div class="text-center py-12 text-[var(--tf-text-secondary)]">
         <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
-        <p class="mt-4">Selector de equipo próximamente</p>
-      </div>
+        <p class="mt-4">Selector de equipo próximamente</p>      </div>
     </div>
 
     <!-- Navigation Buttons -->
-    <div class="flex justify-between mt-8 pt-6 border-t">
+    <div class="flex justify-between mt-8 pt-6 border-t border-[var(--tf-border)]">
       <button
         type="button"
         @click="prevStep()"
         x-show="currentStep > 1"
-        class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+        class="px-6 py-2 border border-[var(--tf-border)] rounded-md text-[var(--tf-text-primary)] hover:bg-[var(--tf-bg-surface)] font-medium transition-colors"
       >
         ← Anterior
       </button>
@@ -488,7 +492,7 @@ const { organizationType = 'personal' } = Astro.props;
         @click="nextStep()"
         x-show="currentStep < totalSteps"
         :disabled="!canProceed()"
-        :class="canProceed() ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-300 cursor-not-allowed'"
+        :class="canProceed() ? 'bg-[var(--tf-color-primary)] hover:bg-[var(--tf-color-primary-hover)]' : 'bg-[var(--tf-bg-surface)] cursor-not-allowed'"
         class="px-6 py-2 rounded-md text-white font-medium transition-colors"
       >
         Siguiente →
@@ -498,7 +502,7 @@ const { organizationType = 'personal' } = Astro.props;
         type="button"
         @click="submit()"
         x-show="currentStep === totalSteps"
-        class="px-8 py-2 bg-green-600 hover:bg-green-700 rounded-md text-white font-medium transition-colors"
+        class="px-8 py-2 bg-[var(--tf-color-success)] hover:brightness-110 rounded-md text-white font-medium transition-colors"
       >
         ✓ Crear Proyecto
       </button>
@@ -512,46 +516,7 @@ const { organizationType = 'personal' } = Astro.props;
   
   /* Contenedor principal */
   .max-w-4xl {
-    color: var(--text-primary);
-  }
-  
-  /* Pasos completados - usar color primario en modo oscuro */
-  .bg-green-500 {
-    background-color: var(--success-color, #10b981) !important;
-  }
-  
-  .bg-indigo-600 {
-    background-color: var(--primary-color, #667eea) !important;
-  }
-  
-  /* Pasos inactivos */
-  .bg-gray-200 {
-    background-color: var(--step-inactive-bg, rgba(156, 163, 175, 0.2)) !important;
-  }
-  
-  .text-gray-500 {
-    color: var(--text-secondary) !important;
-  }
-  
-  /* Barra de progreso */
-  .bg-gray-200.rounded {
-    background-color: var(--border-color, rgba(156, 163, 175, 0.2)) !important;
-  }
-  
-  /* Formulario - fondo de card */
-  .bg-white.rounded-lg.shadow-lg {
-    background-color: var(--card-bg) !important;
-    border: 1px solid var(--border-color);
-  }
-  
-  /* Títulos */
-  .text-gray-900 {
-    color: var(--text-primary) !important;
-  }
-  
-  /* Labels */
-  .text-gray-700 {
-    color: var(--text-primary) !important;
+    color: var(--tf-text-primary);
   }
   
   /* Inputs */
@@ -559,67 +524,37 @@ const { organizationType = 'personal' } = Astro.props;
   input[type="number"],
   textarea,
   select {
-    background-color: var(--input-bg, rgba(255, 255, 255, 0.05)) !important;
-    border-color: var(--border-color) !important;
-    color: var(--text-primary) !important;
+    background-color: var(--tf-bg-input) !important;
+    border-color: var(--tf-border) !important;
+    color: var(--tf-text-primary) !important;
   }
   
   input::placeholder,
   textarea::placeholder {
-    color: var(--text-secondary) !important;
+    color: var(--tf-text-secondary) !important;
     opacity: 0.6;
   }
   
   input:focus,
   textarea:focus,
   select:focus {
-    border-color: var(--primary-color, #667eea) !important;
-    ring-color: var(--primary-color, #667eea) !important;
+    border-color: var(--tf-color-primary) !important;
   }
   
-  /* Checkboxes y radio buttons */
+  /* Checkboxes */
   input[type="checkbox"] {
-    border-color: var(--border-color) !important;
-    background-color: var(--input-bg, rgba(255, 255, 255, 0.05)) !important;
+    border-color: var(--tf-border) !important;
+    background-color: var(--tf-bg-input) !important;
   }
   
   input[type="checkbox"]:checked {
-    background-color: var(--primary-color, #667eea) !important;
-    border-color: var(--primary-color, #667eea) !important;
-  }
-  
-  /* Text muted */
-  .text-gray-600 {
-    color: var(--text-secondary) !important;
-  }
-  
-  /* Divisores */
-  .border-gray-200 {
-    border-color: var(--border-color) !important;
-  }
-  
-  /* Hover states */
-  .hover\\:bg-gray-50:hover {
-    background-color: var(--hover-bg, rgba(102, 126, 234, 0.1)) !important;
-  }
-  
-  /* Cards internos */
-  .bg-gray-50 {
-    background-color: var(--card-header-bg, rgba(102, 126, 234, 0.05)) !important;
-  }
-  
-  .border-gray-300 {
-    border-color: var(--border-color) !important;
-  }
-  
-  /* Texto pequeño */
-  .text-sm {
-    font-size: 0.875rem;
+    background-color: var(--tf-color-primary) !important;
+    border-color: var(--tf-color-primary) !important;
   }
   
   /* Asegurar contraste en labels y spans */
   label,
-  span:not(.text-white):not(.bg-green-500):not(.bg-indigo-600) {
-    color: var(--text-primary);
+  span:not(.text-white) {
+    color: var(--tf-text-primary);
   }
 </style>

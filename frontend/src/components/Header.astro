@@ -10,19 +10,19 @@ const { children } = Astro.props;
 ---
 
 <header class="header">
-  <nav class="navbar">
+  <nav class="navbar" role="navigation" aria-label="Navegación principal">
     <div class="container navbar-content">
       <div class="nav-brand">
         <h1>⏱️ TimeFlow</h1>
       </div>
       
-      <button class="hamburger-toggle" aria-label="Toggle menu">
+      <button class="hamburger-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-menu">
         <span></span>
         <span></span>
         <span></span>
       </button>
 
-      <div class="nav-menu">
+      <div class="nav-menu" id="nav-menu">
         <OrganizationSelector />
         <a href="/dashboard" class="nav-link">Dashboard</a>
         <a href="/proyectos" class="nav-link">Proyectos</a>
@@ -37,12 +37,11 @@ const { children } = Astro.props;
 
 <style>
   .header {
-    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
-    color: white;
+    background: var(--tf-bg-surface);
+    color: var(--tf-text-primary);
     padding: 1rem 0;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     margin-bottom: 2rem;
-    border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    border-bottom: 1px solid var(--tf-border);
   }
 
   .navbar {
@@ -61,7 +60,7 @@ const { children } = Astro.props;
   .nav-brand h1 {
     margin: 0;
     font-size: 1.5rem;
-    color: #667eea;
+    color: var(--tf-color-primary);
     font-weight: 700;
   }
   
@@ -78,38 +77,34 @@ const { children } = Astro.props;
   }
 
   .nav-link {
-    color: var(--text-secondary);
+    color: var(--tf-text-secondary);
     text-decoration: none;
     transition: all 0.2s ease;
     font-weight: 500;
-    position: relative;
-  }
-
-  .nav-link::after {
-    content: '';
-    position: absolute;
-    bottom: -5px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    transition: width 0.3s ease;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--tf-radius-sm);
   }
 
   .nav-link:hover {
-    color: var(--text-primary);
+    color: var(--tf-text-primary);
+    background: var(--tf-bg-input);
   }
 
-  .nav-link:hover::after {
-    width: 100%;
+  .nav-link:focus-visible {
+    outline: 2px solid var(--tf-color-primary);
+    outline-offset: 2px;
+  }
+
+  .nav-link[aria-current="page"] {
+    color: var(--tf-color-primary);
+    background: rgba(102, 126, 234, 0.1);
   }
 
   .nav-link-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--tf-color-primary);
     color: white !important;
     padding: 0.5rem 1.25rem;
-    border-radius: 6px;
-    position: relative;
+    border-radius: var(--tf-radius-md);
     border: none;
     cursor: pointer;
     font-weight: 500;
@@ -117,13 +112,13 @@ const { children } = Astro.props;
     font-size: inherit;
   }
 
-  .nav-link-primary::after {
-    display: none;
+  .nav-link-primary:hover {
+    background: var(--tf-color-primary-hover);
   }
 
-  .nav-link-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+  .nav-link-primary:focus-visible {
+    outline: 2px solid var(--tf-color-primary);
+    outline-offset: 2px;
   }
 
   /* Hamburger Menu */
@@ -142,7 +137,7 @@ const { children } = Astro.props;
     display: block;
     width: 25px;
     height: 3px;
-    background: var(--text-primary);
+    background: var(--tf-text-primary);
     border-radius: 3px;
     transition: all 0.3s ease;
   }
@@ -174,11 +169,11 @@ const { children } = Astro.props;
       right: -100%;
       width: 280px;
       height: 100vh;
-      background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+      background: var(--tf-bg-surface);
       flex-direction: column;
       gap: 0;
       padding: 5rem 0 2rem 0;
-      box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
+      border-left: 1px solid var(--tf-border);
       transition: right 0.3s ease;
       z-index: 1000;
       overflow-y: auto;
@@ -192,16 +187,13 @@ const { children } = Astro.props;
       width: 100%;
       text-align: left;
       padding: 1rem 2rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid var(--tf-border);
+      border-radius: 0;
       transition: all 0.2s ease;
     }
 
-    .nav-link::after {
-      display: none;
-    }
-
     .nav-link:hover {
-      background: rgba(102, 126, 234, 0.1);
+      background: var(--tf-bg-input);
       padding-left: 2.5rem;
     }
 
@@ -239,6 +231,25 @@ const { children } = Astro.props;
 
   // Inicializar menú hamburguesa
   initHamburgerMenu();
+
+  // Marcar link activo con aria-current="page"
+  const currentPath = window.location.pathname;
+  document.querySelectorAll<HTMLAnchorElement>('.nav-link[href]').forEach(link => {
+    const href = link.getAttribute('href');
+    if (href && (currentPath === href || currentPath.startsWith(href + '/'))) {
+      link.setAttribute('aria-current', 'page');
+    }
+  });
+
+  // Sincronizar aria-expanded del hamburger
+  const hamburger = document.querySelector('.hamburger-toggle');
+  if (hamburger) {
+    const observer = new MutationObserver(() => {
+      const isActive = hamburger.classList.contains('active');
+      hamburger.setAttribute('aria-expanded', String(isActive));
+    });
+    observer.observe(hamburger, { attributes: true, attributeFilter: ['class'] });
+  }
 
   // FASE 2 PERMISOS: Mostrar/ocultar enlaces según permisos y modo organizacional
   async function adjustMenuByPermissions() {

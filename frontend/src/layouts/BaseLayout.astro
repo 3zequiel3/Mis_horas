@@ -1,4 +1,5 @@
 ---
+import '../styles/tokens.css';
 import '../styles/global.css';
 import '../styles/modales.css';
 import '../styles/invitaciones-modal.css';
@@ -18,16 +19,17 @@ const { title = 'TimeFlow' } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" href="/favicon.ico" />
+    <meta name="description" content="TimeFlow — Sistema de gestión de tiempo, proyectos y asistencia" />
+    <meta name="theme-color" content="#0f1419" />
     <title>{title} | TimeFlow</title>
   </head>
   <body>
     <slot />
     
-    <!-- Alpine.js Core -->
+    <!-- Alpine.js Global Initialization -->
     <script>
       import Alpine from 'alpinejs';
       
-      // Inicializar Alpine
       if (typeof window !== 'undefined') {
         window.Alpine = Alpine;
         Alpine.start();

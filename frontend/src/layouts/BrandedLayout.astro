@@ -19,31 +19,22 @@ const { title, projectId } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     
-    <!-- CSS Variables por defecto -->
+    <!-- CSS Variables de branding dinámico (namespaced para evitar colisión con tokens.css) -->
     <style is:inline>
       :root {
-        /* Colores por defecto (Indigo) */
-        --color-primary: #3b82f6;
-        --color-primary-dark: #2563eb;
-        --color-primary-light: #60a5fa;
-        --color-accent: #8b5cf6;
-        --color-primary-rgb: 59, 130, 246;
-        
-        /* Background & Text */
-        --color-background: #ffffff;
-        --color-text: #1f2937;
-        --color-border: #e5e7eb;
+        /* Branding por defecto — sobreescritas por loadProjectBranding() en runtime */
+        --brand-primary: #3b82f6;
+        --brand-primary-dark: #2563eb;
+        --brand-primary-light: #60a5fa;
+        --brand-accent: #8b5cf6;
+        --brand-primary-rgb: 59, 130, 246;
       }
       
       .dark {
-        --color-background: #111827;
-        --color-text: #f9fafb;
-        --color-border: #374151;
-      }
-      
-      body {
-        background-color: var(--color-background);
-        color: var(--color-text);
+        /* En dark mode, hereda de tokens del sistema como base */
+        --brand-background: var(--tf-bg-base, #111827);
+        --brand-text: var(--tf-text-primary, #f9fafb);
+        --brand-border: var(--tf-border, rgba(255, 255, 255, 0.1));
       }
     </style>
   </head>

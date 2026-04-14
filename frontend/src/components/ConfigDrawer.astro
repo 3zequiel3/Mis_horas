@@ -5,11 +5,11 @@
  */
 ---
 
-<div id="config-drawer" class="config-drawer">
+<div id="config-drawer" class="config-drawer" role="dialog" aria-modal="true" aria-labelledby="config-drawer-title">
   <div class="drawer-overlay" id="drawer-overlay"></div>
   <div class="drawer-content">
     <div class="drawer-header">
-      <h2>⚙️ Configuración del Proyecto</h2>
+      <h2 id="config-drawer-title">⚙️ Configuración del Proyecto</h2>
       <button class="drawer-close" id="drawer-close">✕</button>
     </div>
 
@@ -271,9 +271,9 @@
     bottom: 0;
     width: 100%;
     max-width: 600px;
-    background: linear-gradient(135deg, #1a1f2e 0%, #151a26 100%);
+    background: var(--tf-bg-elevated);
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
-    border-left: 1px solid rgba(102, 126, 234, 0.2);
+    border-left: 1px solid var(--tf-border);
     display: flex;
     flex-direction: column;
     animation: slideIn 0.2s ease-out;
@@ -296,29 +296,16 @@
     align-items: center;
     justify-content: space-between;
     padding: 2rem 2rem 1.5rem 2rem;
-    background: linear-gradient(180deg, rgba(102, 126, 234, 0.1) 0%, transparent 100%);
-    border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+    background: var(--tf-bg-surface);
+    border-bottom: 2px solid var(--tf-border);
     position: relative;
-  }
-
-  .drawer-header::before {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent);
   }
 
   .drawer-header h2 {
     margin: 0;
     font-size: 1.5rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--tf-color-primary);
     letter-spacing: -0.02em;
   }
 
@@ -397,7 +384,7 @@
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--tf-text-secondary);
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
@@ -407,34 +394,18 @@
     overflow: hidden;
   }
 
-  .drawer-tab::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
   .drawer-tab:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(102, 126, 234, 0.3);
-    color: var(--text-primary, #fff);
+    color: var(--tf-text-primary);
     transform: translateY(-2px);
   }
 
-  .drawer-tab:hover::before {
-    opacity: 1;
-  }
-
   .drawer-tab.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--tf-color-primary);
     border-color: transparent;
     color: white;
-    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+    box-shadow: var(--tf-shadow-md);
     transform: translateY(-2px);
   }
 
@@ -477,7 +448,7 @@
   .form-group label {
     font-size: 0.95rem;
     font-weight: 600;
-    color: var(--text-primary, #fff);
+    color: var(--tf-text-primary);
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -485,14 +456,14 @@
 
   .form-group small {
     font-size: 0.85rem;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--tf-text-secondary);
     margin-top: -0.25rem;
   }
 
   .form-input {
     padding: 0.875rem 1rem;
-    background: rgba(255, 255, 255, 0.04);
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    background: var(--tf-bg-input);
+    border: 2px solid var(--tf-border);
     border-radius: 10px;
     color: var(--text-primary, #fff);
     font-size: 0.95rem;
@@ -505,13 +476,13 @@
   }
 
   .form-input:hover {
-    border-color: rgba(102, 126, 234, 0.3);
+    border-color: var(--tf-border-hover);
     background: rgba(255, 255, 255, 0.06);
   }
 
   .form-input:focus {
     outline: none;
-    border-color: var(--primary-color, #667eea);
+    border-color: var(--tf-color-primary);
     background: rgba(255, 255, 255, 0.08);
     box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
   }
@@ -524,7 +495,7 @@
 
   .btn-primary {
     padding: 1rem 1.75rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--tf-color-primary);
     border: none;
     border-radius: 10px;
     color: white;
@@ -532,12 +503,12 @@
     font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.15s ease;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    box-shadow: var(--tf-shadow-sm);
   }
 
   .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    background: var(--tf-color-primary-hover);
+    box-shadow: var(--tf-shadow-md);
   }
 
   .btn-primary:active {
@@ -629,16 +600,16 @@
     align-items: center;
     justify-content: space-between;
     padding: 1.25rem 1.5rem;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
-    border: 2px solid rgba(255, 255, 255, 0.08);
+    background: var(--tf-bg-surface);
+    border: 2px solid var(--tf-border);
     border-radius: 12px;
     transition: all 0.15s ease;
     position: relative;
   }
 
   .module-item:hover {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%);
-    border-color: rgba(102, 126, 234, 0.3);
+    background: var(--tf-bg-elevated);
+    border-color: var(--tf-border-hover);
   }
 
   .module-info {
@@ -661,7 +632,7 @@
 
   .module-info strong {
     display: block;
-    color: var(--text-primary, #fff);
+    color: var(--tf-text-primary);
     font-size: 1rem;
     font-weight: 600;
     margin-bottom: 0.25rem;
@@ -669,7 +640,7 @@
 
   .module-info small {
     display: block;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--tf-text-secondary);
     font-size: 0.85rem;
   }
 
@@ -704,7 +675,7 @@
     width: 22px;
     left: 3px;
     bottom: 2px;
-    background: linear-gradient(135deg, #ffffff 0%, #e5e5e5 100%);
+    background: #ffffff;
     transition: all 0.15s ease;
     border-radius: 50%;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
@@ -716,18 +687,18 @@
   }
 
   input:checked + .toggle-slider {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--tf-color-primary);
     border-color: transparent;
   }
 
   input:checked + .toggle-slider:before {
     transform: translateX(26px);
-    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+    background: #ffffff;
     box-shadow: 0 1px 4px rgba(102, 126, 234, 0.4);
   }
 
   input:checked:hover + .toggle-slider {
-    background: linear-gradient(135deg, #5568d3 0%, #6a3d8f 100%);
+    background: var(--tf-color-primary-hover);
   }
 
   /* Settings Item */
@@ -736,21 +707,21 @@
     align-items: center;
     justify-content: space-between;
     padding: 1.25rem 1.5rem;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
-    border: 2px solid rgba(255, 255, 255, 0.08);
+    background: var(--tf-bg-surface);
+    border: 2px solid var(--tf-border);
     border-radius: 12px;
     margin-bottom: 2rem;
     transition: all 0.15s ease;
   }
 
   .setting-item:hover {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%);
-    border-color: rgba(102, 126, 234, 0.3);
+    background: var(--tf-bg-elevated);
+    border-color: var(--tf-border-hover);
   }
 
   .setting-info strong {
     display: block;
-    color: var(--text-primary, #fff);
+    color: var(--tf-text-primary);
     font-size: 1rem;
     font-weight: 600;
     margin-bottom: 0.375rem;
@@ -758,15 +729,15 @@
 
   .setting-info small {
     display: block;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--tf-text-secondary);
     font-size: 0.85rem;
   }
 
   /* Turno Group */
   .turno-group {
     padding: 1.5rem;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.03) 100%);
-    border: 2px solid rgba(102, 126, 234, 0.2);
+    background: var(--tf-bg-surface);
+    border: 2px solid var(--tf-border);
     border-radius: 12px;
     margin-bottom: 1.25rem;
     transition: all 0.15s ease;
