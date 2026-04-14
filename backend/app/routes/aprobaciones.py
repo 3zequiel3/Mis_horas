@@ -6,8 +6,10 @@ Sistema de aprobación de hojas de tiempo
 from flask import Blueprint, request, jsonify
 from app.decorators import token_required, organization_required
 from app.services.time_period_service import TimePeriodService
+from app.services.audit_service import AuditService
 from app.utils.permissions import has_permission, Permission
 from app.utils.response import error_response, success_response
+from app.models import TimePeriod
 
 aprobaciones_bp = Blueprint('aprobaciones', __name__, url_prefix='/api/aprobaciones')
 
@@ -182,6 +184,76 @@ def reopen_period(context, period_id):
         return success_response({'message': 'Período reabierto exitosamente'})
     
     return error_response(error_msg or "No se pudo reabrir el período", 400)
+
+
+@aprobaciones_bp.route('/history', methods=['GET'])
+@organization_required
+def get_period_history(context):
+    """
+    Obtiene historial de acciones de aprobación para un empleado y período.
+
+    Query params:
+    - empleado_id: ID del empleado (requerido)
+    - anio: Año (requerido)
+    - mes: Mes (requerido)
+    """
+    empleado_id = request.args.get('empleado_id', type=int)
+    anio = request.args.get('anio', type=int)
+    mes = request.args.get('mes', type=int)
+
+    if not empleado_id or not anio or not mes:
+        return error_response("Se requieren empleado_id, anio y mes", 400)
+
+    periods = TimePeriod.query.filter_by(
+        organization_id=context['organization_id'],
+        empleado_id=empleado_id,
+        anio=anio,
+        mes=mes
+    ).all()
+
+    if not periods:
+        return success_response({'history': []})
+
+    action_labels = {
+        'submit_timesheet': 'Período enviado',
+        'approve_timesheet': 'Período aprobado',
+        'reject_timesheet': 'Período rechazado',
+        'reopen_timesheet': 'Período reabierto',
+        'lock_period': 'Período bloqueado',
+    }
+
+    history = []
+    for period in periods:
+        logs = AuditService.get_resource_history(
+            organization_id=context['organization_id'],
+            resource_type='time_period',
+            resource_id=period.id
+        )
+
+        for log in logs:
+            extra = log.get('extra_data') or {}
+            history.append({
+                'id': log.get('id'),
+                'period_id': period.id,
+                'empleado_id': empleado_id,
+                'empleado_nombre': extra.get('empleado_nombre'),
+                'proyecto_id': period.proyecto_id,
+                'proyecto_nombre': log.get('resource_name'),
+                'anio': period.anio,
+                'mes': period.mes,
+                'action': log.get('action', ''),
+                'action_label': action_labels.get(log.get('action', ''), log.get('description') or log.get('action', '')), 
+                'timestamp': log.get('created_at'),
+                'performed_by_id': log.get('user_id'),
+                'performed_by_email': log.get('user_email'),
+                'performed_by_role': log.get('user_role'),
+                'notes': extra.get('notes'),
+                'severity': log.get('severity', 'info'),
+            })
+
+    history.sort(key=lambda entry: entry.get('timestamp') or '', reverse=True)
+
+    return success_response({'history': history})
 
 
 @aprobaciones_bp.route('/periods/<int:period_id>/lock', methods=['POST'])
