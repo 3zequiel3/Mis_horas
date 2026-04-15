@@ -1,271 +1,263 @@
 # TimeFlow — Visión General del Sistema
 
-> Documento de análisis técnico y funcional. Generado automáticamente a partir del código fuente.  
-> Última actualización: 2026-03-18
-
----
-
 ## ¿Qué es TimeFlow?
 
-TimeFlow es una **plataforma de gestión de tiempo, proyectos y recursos humanos** orientada a equipos y empresas. Su propósito central es permitir que organizaciones registren, controlen y analicen cómo se distribuye el tiempo real de trabajo de sus colaboradores dentro de proyectos, con visibilidad financiera integrada.
-
-A diferencia de un simple fichador o timesheet, TimeFlow combina:
-- Registro de asistencia con marcado automático
-- Gestión de proyectos con colaboradores
-- Motor financiero de rentabilidad por proyecto
-- Sistema de aprobaciones por períodos
-- Trazabilidad de auditoría completa (log inmutable tipo caja negra)
-- Arquitectura multi-tenant (múltiples organizaciones independientes)
+TimeFlow es una plataforma integral de gestión de tiempo, proyectos y recursos humanos. Permite a equipos y organizaciones trackear horas trabajadas, gestionar proyectos con tareas granulares, administrar colaboradores, y controlar presupuestos y rentabilidad — todo desde una interfaz web unificada con soporte multi-tenant.
 
 ---
 
 ## Stack Tecnológico
 
-| Capa | Tecnología |
-|------|-----------|
-| Backend | **Flask** (Python) + SQLAlchemy ORM |
-| Base de datos | **MySQL** (PyMySQL) |
-| Frontend | **Astro** (framework SSG/SSR) + Alpine.js + TailwindCSS |
-| Tareas programadas | **APScheduler** (cron interno, proceso aparte) |
-| Infraestructura | **Docker** + docker-compose |
-| Autenticación | JWT + sesiones con cookie |
-| Email | SMTP (servicio de emails de invitación / notificaciones) |
+| Capa | Tecnología | Versión | Notas |
+|------|-----------|---------|-------|
+| **Frontend** | Astro (SSR) | 6.1.3 | Server-side rendering con `@astrojs/node` |
+| **Interactividad** | Alpine.js | 3.15+ | Reactividad declarativa en HTML, sin framework SPA |
+| **Estilos** | Tailwind CSS | 4.2 | Configuración nativa con `@import "tailwindcss"` + `@theme` |
+| **Design Tokens** | CSS Custom Properties | — | Namespace `--tf-*` en `tokens.css` |
+| **State Management** | Nanostores | 1.2 | Store de organizaciones global |
+| **Backend** | Flask (Python) | — | API REST con blueprints |
+| **ORM** | SQLAlchemy | — | Modelos declarativos, migraciones SQL manuales |
+| **Base de Datos** | MySQL | 8.0 | UTF-8 mb4, `mysql_native_password` |
+| **Auth** | JWT | — | httpOnly cookies, middleware server-side |
+| **Infraestructura** | Docker + docker-compose | — | 3 servicios: db, backend, frontend |
+| **Scheduler** | APScheduler | — | Tareas programadas (cierre de períodos, etc.) |
+| **PDF** | jsPDF + html2canvas | — | Exportación de reportes |
+| **Alertas** | SweetAlert2 | 11.x | Confirmaciones y notificaciones UI |
+
+> **Nota:** React fue integrado en una iteración anterior y posteriormente **eliminado por completo** (Fase 5). Alpine.js maneja TODA la interactividad del frontend.
 
 ---
 
-## Arquitectura del Sistema
+## Arquitectura
 
-### Estructura de carpetas
+### Estructura General
 
 ```
 TimeFlow/
+├── docker-compose.yml          # Orquestación de servicios
+├── Makefile                    # Comandos de desarrollo
+├── .env                        # Variables de entorno (no versionado)
+│
 ├── backend/
+│   ├── main.py                 # Entry point Flask
+│   ├── scheduler.py            # APScheduler — tareas programadas
+│   ├── requirements.txt        # Dependencias Python
+│   ├── Dockerfile
 │   ├── app/
-│   │   ├── models/       # 23 modelos SQLAlchemy
-│   │   ├── routes/       # 21 blueprints Flask (endpoints)
-│   │   ├── services/     # 15 servicios de dominio
-│   │   └── utils/        # Helpers y decoradores
-│   ├── scheduler.py      # Proceso APScheduler autónomo
-│   └── main.py
-└── frontend/
-    └── src/
-        ├── pages/        # Rutas Astro (dashboard, proyectos, org...)
-        ├── components/   # Componentes reutilizables
-        ├── services/     # Llamadas a la API desde el cliente
-        ├── handlers/     # Lógica específica por sección
-        ├── layouts/      # Layouts base de las páginas
-        └── stores/       # Estado global del frontend
+│   │   ├── config.py           # Configuración Flask/DB
+│   │   ├── decorators.py       # Decoradores de auth y permisos
+│   │   ├── models/             # 23 modelos SQLAlchemy
+│   │   ├── routes/             # 21 blueprints de API
+│   │   ├── services/           # Lógica de negocio
+│   │   └── utils/              # Utilidades compartidas
+│   ├── migrations/             # SQL de migraciones (versionadas)
+│   └── scripts/                # Scripts de mantenimiento
+│
+├── frontend/
+│   ├── astro.config.mjs        # Config Astro + Tailwind 4 vite plugin
+│   ├── package.json            # Dependencias (pnpm)
+│   ├── Dockerfile
+│   └── src/
+│       ├── middleware.ts        # Entry de middleware Astro
+│       ├── middleware/auth.ts   # Validación JWT server-side
+│       ├── components/         # 15 componentes .astro
+│       ├── handlers/           # 22 módulos Alpine.js (lógica de página)
+│       ├── layouts/            # BaseLayout + BrandedLayout
+│       ├── pages/              # ~20 páginas (file-based routing)
+│       ├── services/           # 18 servicios API (fetch al backend)
+│       ├── stores/             # Nanostores (organizationStore)
+│       ├── styles/             # 18 archivos CSS (tokens + global + por feature)
+│       ├── types/              # 17 archivos TypeScript de tipos
+│       └── utils/              # 24 utilidades (auth, formatters, modals, etc.)
+│
+└── docs/                       # Documentación del sistema
 ```
+
+### Flujo de Datos
+
+```
+Browser → Astro SSR (middleware auth) → Página .astro → Alpine.js handler
+                                                             ↓
+                                                      fetch API (service)
+                                                             ↓
+                                              Flask API (blueprint → service → model)
+                                                             ↓
+                                                        MySQL 8.0
+```
+
+### Docker Services
+
+| Servicio | Container | Puerto |
+|----------|-----------|--------|
+| MySQL 8.0 | `timeflow_db_dev` | `${DB_PUBLIC_PORT}:3306` |
+| Flask Backend | `timeflow_backend_dev` | `${BACKEND_PUBLIC_PORT}:5000` |
+| Astro Frontend | `timeflow_frontend_dev` | `${FRONTEND_PUBLIC_PORT}:3000` |
+
+Los 3 servicios están en la red `timeflow-network-dev`. El backend depende del healthcheck de la DB.
 
 ---
 
 ## Fases de Desarrollo
 
-El sistema fue construido en **4 fases incrementales**, cada una registrada como comentarios en el código:
+### Fase 1 — MVP Core
+- Autenticación (registro, login, JWT httpOnly)
+- CRUD de proyectos con color de marca
+- Sistema de tareas con posicionamiento drag & preparado
+- Registro de horas diarias por tarea
+- Dashboard con métricas de resumen
 
-| Fase | Nombre | ¿Qué agrega? |
-|------|--------|-------------|
-| Fase 1 | **Multi-Tenant** | Organizaciones independientes, registro auto-crea org personal |
-| Fase 2 | **RBAC + Auditoría + Aprobaciones** | Roles, log de acciones inmutable, flujo de aprobación de timesheets |
-| Fase 3 | **Motor Financiero** | Tarifas, presupuestos, gastos, rentabilidad en tiempo real |
-| Fase 4 | **UX Unificada** | Módulos configurables por proyecto, branding, vista pública |
+### Fase 2 — Gestión de Colaboradores y Equipos
+- Invitaciones a proyectos por email
+- Roles de colaborador (owner, admin, collaborator, viewer)
+- Tablero de seguimiento de equipo
+- Separación de vistas: tablero-empleado vs tablero-proyecto
 
----
+### Fase 3 — Motor Financiero y Presupuestos
+- Rates (tarifas) por proyecto, colaborador y tipo
+- Budgets (presupuesto total del proyecto)
+- Budget Addons (ajustes adicionales al presupuesto)
+- Expenses (gastos del proyecto)
+- Cálculo de rentabilidad en tiempo real (BurnBar, ProfitabilityMeter)
+- Exportación de proyectos a PDF
 
-## Funcionalidades Implementadas
+### Fase 4 — Multi-Tenant, Asistencia y HR
+- Organizaciones con planes (free, starter, professional, enterprise)
+- Gestión de miembros con roles organizacionales (owner, admin, manager, member, viewer)
+- Sistema de asistencia con marcados (entrada/salida)
+- Configuración de horarios y turnos
+- Sistema de deuda de horas y justificativos
+- Aprobaciones workflow (pendiente → aprobado/rechazado)
+- Sistema de notificaciones in-app
+- Auditoría (audit log)
 
-### 1. Gestión de Organizaciones (Multi-Tenant)
-
-Cada usuario al registrarse obtiene **automáticamente su propia organización personal**. Las organizaciones son universos de datos completamente independientes.
-
-- Tipos: `personal`, `empresa`, `freelance`, `agencia`
-- Planes preparados: `free`, `starter`, `professional`, `enterprise` (estructura lista, sin lógica de cobro activa aún)
-- Cada organización tiene: zona horaria, moneda, formato de fecha, logo, slug URL
-- Un usuario puede pertenecer a múltiples organizaciones con distintos roles
-
-### 2. Proyectos
-
-Los proyectos son el eje central. Cada proyecto lleva:
-
-- **Tipo**: `personal` (solo el dueño) o `empleados` (equipo)
-- **Modo de horario**: `corrido` (horario único) o `turnos` (mañana/tarde con horarios propios)
-- **Configuración de módulos** por proyecto:
-  - `budget` — Activa el motor financiero
-  - `time_tracking` — Registro de tiempo (siempre activo)
-  - `audit` — Activa logs de auditoría
-  - `approvals` — Activa el flujo de aprobación de timesheets
-  - `public_view` — Habilita vista pública del proyecto
-- **Tipo de presupuesto**: `fixed_price`, `hourly_retainer`, `time_and_materials`, `none`
-- Campo `client_name` y `brand_color` para personalización
-
-### 3. Registro de Tiempo y Asistencia
-
-Los colaboradores registran su tiempo día a día. El sistema soporta:
-
-- **Marcado manual** (entrada/salida del empleado)
-- **Marcado automático** (APScheduler lo procesa cada hora: si un empleado olvidó marcar salida, el sistema lo hace automáticamente)
-- **Horas reales** vs horas estimadas (configurable a nivel usuario y proyecto)
-- **Deuda de horas**: si un empleado trabaja menos horas de las requeridas, el sistema lo detecta y lo registra en `DeudaHoras`
-- **Justificaciones**: los empleados pueden justificar ausencias o diferencias de horas
-
-### 4. Sistema de Períodos y Aprobaciones
-
-El modelo `TimePeriod` permite que los timesheets mensuales sigan un **flujo formal de aprobación**:
-
-```
-draft → pending (enviado para revisar) → approved / rejected
-approved → locked (bloqueado permanentemente)
-rejected → draft (volver a editar)
-```
-
-- Un período agrupa todos los días trabajados de un empleado en un mes
-- Solo se puede editar en estado `draft` o `rejected`
-- Solo Owner/Admin puede reabrirlo si ya está `approved` o `locked`
-- Registra quién envió, quién aprobó/rechazó y las notas de la revisión
-
-### 5. Motor Financiero (Fase 3)
-
-El servicio `ProfitabilityService` calcula en tiempo real:
-
-- **Horas totales y facturables** por proyecto
-- **Costo interno** (horas × tarifa interna del empleado)
-- **Ingresos facturables** (horas × tarifa de billing)
-- **Gastos adicionales** (no humanos: herramientas, licencias, etc.)
-- **Ganancia neta** y **margen de rentabilidad**
-- Estado de salud del proyecto: `healthy` (>30%), `warning` (10-30%), `critical` (0-10%), `losing_money` (<0%)
-
-El modelo `Budget` maneja los límites de gasto:
-- Tipos: `monetary` (dinero), `hours` (bolsa de horas), `fixed_price`, `none`
-- Calcula el **burn rate** (% consumido) en tiempo real
-- Alerta configurable (por defecto al 80% de consumo)
-- Puede bloquearse automáticamente al exceder el límite
-
-### 6. Sistema de Tarifas (Rates)
-
-El modelo `Rate` permite tarifas en cascada:
-- Tarifa a nivel organización (global)
-- Tarifa a nivel proyecto (sobreescribe la global)
-- Tarifa a nivel usuario dentro de un proyecto (sobreescribe la de proyecto)
-
-Cada tarifa tiene: `internal_cost` (costo interno) y `billing_rate` (precio al cliente).
-
-### 7. Gastos de Proyecto
-
-El modelo `ProjectExpense` registra gastos no humanos:
-- Categorizados (herramientas, servicios, viajes, etc.)
-- Clasificados como `billable` o `non_billable`
-- Flujo de aprobación de gastos
-
-### 8. Sistema de Invitaciones y Colaboradores
-
-El flujo para sumar un empleado a un proyecto es:
-
-```
-Admin crea empleado en el proyecto →
-Admin envía invitación por email →
-Usuario registrado (o nuevo) recibe email con token →
-Usuario acepta → se vincula automáticamente al empleado →
-Notificación al admin
-```
-
-- Si el usuario aún no existe en el sistema, se lo invita a registrarse
-- Las invitaciones tienen expiración configurable y contador de reenvíos
-- Al aceptar, se crea la relación `EmpleadoUsuario` con rol `empleado`
-
-### 9. Auditoría y Trazabilidad (Caja Negra)
-
-El modelo `AuditLog` registra **todas las acciones críticas** del sistema:
-
-- Quién hizo la acción (usuario, email, rol en ese momento)
-- Qué hizo (acción + categoría + descripción)
-- A qué recurso afectó (tipo + ID + nombre)
-- Valores anteriores y nuevos (old_value / new_value en JSON)
-- IP address y user agent del cliente
-- Severidad: `info`, `warning`, `critical`
-
-Acciones auditadas: login/logout, crear/eliminar proyectos, cambios de rol, aprobar/rechazar timesheets, bloquear períodos, ver costos, exportar reportes, entre otras.
-
-### 10. Notificaciones Internas
-
-Sistema de notificaciones en tiempo real dentro de la plataforma:
-- Invitación aceptada/rechazada
-- Timesheet enviado para aprobación
-- Período aprobado/rechazado
-- Alertas de presupuesto excedido
-
-### 11. Scheduler Automático (Proceso Separado)
-
-`scheduler.py` corre como un proceso aparte con dos trabajos cron:
-
-| Tarea | Frecuencia | Función |
-|-------|-----------|---------|
-| Marcado automático de salida | Cada hora en punto | Si un empleado no marcó salida, el sistema lo hace |
-| Procesamiento de horas extras | Cada 2 horas | Detecta y registra horas extra con confirmación |
-
-### 12. Exportación de Proyectos
-
-Endpoint dedicado (`proyecto_export_bp`) para exportar la información de proyectos colaborativos (detalles + horas trabajadas).
+### Fase 5 — Modernización Frontend
+- **Eliminación completa de React** (dependencias, componentes .tsx, configuración)
+- Migración de Tailwind CSS v3 → v4 nativo (`@import "tailwindcss"` + `@theme`)
+- Sistema de design tokens (`tokens.css` con namespace `--tf-*`)
+- Reescritura de 16+ archivos CSS con `@layer components`
+- Eliminación de 40+ gradientes hardcodeados → colores sólidos flat
+- Accesibilidad ARIA en todos los componentes (roles, landmarks, aria-live)
+- Limpieza de 8 archivos muertos
+- Corrección de errores TypeScript pre-existentes
 
 ---
 
-## Funcionalidades Modeladas / Preparadas (no completamente activas)
+## Secciones Funcionales
 
-| Funcionalidad | Estado | Descripción |
-|--------------|--------|-------------|
-| Planes de suscripción | Estructurado | El modelo `Organization` tiene `plan_type` (free/starter/professional/enterprise) y límites de proyectos/miembros, pero la lógica de cobro y restricción no está activa |
-| Vista pública de proyecto | Preparado | El proyecto tiene `public_view` en `modules_config`, pero la lógica de renderizado público no está completa |
-| Límites por plan | Estructurado | `limite_proyectos`, `limite_miembros`, `limite_almacenamiento_mb` en el modelo, sin enforcement en código |
-| RBAC granular | Parcial | `OrganizationMember` maneja roles, pero permisos granulares por módulo están en proceso |
-| Alertas de presupuesto por email | Parcial | La lógica de `should_send_alert()` existe en el modelo, pero el trigger de email automático al superar el umbral puede estar pendiente |
+### 1. Autenticación y Usuarios
+- Registro con validación de campos
+- Login con JWT almacenado en httpOnly cookie
+- Middleware server-side que protege rutas
+- Perfil de usuario editable
+- Logout con limpieza de cookie
+
+### 2. Organizaciones (Multi-Tenant)
+- Crear/editar organizaciones
+- Invitar miembros con roles
+- Selector de organización en el Header
+- Contexto organizacional global (Nanostores)
+- Planes con límites de features
+- Configuración de zona horaria, moneda y formato de fecha
+
+### 3. Proyectos
+- CRUD completo con metadatos (nombre, descripción, presupuesto, color de marca)
+- Vista de lista con tarjetas y métricas
+- Vista detallada con sidebar de meses navegable
+- Configuración de proyecto (drawer lateral)
+- Color de marca que aplica theming dinámico (BrandedLayout)
+
+### 4. Tareas
+- CRUD dentro de proyecto con posición ordenable
+- Asignación de horas por día con input especializado (TimeInput)
+- Períodos mensuales (mes/año) con cierre automático
+- Vista de tabla con totales y promedios
+
+### 5. Colaboradores
+- Invitación por email a proyectos
+- Roles: owner, admin, collaborator, viewer
+- Vista de equipo por proyecto
+- Gestión de permisos por rol
+
+### 6. Dashboard
+- Resumen de horas del período actual
+- Proyectos activos con métricas
+- Accesos rápidos a funciones frecuentes
+
+### 7. Motor Financiero
+- **Rates**: tarifas configurables por proyecto/colaborador/tipo
+- **Budgets**: presupuesto base del proyecto
+- **Budget Addons**: ajustes incrementales al presupuesto
+- **Expenses**: gastos asociados al proyecto
+- **Rentabilidad**: cálculo en tiempo real (ingreso vs costo vs gasto)
+- **BurnBar**: visualización de consumo de presupuesto
+- **ProfitabilityMeter**: indicador de margen de ganancia
+
+### 8. Exportación PDF
+- Exportación de vista de proyecto a PDF
+- Template personalizado (PDFTemplate.astro)
+- Generación client-side con jsPDF + html2canvas
+
+### 9. Sistema de Asistencia
+- Marcado de entrada/salida
+- Configuración de horarios por empleado
+- Turnos (mañana, tarde, noche, flexible)
+- Registro histórico de asistencia
+
+### 10. Deuda de Horas y Justificativos
+- Cálculo automático de horas debidas
+- Sistema de justificativos (enfermedad, vacaciones, etc.)
+- Workflow de aprobación de justificativos
+
+### 11. Aprobaciones
+- Historial de aprobaciones (ApprovalHistoryTimeline)
+- Estados: pendiente → aprobado / rechazado
+- Notificación al usuario del resultado
+
+### 12. Auditoría
+- Registro de acciones del sistema (audit log)
+- Filtrado por tipo de acción, usuario y fecha
+- Vista dedicada con tabla paginada
 
 ---
 
-## Flujo Completo de Uso (Caso típico)
+## Features Preparadas (no activas)
+
+| Feature | Estado | Detalle |
+|---------|--------|---------|
+| Drag & Drop de tareas | Modelo preparado (`position`) | UI no implementada |
+| Notificaciones push | Modelo + rutas | Sin service worker |
+| Modo personal (sin org) | Utility preparada | Flag `personalMode` |
+| Exportación masiva | Ruta backend | Sin UI |
+
+---
+
+## Flujo de Uso Completo
 
 ```
-1. El usuario se registra
-   └── Se crea automáticamente su Organización personal
-
-2. Crea una Organización para su empresa
-   └── Configura nombre, moneda, zona horaria
-
-3. Crea un Proyecto dentro de la organización
-   └── Define tipo (personal/empleados), modo horario, presupuesto, módulos
-
-4. Agrega Empleados al proyecto (tipo: empleados)
-   └── Envía invitación por email a cada uno
-
-5. Los empleados aceptan y se vinculan con sus cuentas de usuario
-
-6. Los empleados marcan asistencia diariamente
-   └── El scheduler procesa marcados olvidados automáticamente
-
-7. Al fin del mes, los empleados envían su período para aprobación
-   │  Estado: draft → pending
-   └── El admin aprueba o rechaza con notas
-
-8. El admin visualiza la rentabilidad del proyecto en tiempo real
-   └── Horas, costos internos, ingresos facturables, burn rate
-
-9. Todas las acciones quedan registradas en el AuditLog (caja negra)
+1. Usuario se registra → login → JWT cookie
+2. Crea u organización (o usa modo personal)
+3. Invita miembros a la organización
+4. Crea un proyecto con presupuesto y color de marca
+5. Agrega tareas al proyecto
+6. Invita colaboradores al proyecto
+7. Colaboradores registran horas diarias por tarea
+8. El sistema calcula rentabilidad en tiempo real
+9. Owner puede exportar reportes a PDF
+10. Sistema de asistencia trackea entradas/salidas
+11. Deuda de horas se calcula automáticamente
+12. Justificativos pasan por workflow de aprobación
+13. Auditoría registra todas las acciones relevantes
 ```
 
 ---
 
-## Ventajas Técnicas del Sistema
+## Ventajas Técnicas
 
-1. **Multi-tenant nativo desde la base**: cada organización es un universo de datos completamente isolado. No hay contaminación de datos entre clientes.
-
-2. **Escalabilidad por fases**: cada fase agrega funcionalidad sin romper la anterior. El código usa feature flags en `modules_config` por proyecto.
-
-3. **Marcado automático resiliente**: si el empleado se olvida de marcar salida, el scheduler lo cubre, evitando registros inconsistentes.
-
-4. **Rentabilidad en tiempo real**: no hay reports de fin de mes; los cálculos de costo, margen y burn rate son instantáneos con los datos actuales.
-
-5. **Auditoría inmutable como caja negra**: cada acción crítica es registrada con estado anterior y nuevo, IP y rol del usuario en ese momento. Útil para compliance y disputas internas.
-
-6. **Tarifas en cascada**: la lógica de `Rate.get_effective_rate()` resuelve automáticamente si se usa la tarifa del usuario, del proyecto o de la organización, en ese orden de prioridad.
-
-7. **Sistema de invitaciones robusto**: maneja usuarios existentes y nuevos, reenvíos, expiración, y no falla si el email no se puede enviar (la invitación igual se crea).
-
-8. **Separación clara de responsabilidades**: `models/` (datos), `services/` (dominio), `routes/` (HTTP), `utils/` (helpers). El frontend tiene la misma separación con `services/`, `handlers/` y `stores/`.
+- **SSR con Astro**: SEO-friendly, carga rápida, auth seguro server-side
+- **Alpine.js sin SPA**: Interactividad sin bundle pesado ni hidratación compleja
+- **Tailwind CSS 4 nativo**: Sin config JS, todo en CSS con `@theme`
+- **Design Tokens centralizados**: Un solo archivo (`tokens.css`) como fuente de verdad
+- **Multi-tenant real**: Aislamiento por organización con RBAC granular
+- **Docker-compose**: Setup de desarrollo reproducible en un comando
+- **Migraciones SQL explícitas**: Control total sobre el schema, sin magic de frameworks
+- **JWT httpOnly**: Auth seguro sin localStorage, protegido contra XSS
