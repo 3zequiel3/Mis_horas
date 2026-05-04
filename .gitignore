@@ -116,3 +116,5 @@ backups/
 # Scripts y SQL
 *.sh
 *.sql
+
+.claude/

@@ -1,5 +1,5 @@
 # Stage 1: Dependencies - solo dependencias de producción
-FROM node:20-alpine as deps
+FROM node:22-alpine AS deps
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 
 # Stage 2: Builder - Compilar la aplicación
-FROM node:20-alpine as builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -25,13 +25,12 @@ COPY frontend/src ./src
 COPY frontend/public ./public
 COPY frontend/astro.config.mjs ./
 COPY frontend/tsconfig.json ./
-COPY frontend/tailwind.config.mjs ./
 
 # Compilar la aplicación
 RUN pnpm run build
 
 # Stage 3: Runtime - Imagen final optimizada
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 

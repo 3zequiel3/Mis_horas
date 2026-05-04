@@ -1,0 +1,22 @@
+# Dockerfile para DESARROLLO con hot reload
+# El código fuente se monta como volumen desde docker-compose.yml
+# El comando real (pnpm run dev) lo define el docker-compose
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Instalar pnpm globalmente
+RUN npm install -g pnpm@latest
+
+# Copiar manifiestos de dependencias e instalarlas
+# (esto se cachea hasta que cambien package.json o pnpm-lock.yaml)
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# Exponer el puerto del dev server
+EXPOSE 3000
+
+# El command real lo define docker-compose (pnpm run dev)
+# Fallback por si se corre sin docker-compose
+CMD ["pnpm", "run", "dev"]
